@@ -1,5 +1,5 @@
 // Укажите ваш URL из Google Apps Script
-const API_URL = 'https://script.google.com/macros/s/AKfycbyvovPXuLFGHYnVqOjEW5cRIydPB5hP1dioHukbGc2DSn3uFc6zRBBc0MwlR6ET_v8Yow/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzxLfXzKbsIQIUsUWytSHrTNsC9SSkmqsYIUkvjbi8Oao7YlRPvMNp-pRz4T6lggLwnQg/exec';
 
 let data = {
   orders: []
@@ -83,9 +83,6 @@ function switchScreen(id) {
   // Скрываем все экраны
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
 
-  // Удаляем все динамические экраны (все кроме mainScreen)
-  document.querySelectorAll('.screen:not(#mainScreen)').forEach(el => el.remove());
-
   let screen = document.getElementById(id);
   if (!screen) {
     console.error(`Screen with id '${id}' not found.`);
@@ -95,23 +92,26 @@ function switchScreen(id) {
 }
 
 function showShiftsScreen() {
-  let screen = document.createElement("div");
-  screen.className = "screen";
-  screen.id = "shiftScreen";
-  screen.innerHTML = `
-    <h2>введите дату</h2>
-    <input type="date" id="dateInput" value="${new Date().toISOString().split('T')[0]}">
-    <button id="showOrdersForDay">показать</button>
-    <div id="ordersOfDay"></div>
-    <div id="totalOfDay"></div>
-    <button onclick="goToPrevious()">назад</button>
-  `;
-  document.body.appendChild(screen);
+  let screen = document.getElementById("shiftScreen");
+  if (!screen) {
+    screen = document.createElement("div");
+    screen.className = "screen";
+    screen.id = "shiftScreen";
+    screen.innerHTML = `
+      <h2>введите дату</h2>
+      <input type="date" id="dateInput" value="${new Date().toISOString().split('T')[0]}">
+      <button id="showOrdersForDay">показать</button>
+      <div id="ordersOfDay"></div>
+      <div id="totalOfDay"></div>
+      <button onclick="goToPrevious()">назад</button>
+    `;
+    document.body.appendChild(screen);
 
-  document.getElementById("showOrdersForDay").addEventListener("click", async () => {
-    const date = document.getElementById("dateInput").value;
-    await showOrdersForDay(date);
-  });
+    document.getElementById("showOrdersForDay").addEventListener("click", async () => {
+      const date = document.getElementById("dateInput").value;
+      await showOrdersForDay(date);
+    });
+  }
 
   switchScreen('shiftScreen');
 }
@@ -139,33 +139,37 @@ async function showOrdersForDay(date) {
 }
 
 function showOrdersList() {
-  let screen = document.createElement("div");
-  screen.className = "screen";
-  screen.id = "ordersListScreen";
-  screen.innerHTML = `
-    <h2>список заказов</h2>
-    <input type="text" id="searchInput" placeholder="поиск по номеру заказа" style="padding: 10px; width: 100%; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">
-    <div id="allOrdersList"></div>
-    <button id="btnCreateNew">создать новый</button>
-    <button onclick="goToPrevious()">назад</button>
-  `;
-  document.body.appendChild(screen);
+  let screen = document.getElementById("ordersListScreen");
+  if (!screen) {
+    screen = document.createElement("div");
+    screen.className = "screen";
+    screen.id = "ordersListScreen";
+    screen.innerHTML = `
+      <h2>список заказов</h2>
+      <input type="text" id="searchInput" placeholder="поиск по номеру заказа" style="padding: 10px; width: 100%; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">
+      <div id="allOrdersList"></div>
+      <button id="btnCreateNew">создать новый</button>
+      <button onclick="goToPrevious()">назад</button>
+    `;
+    document.body.appendChild(screen);
 
-  const searchInput = document.getElementById("searchInput");
-  searchInput.addEventListener("input", function() {
-    const query = this.value.trim().toLowerCase();
-    if (query) {
-      searchOrders(query);
-    } else {
-      displayOrdersGroupedByDate();
-    }
-  });
+    const searchInput = document.getElementById("searchInput");
+    searchInput.addEventListener("input", function() {
+      const query = this.value.trim().toLowerCase();
+      if (query) {
+        searchOrders(query);
+      } else {
+        displayOrdersGroupedByDate();
+      }
+    });
 
-  document.getElementById("btnCreateNew").addEventListener("click", () => {
-    createOrderForm();
-    addToHistory('createOrderScreen');
-  });
+    document.getElementById("btnCreateNew").addEventListener("click", () => {
+      createOrderForm();
+      addToHistory('createOrderScreen');
+    });
+  }
 
+  // Обновляем содержимое списка
   displayOrdersGroupedByDate();
 
   switchScreen('ordersListScreen');
@@ -245,134 +249,171 @@ function searchOrders(query) {
 }
 
 function createOrderForm() {
-  let screen = document.createElement("div");
-  screen.className = "screen";
-  screen.id = "createOrderScreen";
-  screen.innerHTML = `
-    <h2>создать заказ</h2>
-    <input type="text" id="orderNumber" placeholder="номер заказа">
-    <input type="text" id="orderDetail" placeholder="деталь">
-    <input type="date" id="orderDate" value="${new Date().toISOString().split('T')[0]}">
-    <select id="orderType">
-      <option value="Распил">Распил — 65₽/м²</option>
-      <option value="Линейный">Линейный — 26₽/п.м</option>
-      <option value="Склейка простая">Склейка простая — 165₽/м²</option>
-      <option value="Склейка с обгоном">Склейка с обгоном — 210₽/м²</option>
-      <option value="Фрезер фаски">Фрезер фаски — 16₽/п.м</option>
-      <option value="Пазовка">Пазовка — 30₽/п.м</option>
-      <option value="Время">Время — 330₽</option>
-    </select>
-    <input type="number" id="quantity" placeholder="Количество" step="1" min="1" value="1">
-    <input type="number" id="m2" placeholder="м²" step="0.1" min="0" value="0">
-    <input type="number" id="pm" placeholder="п.м" step="0.1" min="0" value="0">
-    <input type="number" id="time" placeholder="Часы" step="0.5" min="0" value="0">
-    <button id="saveOrder">создать</button>
-    <button onclick="goToPrevious()">назад</button>
-  `;
-  document.body.appendChild(screen);
+  let screen = document.getElementById("createOrderScreen");
+  if (!screen) {
+    screen = document.createElement("div");
+    screen.className = "screen";
+    screen.id = "createOrderScreen";
+    screen.innerHTML = `
+      <h2>создать заказ</h2>
+      <input type="text" id="orderNumber" placeholder="номер заказа">
+      <input type="text" id="orderDetail" placeholder="деталь">
+      <input type="date" id="orderDate" value="${new Date().toISOString().split('T')[0]}">
+      <select id="orderType">
+        <option value="Распил">Распил — 65₽/м²</option>
+        <option value="Линейный">Линейный — 26₽/п.м</option>
+        <option value="Склейка простая">Склейка простая — 165₽/м²</option>
+        <option value="Склейка с обгоном">Склейка с обгоном — 210₽/м²</option>
+        <option value="Фрезер фаски">Фрезер фаски — 16₽/п.м</option>
+        <option value="Пазовка">Пазовка — 30₽/п.м</option>
+        <option value="Время">Время — 330₽</option>
+      </select>
+      <input type="number" id="quantity" placeholder="Количество" step="1" min="1" value="1">
+      <input type="number" id="m2" placeholder="м²" step="0.1" min="0" value="0">
+      <input type="number" id="pm" placeholder="п.м" step="0.1" min="0" value="0">
+      <input type="number" id="time" placeholder="Часы" step="0.5" min="0" value="0">
+      <button id="saveOrder">создать</button>
+      <button onclick="goToPrevious()">назад</button>
+    `;
+    document.body.appendChild(screen);
 
-  document.getElementById("saveOrder").addEventListener("click", async () => {
-    const id = document.getElementById("orderNumber").value.trim();
-    if (!id) {
-      alert("Введите номер заказа");
-      return;
-    }
-    const detail = document.getElementById("orderDetail").value.trim();
-    const type = document.getElementById("orderType").value;
-    const quantity = parseFloat(document.getElementById("quantity").value) || 1;
-    const m2 = parseFloat(document.getElementById("m2").value) || 0;
-    const pm = parseFloat(document.getElementById("pm").value) || 0;
-    const time = parseFloat(document.getElementById("time").value) || 0;
-    const date = document.getElementById("orderDate").value;
+    document.getElementById("saveOrder").addEventListener("click", async () => {
+      const id = document.getElementById("orderNumber").value.trim();
+      if (!id) {
+        alert("Введите номер заказа");
+        return;
+      }
+      const detail = document.getElementById("orderDetail").value.trim();
+      const type = document.getElementById("orderType").value;
+      const quantity = parseFloat(document.getElementById("quantity").value) || 1;
+      const m2 = parseFloat(document.getElementById("m2").value) || 0;
+      const pm = parseFloat(document.getElementById("pm").value) || 0;
+      const time = parseFloat(document.getElementById("time").value) || 0;
+      const date = document.getElementById("orderDate").value;
 
-    const rates = {
-      "Распил": 65,
-      "Линейный": 26,
-      "Склейка простая": 165,
-      "Склейка с обгоном": 210,
-      "Фрезер фаски": 16,
-      "Пазовка": 30,
-      "Время": 330
-    };
+      const rates = {
+        "Распил": 65,
+        "Линейный": 26,
+        "Склейка простая": 165,
+        "Склейка с обгоном": 210,
+        "Фрезер фаски": 16,
+        "Пазовка": 30,
+        "Время": 330
+      };
 
-    let price = 0;
-    if (["Распил", "Склейка простая", "Склейка с обгоном"].includes(type)) {
-      price += m2 * rates[type];
-    }
-    if (["Линейный", "Фрезер фаски", "Пазовка"].includes(type)) {
-      price += pm * rates[type];
-    }
-    if (type === "Время") {
-      price += time * rates[type];
-    }
+      let price = 0;
+      if (["Распил", "Склейка простая", "Склейка с обгоном"].includes(type)) {
+        price += m2 * rates[type];
+      }
+      if (["Линейный", "Фрезер фаски", "Пазовка"].includes(type)) {
+        price += pm * rates[type];
+      }
+      if (type === "Время") {
+        price += time * rates[type];
+      }
 
-    price = Math.round(price * 100) / 100;
+      price = Math.round(price * 100) / 100;
 
-    const order = {
-      id,
-      detail,
-      date,
-      type,
-      quantity,
-      m2,
-      pm,
-      time,
-      status: 'open',
-      price,
-      createdAt: new Date().toISOString()
-    };
+      const order = {
+        id,
+        detail,
+        date,
+        type,
+        quantity,
+        m2,
+        pm,
+        time,
+        status: 'open',
+        price,
+        createdAt: new Date().toISOString()
+      };
 
-    try {
-      await fetch(`${API_URL}?action=createOrder&data=${JSON.stringify(order)}`);
-      alert(`Заказ создан: ${id}`);
-      // Обновляем локальные данные
-      data.orders.push(order);
-      goToPrevious();
-    } catch (e) {
-      alert('Ошибка сохранения заказа');
-    }
-  });
+      try {
+        await fetch(`${API_URL}?action=createOrder&data=${JSON.stringify(order)}`);
+        alert(`Заказ создан: ${id}`);
+        // Обновляем локальные данные
+        data.orders.push(order);
+        goToPrevious();
+      } catch (e) {
+        alert('Ошибка сохранения заказа');
+      }
+    });
+  }
 
   switchScreen('createOrderScreen');
 }
 
 function showOrderDetails(orderId) {
-  const order = data.orders.find(o => o.ID === orderId);
-  if (!order) return;
+  let screen = document.getElementById("orderDetailsScreen");
+  if (!screen) {
+    screen = document.createElement("div");
+    screen.className = "screen";
+    screen.id = "orderDetailsScreen";
+    const order = data.orders.find(o => o.ID === orderId);
+    if (!order) return;
 
-  let screen = document.createElement("div");
-  screen.className = "screen";
-  screen.id = "orderDetailsScreen";
+    let detailsHtml = `
+      <h2>${order.ID}</h2>
+      <p>деталь: ${order.Detail || '-'}</p>
+      <p>дата: ${order.Date}</p>
+      <p>тип: ${order.Type}</p>
+      <p>кол-во: ${order.Quantity}</p>
+      <p>м²: ${order.M2}</p>
+      <p>п.м: ${order.PM}</p>
+      <p>время: ${order.Time}</p>
+    `;
 
-  let detailsHtml = `
-    <h2>${order.ID}</h2>
-    <p>деталь: ${order.Detail || '-'}</p>
-    <p>дата: ${order.Date}</p>
-    <p>тип: ${order.Type}</p>
-    <p>кол-во: ${order.Quantity}</p>
-    <p>м²: ${order.M2}</p>
-    <p>п.м: ${order.PM}</p>
-    <p>время: ${order.Time}</p>
-  `;
+    if (order.Status === 'closed') {
+      detailsHtml += `<p>цена: ${Math.round(parseFloat(order.Price) * 100) / 100}₽</p>`;
+    } else {
+      detailsHtml += `<button id="btnFinishOrder">завершить</button>`;
+    }
 
-  if (order.Status === 'closed') {
-    detailsHtml += `<p>цена: ${Math.round(parseFloat(order.Price) * 100) / 100}₽</p>`;
+    detailsHtml += `
+      <button id="btnDeleteOrder">удалить</button>
+      <button onclick="goToPrevious()">назад</button>
+    `;
+    screen.innerHTML = detailsHtml;
+    document.body.appendChild(screen);
+
+    if (order.Status !== 'closed') {
+      document.getElementById("btnFinishOrder").addEventListener("click", () => finishOrder(order.ID));
+    }
+
+    document.getElementById("btnDeleteOrder").addEventListener("click", () => deleteOrder(order.ID));
   } else {
-    detailsHtml += `<button id="btnFinishOrder">завершить</button>`;
+    // Обновляем содержимое экрана
+    const order = data.orders.find(o => o.ID === orderId);
+    if (!order) return;
+
+    screen.innerHTML = `
+      <h2>${order.ID}</h2>
+      <p>деталь: ${order.Detail || '-'}</p>
+      <p>дата: ${order.Date}</p>
+      <p>тип: ${order.Type}</p>
+      <p>кол-во: ${order.Quantity}</p>
+      <p>м²: ${order.M2}</p>
+      <p>п.м: ${order.PM}</p>
+      <p>время: ${order.Time}</p>
+    `;
+
+    if (order.Status === 'closed') {
+      screen.innerHTML += `<p>цена: ${Math.round(parseFloat(order.Price) * 100) / 100}₽</p>`;
+    } else {
+      screen.innerHTML += `<button id="btnFinishOrder">завершить</button>`;
+    }
+
+    screen.innerHTML += `
+      <button id="btnDeleteOrder">удалить</button>
+      <button onclick="goToPrevious()">назад</button>
+    `;
+
+    if (order.Status !== 'closed') {
+      document.getElementById("btnFinishOrder").addEventListener("click", () => finishOrder(order.ID));
+    }
+
+    document.getElementById("btnDeleteOrder").addEventListener("click", () => deleteOrder(order.ID));
   }
-
-  detailsHtml += `
-    <button id="btnDeleteOrder">удалить</button>
-    <button onclick="goToPrevious()">назад</button>
-  `;
-  screen.innerHTML = detailsHtml;
-  document.body.appendChild(screen);
-
-  if (order.Status !== 'closed') {
-    document.getElementById("btnFinishOrder").addEventListener("click", () => finishOrder(order.ID));
-  }
-
-  document.getElementById("btnDeleteOrder").addEventListener("click", () => deleteOrder(order.ID));
 
   switchScreen('orderDetailsScreen');
 }
