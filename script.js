@@ -6,6 +6,10 @@ let notifications = JSON.parse(localStorage.getItem('notifications')) || [];
 // История экранов
 let screenHistory = ['mainScreen'];
 
+// === GOOGLE SHEETS ===
+// 🔴 ОБЯЗАТЕЛЬНО ЗАМЕНИ НА СВОЙ URL!
+const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwwYGsb7W2zUDpbUqPThkNoIefIUpj5tgO1AdivjFPf-BjCc4zUBkZ7NFSZhhXLRVc-sg/exec';
+
 // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
 
 function saveData() {
@@ -38,6 +42,31 @@ function calculateOrderPrice(operations) {
     }
   });
   return Math.round(total * 100) / 100;
+}
+
+function calculateSingleOperationPrice(op) {
+  const rates = {
+    "Распил": 65,
+    "Линейный": 26,
+    "Склейка простая": 165,
+    "Склейка с обгоном": 210,
+    "Фрезер фаски": 16,
+    "Пазовка": 30,
+    "Время": 330
+  };
+
+  let price = 0;
+  const qty = op.quantity || 1;
+  if (["Распил", "Склейка простая", "Склейка с обгоном"].includes(op.type)) {
+    price += op.m2 * rates[op.type] * qty;
+  }
+  if (["Линейный", "Фрезер фаски", "Пазовка"].includes(op.type)) {
+    price += op.pm * rates[op.type] * qty;
+  }
+  if (op.type === "Время") {
+    price += op.time * rates[op.type] * qty;
+  }
+  return Math.round(price * 100) / 100;
 }
 
 // === УВЕДОМЛЕНИЯ ===
@@ -211,6 +240,7 @@ function showShiftsScreen() {
         <button id="showOrdersForDay" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">показать</button>
         <div id="ordersOfDay"></div>
         <div id="totalOfDay"></div>
+        <button id="btnSaveReport" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">сохранить отчёт</button>
         <button onclick="goToPrevious()" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">назад</button>
       </div>
     `;
@@ -219,6 +249,15 @@ function showShiftsScreen() {
     document.getElementById("showOrdersForDay").addEventListener("click", () => {
       const date = document.getElementById("dateInput").value;
       showOrdersForDay(date);
+    });
+
+    document.getElementById("btnSaveReport").addEventListener("click", () => {
+      const date = document.getElementById("dateInput").value;
+      if (!date) {
+        alert("Выберите дату");
+        return;
+      }
+      saveReportToGoogleSheet(date);
     });
   }
   switchScreen('shiftScreen');
@@ -244,6 +283,52 @@ function showOrdersForDay(date) {
 
   total = Math.round(total * 100) / 100;
   document.getElementById("totalOfDay").innerHTML = `<h3 style="margin-top: 10px;">итого: ${total}₽</h3>`;
+}
+
+async function saveReportToGoogleSheet(date) {
+  const orders = data.orders.filter(o => o.date === date);
+
+  if (orders.length === 0) {
+    alert("Нет заказов за эту дату.");
+    return;
+  }
+
+  const reportData = [];
+
+  orders.forEach(order => {
+    const price = order.status === 'closed'
+      ? (order.price || calculateOrderPrice(order.operations))
+      : calculateOrderPrice(order.operations);
+
+    order.operations.forEach(op => {
+      reportData.push({
+        date: order.date,
+        orderId: order.id,
+        detail: op.detail || '-',
+        operationType: op.type,
+        quantity: op.quantity,
+        m2: op.m2,
+        pm: op.pm,
+        time: op.time,
+        pricePerOperation: calculateSingleOperationPrice(op),
+        totalOrderPrice: price
+      });
+    });
+  });
+
+  try {
+    await fetch(GOOGLE_SHEET_WEB_APP_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ report: reportData })
+    });
+
+    alert(`Отчёт за ${date} отправлен в Google Таблицу!`);
+  } catch (err) {
+    console.error('Ошибка отправки:', err);
+    alert('Не удалось отправить отчёт.');
+  }
 }
 
 function showOrdersList() {
@@ -407,10 +492,9 @@ function createOrderForm() {
       const time = parseFloat(document.getElementById("time").value) || 0;
       const date = document.getElementById("orderDate").value;
 
-      // Первая операция использует деталь заказа
       data.orders.push({
         id,
-        detail, // общая деталь заказа (можно оставить для совместимости)
+        detail,
         date,
         status: 'open',
         operations: [{ detail, type, quantity, m2, pm, time }],
@@ -505,7 +589,6 @@ function showOrderDetails(orderId) {
       <p style="margin: 5px 0;">Дата: ${order.date}</p>
   `;
 
-  // Отображение всех операций с деталями
   detailsHtml += `<h3 style="margin: 15px 0 10px; font-size: 16px;">Операции:</h3>`;
   order.operations.forEach((op, idx) => {
     detailsHtml += `
@@ -572,11 +655,10 @@ function finishOrder(orderId) {
 // === ИНИЦИАЛИЗАЦИЯ ===
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Миграция старых заказов: добавляем operations и detail в каждую операцию
+  // Миграция старых заказов
   let migrated = false;
   data.orders.forEach(order => {
     if (!order.operations) {
-      // Сохраняем общую деталь заказа
       const globalDetail = order.detail || '-';
       order.operations = [{
         detail: globalDetail,
@@ -586,7 +668,6 @@ document.addEventListener("DOMContentLoaded", () => {
         pm: order.pm || 0,
         time: order.time || 0
       }];
-      // Удаляем старые поля
       delete order.type;
       delete order.quantity;
       delete order.m2;
@@ -594,7 +675,6 @@ document.addEventListener("DOMContentLoaded", () => {
       delete order.time;
       migrated = true;
     } else {
-      // Убеждаемся, что у каждой операции есть поле detail
       order.operations.forEach(op => {
         if (op.detail === undefined) {
           op.detail = order.detail || '-';
