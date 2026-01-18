@@ -229,6 +229,15 @@ function loadMainScreen() {
   switchScreen('mainScreen');
 }
 
+// === ФУНКЦИЯ СБРОСА ОТЧЁТОВ ===
+function resetSentReports() {
+  if (confirm("Вы уверены? Это позволит отправить отчёты за все даты заново.")) {
+    sentReports = [];
+    saveData();
+    alert("История отправленных отчётов очищена.");
+  }
+}
+
 function showShiftsScreen() {
   let screen = document.getElementById("shiftScreen");
   if (!screen) {
@@ -237,17 +246,19 @@ function showShiftsScreen() {
     screen.id = "shiftScreen";
     screen.innerHTML = `
       <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto;">
-        <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 20px;">введите дату</h2>
+        <h2 id="shiftTitle" style="font-size: 18px; font-weight: bold; margin-bottom: 20px; cursor: pointer;">введите дату</h2>
         <input type="date" id="dateInput" value="${new Date().toISOString().split('T')[0]}" style="padding: 10px; width: 100%; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
         <button id="showOrdersForDay" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">показать</button>
         <div id="ordersOfDay"></div>
         <div id="totalOfDay"></div>
         <button id="btnSaveReport" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">сохранить отчёт</button>
+        <button id="resetReportsBtn" style="width: 100%; padding: 6px; background: #eee; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; margin-top: 10px; display: none; cursor: pointer;">сбросить отчёты</button>
         <button onclick="goToPrevious()" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">назад</button>
       </div>
     `;
     document.body.appendChild(screen);
 
+    // Обработчики
     document.getElementById("showOrdersForDay").addEventListener("click", () => {
       const date = document.getElementById("dateInput").value;
       showOrdersForDay(date);
@@ -260,6 +271,28 @@ function showShiftsScreen() {
         return;
       }
       saveReportToGoogleSheet(date);
+    });
+
+    // Скрытая кнопка — привязываем обработчик
+    document.getElementById("resetReportsBtn").addEventListener("click", resetSentReports);
+
+    // === СЕКРЕТНЫЙ ТРИГГЕР: 3 клика на заголовок ===
+    let clickCount = 0;
+    let lastClickTime = 0;
+
+    document.getElementById("shiftTitle").addEventListener("click", () => {
+      const now = Date.now();
+      if (now - lastClickTime < 500) {
+        clickCount++;
+      } else {
+        clickCount = 1;
+      }
+      lastClickTime = now;
+
+      if (clickCount >= 3) {
+        document.getElementById("resetReportsBtn").style.display = "block";
+        clickCount = 0;
+      }
     });
   }
   switchScreen('shiftScreen');
