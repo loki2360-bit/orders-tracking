@@ -2,6 +2,7 @@
 let data = JSON.parse(localStorage.getItem('ordersData')) || { orders: [] };
 let appData = JSON.parse(localStorage.getItem('appData')) || { createdCount: 0, activationKeyUsed: false };
 let notifications = JSON.parse(localStorage.getItem('notifications')) || [];
+let sentReports = JSON.parse(localStorage.getItem('sentReports')) || []; // ← ЗАПОМИНАЕМ ОТПРАВЛЕННЫЕ ДАТЫ
 
 // История экранов
 let screenHistory = ['mainScreen'];
@@ -15,6 +16,7 @@ const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwwYGs
 function saveData() {
   localStorage.setItem('ordersData', JSON.stringify(data));
   localStorage.setItem('notifications', JSON.stringify(notifications));
+  localStorage.setItem('sentReports', JSON.stringify(sentReports)); // ← сохраняем список отправленных
 }
 
 function calculateOrderPrice(operations) {
@@ -285,7 +287,15 @@ function showOrdersForDay(date) {
   document.getElementById("totalOfDay").innerHTML = `<h3 style="margin-top: 10px;">итого: ${total}₽</h3>`;
 }
 
+// === ОТПРАВКА ОТЧЁТА (С ЗАЩИТОЙ ОТ ПОВТОРОВ) ===
+
 async function saveReportToGoogleSheet(date) {
+  // 🔒 Проверка: уже отправляли?
+  if (sentReports.includes(date)) {
+    alert(`Отчёт за ${date} уже отправлен в Google Таблицу.`);
+    return;
+  }
+
   const orders = data.orders.filter(o => o.date === date);
 
   if (orders.length === 0) {
@@ -324,12 +334,18 @@ async function saveReportToGoogleSheet(date) {
       body: JSON.stringify({ report: reportData })
     });
 
-    alert(`Отчёт за ${date} отправлен в Google Таблицу!`);
+    // ✅ Запоминаем, что отчёт за эту дату отправлен
+    sentReports.push(date);
+    saveData();
+
+    alert(`Отчёт за ${date} успешно отправлен в Google Таблицу!`);
   } catch (err) {
     console.error('Ошибка отправки:', err);
     alert('Не удалось отправить отчёт.');
   }
 }
+
+// === СПИСОК ЗАКАЗОВ ===
 
 function showOrdersList() {
   let screen = document.getElementById("ordersListScreen");
