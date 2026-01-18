@@ -1,6 +1,5 @@
 // Укажите ваш URL из Google Apps Script
 const API_URL = 'https://script.google.com/macros/s/AKfycbznPs8QNbUqFHwgci7msTMTk04K0uNBMc6U9sqY20MPcYm6JTFpdF5bCa-DruKTWVFCfA/exec';
-
 let data = {
   orders: []
 };
@@ -132,8 +131,13 @@ function markAsRead(notificationId) {
   if (notification) {
     notification.Read = 'TRUE';
     // Отправляем в Google Таблицы
-    fetch(`${API_URL}?action=markNotificationAsRead&id=${notificationId}`, {
-      method: 'POST'
+    fetch(`${API_URL}`, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: `action=markNotificationAsRead&id=${notificationId}`
     }).then(() => {
       updateNotificationBadge();
       updateNotificationIcon();
@@ -145,8 +149,6 @@ function markAsRead(notificationId) {
 function clearAllNotifications() {
   if (confirm("Вы уверены, что хотите очистить все уведомления?")) {
     notifications = [];
-    // В Google Таблицах нужно будет вручную обновить столбец Read
-    // или удалить все строки (в скрипте добавьте действие clearNotifications)
     updateNotificationBadge();
     updateNotificationIcon();
     showNotificationsScreen();
@@ -274,13 +276,13 @@ function showOrdersList() {
     screen.id = "ordersListScreen";
     screen.innerHTML = `
       <h2>список заказов</h2>
-      <input type="text" id="searchInput" placeholder="поиск по номеру заказа" style="padding: 10px; width: 100%; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">
-      <div style="position: relative;">
-        <button id="btnNotificationsInList" onclick="showNotificationsScreen()" style="position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 20px; cursor: pointer;">
+      <div style="position: relative; margin-bottom: 10px;">
+        <button id="btnNotificationsInList" onclick="showNotificationsScreen()" style="position: absolute; top: 0; right: 0; background: none; border: none; font-size: 20px; cursor: pointer; z-index: 1000;">
           <span id="notificationIcon" style="color: black;">🔔</span>
           <span id="notificationBadgeInList" style="position: absolute; top: -8px; right: -8px; background: red; color: white; border-radius: 50%; width: 18px; height: 18px; display: none; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;"></span>
         </button>
       </div>
+      <input type="text" id="searchInput" placeholder="поиск по номеру заказа" style="padding: 10px; width: 100%; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">
       <div id="allOrdersList"></div>
       <button id="btnCreateNew">создать новый</button>
       <button onclick="goToPrevious()">назад</button>
@@ -563,8 +565,13 @@ function showOrderDetails(orderId) {
 
 function deleteOrder(orderId) {
   if (confirm("Вы уверены, что хотите удалить этот заказ?")) {
-    fetch(`${API_URL}?action=deleteOrder&id=${orderId}`, {
-      method: 'POST'
+    fetch(`${API_URL}`, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: `action=deleteOrder&id=${orderId}`
     })
     .then(() => {
       // Обновляем локальные данные
@@ -605,8 +612,13 @@ function finishOrder(orderId) {
 
   price = Math.round(price * 100) / 100;
 
-  fetch(`${API_URL}?action=updateOrderStatus&id=${orderId}&status=closed`, {
-    method: 'POST'
+  fetch(`${API_URL}`, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: `action=updateOrderStatus&id=${orderId}&status=closed`
   })
   .then(() => {
     // Обновляем локальные данные
