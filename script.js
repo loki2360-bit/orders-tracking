@@ -399,7 +399,7 @@ function createOrderForm() {
     document.getElementById("saveOrder").addEventListener("click", () => {
       const id = document.getElementById("orderNumber").value.trim();
       if (!id) { alert("Введите номер заказа"); return; }
-      const detail = document.getElementById("orderDetail").value.trim();
+      const detail = document.getElementById("orderDetail").value.trim() || '-';
       const type = document.getElementById("orderType").value;
       const quantity = parseFloat(document.getElementById("quantity").value) || 1;
       const m2 = parseFloat(document.getElementById("m2").value) || 0;
@@ -407,12 +407,13 @@ function createOrderForm() {
       const time = parseFloat(document.getElementById("time").value) || 0;
       const date = document.getElementById("orderDate").value;
 
+      // Первая операция использует деталь заказа
       data.orders.push({
         id,
-        detail,
+        detail, // общая деталь заказа (можно оставить для совместимости)
         date,
         status: 'open',
-        operations: [{ type, quantity, m2, pm, time }],
+        operations: [{ detail, type, quantity, m2, pm, time }],
         createdAt: new Date().toISOString()
       });
 
@@ -441,6 +442,7 @@ function showAddOperationForm(orderId) {
   modal.innerHTML = `
     <div style="background:white; padding:20px; border-radius:12px; width:90%; max-width:400px;">
       <h3 style="margin-bottom:15px;">Новая операция</h3>
+      <input type="text" id="newOpDetail" placeholder="Деталь (например, столешка, ножка)" style="width:100%; padding:10px; margin:5px 0; border:1px solid #ddd; border-radius:4px;">
       <select id="newOpType" style="width:100%; padding:10px; margin:5px 0; border:1px solid #ddd; border-radius:4px;">
         <option value="Распил">Распил — 65₽/м²</option>
         <option value="Линейный">Линейный — 26₽/п.м</option>
@@ -461,6 +463,7 @@ function showAddOperationForm(orderId) {
   document.body.appendChild(modal);
 
   document.getElementById("saveNewOp").addEventListener("click", () => {
+    const detail = document.getElementById("newOpDetail").value.trim() || '-';
     const type = document.getElementById("newOpType").value;
     const quantity = parseFloat(document.getElementById("newOpQuantity").value) || 1;
     const m2 = parseFloat(document.getElementById("newOpM2").value) || 0;
@@ -469,7 +472,7 @@ function showAddOperationForm(orderId) {
 
     const order = data.orders.find(o => o.id === orderId);
     if (order) {
-      order.operations.push({ type, quantity, m2, pm, time });
+      order.operations.push({ detail, type, quantity, m2, pm, time });
       saveData();
       showOrderDetails(orderId);
     }
@@ -498,33 +501,32 @@ function showOrderDetails(orderId) {
   let detailsHtml = `
     <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto;">
       <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">${order.id}</h2>
-      <p style="margin: 5px 0;">деталь: ${order.detail || '-'}</p>
-      <p style="margin: 5px 0;">дата: ${order.date}</p>
+      <p style="margin: 5px 0;">Общая деталь: ${order.detail || '-'}</p>
+      <p style="margin: 5px 0;">Дата: ${order.date}</p>
   `;
 
-  // Отображение всех операций
+  // Отображение всех операций с деталями
   detailsHtml += `<h3 style="margin: 15px 0 10px; font-size: 16px;">Операции:</h3>`;
   order.operations.forEach((op, idx) => {
     detailsHtml += `
       <div style="background:#f9f9f9; padding:8px; border-radius:4px; margin:5px 0;">
         <small>${idx + 1}. ${op.type}</small><br>
+        <small>Деталь: ${op.detail || '-'}</small><br>
         <small>Кол-во: ${op.quantity} | м²: ${op.m2} | п.м: ${op.pm} | ч: ${op.time}</small>
       </div>
     `;
   });
 
-  // Текущая цена (для открытых — пересчитываем)
   const currentPrice = order.status === 'closed'
     ? (order.price || calculateOrderPrice(order.operations))
     : calculateOrderPrice(order.operations);
   detailsHtml += `<p style="margin: 10px 0; font-weight: bold;">Текущая сумма: ${currentPrice}₽</p>`;
 
-  // Кнопки
   if (order.status !== 'closed') {
     detailsHtml += `<button id="btnAddOperation" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">добавить операцию</button>`;
     detailsHtml += `<button id="btnFinishOrder" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">завершить</button>`;
   } else {
-    detailsHtml += `<p style="margin: 10px 0;">цена: ${order.price}₽</p>`;
+    detailsHtml += `<p style="margin: 10px 0;">Итоговая цена: ${order.price}₽</p>`;
   }
 
   detailsHtml += `
@@ -570,23 +572,35 @@ function finishOrder(orderId) {
 // === ИНИЦИАЛИЗАЦИЯ ===
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Миграция старых заказов
+  // Миграция старых заказов: добавляем operations и detail в каждую операцию
   let migrated = false;
   data.orders.forEach(order => {
     if (!order.operations) {
+      // Сохраняем общую деталь заказа
+      const globalDetail = order.detail || '-';
       order.operations = [{
+        detail: globalDetail,
         type: order.type || "Время",
         quantity: order.quantity || 1,
         m2: order.m2 || 0,
         pm: order.pm || 0,
         time: order.time || 0
       }];
+      // Удаляем старые поля
       delete order.type;
       delete order.quantity;
       delete order.m2;
       delete order.pm;
       delete order.time;
       migrated = true;
+    } else {
+      // Убеждаемся, что у каждой операции есть поле detail
+      order.operations.forEach(op => {
+        if (op.detail === undefined) {
+          op.detail = order.detail || '-';
+          migrated = true;
+        }
+      });
     }
   });
   if (migrated) saveData();
