@@ -4,7 +4,6 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbyvovPXuLFGHYnVqOjEW5cR
 let data = {
   orders: []
 };
-let notifications = [];
 
 // История экранов
 let screenHistory = ['mainScreen'];
@@ -16,140 +15,18 @@ document.addEventListener("DOMContentLoaded", () => {
   setupBackButtonHandler();
 });
 
-// Загрузка всех данных из Google Таблиц
+// Загрузка данных из Google Таблиц
 async function loadAllData() {
   try {
-    const [ordersRes, notifRes] = await Promise.all([
-      fetch(`${API_URL}?action=getOrders`),
-      fetch(`${API_URL}?action=getNotifications`)
-    ]);
+    const res = await fetch(`${API_URL}?action=getOrders`);
+    data.orders = await res.json();
 
-    data.orders = await ordersRes.json();
-    notifications = await notifRes.json();
-
-    // Обновляем значки
-    updateNotificationBadge();
-    updateNotificationIcon();
-
-    // Проверяем просроченные заказы
-    checkOverdueOrders();
+    // Проверяем просроченные заказы (если нужно)
+    // checkOverdueOrders(); // Убираем, если не нужно
 
     loadMainScreen();
   } catch (e) {
     console.error('Ошибка загрузки данных:', e);
-  }
-}
-
-function updateNotificationBadge() {
-  const unreadCount = notifications.filter(n => !n.Read || n.Read === 'FALSE').length;
-  const badge = document.getElementById('notificationBadge');
-  if (badge) {
-    badge.textContent = unreadCount > 0 ? unreadCount : '';
-    badge.style.display = unreadCount > 0 ? 'block' : 'none';
-  }
-}
-
-function updateNotificationIcon() {
-  const icon = document.getElementById('notificationIcon');
-  if (icon) {
-    if (notifications.length > 0) {
-      icon.style.color = 'red';
-    } else {
-      icon.style.color = 'black';
-    }
-  }
-}
-
-function createNotification(orderId, message) {
-  const now = new Date().toISOString();
-  const notification = {
-    id: `notif-${Date.now()}`,
-    orderId: orderId,
-    message: message,
-    timestamp: now,
-    read: false
-  };
-  // Добавляем в локальный массив
-  notifications.push(notification);
-  // Отправляем в Google Таблицы
-  fetch(`${API_URL}?action=createNotification&data=${JSON.stringify(notification)}`)
-    .then(() => {
-      updateNotificationBadge();
-      updateNotificationIcon();
-    });
-}
-
-function checkOverdueOrders() {
-  const now = new Date();
-  data.orders.forEach(order => {
-    if (order.Status === 'open') {
-      let orderDate = new Date(order.CreatedAt);
-      if ((now - orderDate) > 15 * 60 * 1000) { // 15 минут
-        const existing = notifications.find(n => n.OrderID === order.ID && n.Read === 'FALSE');
-        if (!existing) {
-          createNotification(order.ID, `Ваш заказ ${order.ID}, не закрыт`);
-        }
-      }
-    }
-  });
-}
-
-function showNotificationsScreen() {
-  let screen = document.getElementById("notificationsScreen");
-  if (!screen) {
-    screen = document.createElement("div");
-    screen.className = "screen";
-    screen.id = "notificationsScreen";
-    screen.innerHTML = `
-      <h2>Уведомления</h2>
-      <button onclick="clearAllNotifications()" style="padding: 8px 16px; background: #ffd700; border: none; border-radius: 4px; font-weight: bold; margin-bottom: 10px;">очистить все</button>
-      <div id="notificationsList"></div>
-      <button onclick="goToPrevious()">назад</button>
-    `;
-    document.body.appendChild(screen);
-
-    const list = document.getElementById("notificationsList");
-    list.innerHTML = "";
-
-    if (notifications.length === 0) {
-      list.innerHTML = `<p>Нет уведомлений</p>`;
-    } else {
-      notifications.forEach(notification => {
-        const item = document.createElement("div");
-        item.className = `notification-item ${notification.Read === 'TRUE' ? 'read' : 'unread'}`;
-        item.innerHTML = `<span>${notification.Message}</span>`;
-        item.onclick = () => markAsRead(notification.ID);
-        list.appendChild(item);
-      });
-    }
-  }
-  switchScreen('notificationsScreen');
-}
-
-function markAsRead(notificationId) {
-  // Обновляем локально
-  const notification = notifications.find(n => n.ID === notificationId);
-  if (notification) {
-    notification.Read = 'TRUE';
-    // Отправляем в Google Таблицы
-    fetch(`${API_URL}?action=markNotificationAsRead&id=${notificationId}`, {
-      method: 'POST'
-    }).then(() => {
-      updateNotificationBadge();
-      updateNotificationIcon();
-      showNotificationsScreen();
-    });
-  }
-}
-
-function clearAllNotifications() {
-  if (confirm("Вы уверены, что хотите очистить все уведомления?")) {
-    notifications = [];
-    // В Google Таблицах нужно будет вручную обновить столбец Read
-    // или удалить все строки (в скрипте добавьте действие clearNotifications)
-    updateNotificationBadge();
-    updateNotificationIcon();
-    showNotificationsScreen();
   }
 }
 
@@ -161,10 +38,6 @@ function setupEventListeners() {
   document.getElementById("btnShifts").addEventListener("click", () => {
     showShiftsScreen();
     addToHistory('shiftScreen');
-  });
-  document.getElementById("btnNotifications").addEventListener("click", () => {
-    showNotificationsScreen();
-    addToHistory('notificationsScreen');
   });
 }
 
@@ -275,12 +148,6 @@ function showOrdersList() {
     screen.innerHTML = `
       <h2>список заказов</h2>
       <input type="text" id="searchInput" placeholder="поиск по номеру заказа" style="padding: 10px; width: 100%; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">
-      <div style="position: relative;">
-        <button id="btnNotificationsInList" onclick="showNotificationsScreen()" style="position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 20px; cursor: pointer;">
-          <span id="notificationIcon" style="color: black;">🔔</span>
-          <span id="notificationBadgeInList" style="position: absolute; top: -8px; right: -8px; background: red; color: white; border-radius: 50%; width: 18px; height: 18px; display: none; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;"></span>
-        </button>
-      </div>
       <div id="allOrdersList"></div>
       <button id="btnCreateNew">создать новый</button>
       <button onclick="goToPrevious()">назад</button>
@@ -302,9 +169,6 @@ function showOrdersList() {
       addToHistory('createOrderScreen');
     });
 
-    updateNotificationIcon();
-    updateNotificationBadge();
-
     displayOrdersGroupedByDate();
   } else {
     const searchInput = document.getElementById("searchInput");
@@ -314,8 +178,6 @@ function showOrdersList() {
     } else {
       displayOrdersGroupedByDate();
     }
-    updateNotificationIcon();
-    updateNotificationBadge();
   }
 
   switchScreen('ordersListScreen');
@@ -572,10 +434,9 @@ function deleteOrder(orderId) {
       // Обновляем данные из таблицы
       await refreshOrdersFromTable();
 
-      // Обновляем список заказов на экране
+      // Если пользователь на экране списка заказов — обновляем список
       const screen = document.getElementById("ordersListScreen");
       if (screen && screen.classList.contains('active')) {
-        // Если мы на экране списка заказов — перерисуем его
         displayOrdersGroupedByDate();
       }
 
@@ -623,10 +484,9 @@ function finishOrder(orderId) {
     // Обновляем данные из таблицы
     await refreshOrdersFromTable();
 
-    // Обновляем список заказов на экране
+    // Если пользователь на экране списка заказов — обновляем список
     const screen = document.getElementById("ordersListScreen");
     if (screen && screen.classList.contains('active')) {
-      // Если мы на экране списка заказов — перерисуем его
       displayOrdersGroupedByDate();
     }
 
