@@ -7,7 +7,7 @@ let data = {
 // Загрузка данных при запуске
 document.addEventListener("DOMContentLoaded", async () => {
   await loadData();
-  setupEventListeners();
+  showMainScreen();
 });
 
 async function loadData() {
@@ -19,23 +19,7 @@ async function loadData() {
   }
 }
 
-function setupEventListeners() {
-  document.getElementById("btnOrders").addEventListener("click", async () => {
-    await loadData();
-    showOrdersList();
-  });
-  document.getElementById("btnShifts").addEventListener("click", async () => {
-    await loadData();
-    showShiftsScreen();
-  });
-}
-
-function switchScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
-
-function loadMainScreen() {
+function showMainScreen() {
   let total = 0;
   let today = new Date().toISOString().split('T')[0];
   let daily = 0;
@@ -52,58 +36,39 @@ function loadMainScreen() {
   total = Math.round(total * 100) / 100;
   daily = Math.round(daily * 100) / 100;
 
-  document.getElementById("totalEarnings").textContent = `${total}₽`;
-  document.getElementById("dailyEarnings").textContent = `${daily}₽`;
-
-  switchScreen('mainScreen');
-}
-
-function showShiftsScreen() {
-  const screen = document.getElementById("shiftScreen");
-  screen.innerHTML = `
-    <h2>введите дату</h2>
-    <input type="date" id="dateInput" value="${new Date().toISOString().split('T')[0]}">
-    <button onclick="showOrdersForDay()">показать</button>
-    <div id="ordersOfDay"></div>
-    <div id="totalOfDay"></div>
-    <button onclick="loadMainScreen()">назад</button>
+  document.body.innerHTML = `
+    <div class="screen">
+      <div class="profile">
+        <div class="avatar">👤</div>
+        <div class="info">
+          <h2>Александр</h2>
+          <p>folder оператор №1Е2 352726 030</p>
+        </div>
+      </div>
+      <div class="earnings">
+        <p>за все время</p>
+        <h1>${total}₽</h1>
+      </div>
+      <div class="today-earnings">
+        <p>заработано за смену:</p>
+        <h2>${daily}₽</h2>
+      </div>
+      <button onclick="showOrdersList()">список заказов</button>
+      <button onclick="showShiftsScreen()">смены</button>
+    </div>
   `;
-  switchScreen('shiftScreen');
-}
-
-function showOrdersForDay() {
-  const date = document.getElementById("dateInput").value;
-  const orders = data.orders.filter(o => o.Date === date);
-  const container = document.getElementById("ordersOfDay");
-  container.innerHTML = "";
-
-  let total = 0;
-
-  orders.forEach(order => {
-    const item = document.createElement("div");
-    item.className = "list-item";
-    let priceDisplay = order.Status === 'closed' ? `${Math.round(parseFloat(order.Price) * 100) / 100}₽` : '—';
-    if (order.Status === 'closed') {
-      total += parseFloat(order.Price) || 0;
-    }
-    item.innerHTML = `<span>${order.ID}</span><span class="price-tag">${priceDisplay}</span>`;
-    container.appendChild(item);
-  });
-
-  total = Math.round(total * 100) / 100;
-  document.getElementById("totalOfDay").innerHTML = `<h3>итого: ${total}₽</h3>`;
 }
 
 function showOrdersList() {
-  const screen = document.getElementById("ordersListScreen");
-  screen.innerHTML = `
-    <h2>список заказов</h2>
-    <input type="text" id="searchInput" placeholder="поиск по номеру заказа" style="padding: 10px; width: 100%; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">
-    <div id="allOrdersList"></div>
-    <button onclick="createOrderForm()">создать новый</button>
-    <button onclick="loadMainScreen()">назад</button>
+  document.body.innerHTML = `
+    <div class="screen">
+      <h2>список заказов</h2>
+      <input type="text" id="searchInput" placeholder="поиск по номеру заказа" style="padding: 10px; width: 100%; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">
+      <div id="allOrdersList"></div>
+      <button onclick="createOrderForm()">создать новый</button>
+      <button onclick="showMainScreen()">назад</button>
+    </div>
   `;
-  switchScreen('ordersListScreen');
 
   // Поиск
   document.getElementById("searchInput").addEventListener("input", function() {
@@ -186,27 +151,28 @@ function searchOrders(query) {
 }
 
 function createOrderForm() {
-  const screen = document.getElementById("ordersListScreen");
-  screen.innerHTML = `
-    <h2>создать заказ</h2>
-    <input type="text" id="orderNumber" placeholder="номер заказа">
-    <input type="text" id="orderDetail" placeholder="деталь">
-    <input type="date" id="orderDate" value="${new Date().toISOString().split('T')[0]}">
-    <select id="orderType">
-      <option value="Распил">Распил — 65₽/м²</option>
-      <option value="Линейный">Линейный — 26₽/п.м</option>
-      <option value="Склейка простая">Склейка простая — 165₽/м²</option>
-      <option value="Склейка с обгоном">Склейка с обгоном — 210₽/м²</option>
-      <option value="Фрезер фаски">Фрезер фаски — 16₽/п.м</option>
-      <option value="Пазовка">Пазовка — 30₽/п.м</option>
-      <option value="Время">Время — 330₽</option>
-    </select>
-    <input type="number" id="quantity" placeholder="Количество" step="1" min="1" value="1">
-    <input type="number" id="m2" placeholder="м²" step="0.1" min="0" value="0">
-    <input type="number" id="pm" placeholder="п.м" step="0.1" min="0" value="0">
-    <input type="number" id="time" placeholder="Часы" step="0.5" min="0" value="0">
-    <button onclick="saveOrder()">создать</button>
-    <button onclick="showOrdersList()">назад</button>
+  document.body.innerHTML = `
+    <div class="screen">
+      <h2>создать заказ</h2>
+      <input type="text" id="orderNumber" placeholder="номер заказа">
+      <input type="text" id="orderDetail" placeholder="деталь">
+      <input type="date" id="orderDate" value="${new Date().toISOString().split('T')[0]}">
+      <select id="orderType">
+        <option value="Распил">Распил — 65₽/м²</option>
+        <option value="Линейный">Линейный — 26₽/п.м</option>
+        <option value="Склейка простая">Склейка простая — 165₽/м²</option>
+        <option value="Склейка с обгоном">Склейка с обгоном — 210₽/м²</option>
+        <option value="Фрезер фаски">Фрезер фаски — 16₽/п.м</option>
+        <option value="Пазовка">Пазовка — 30₽/п.м</option>
+        <option value="Время">Время — 330₽</option>
+      </select>
+      <input type="number" id="quantity" placeholder="Количество" step="1" min="1" value="1">
+      <input type="number" id="m2" placeholder="м²" step="0.1" min="0" value="0">
+      <input type="number" id="pm" placeholder="п.м" step="0.1" min="0" value="0">
+      <input type="number" id="time" placeholder="Часы" step="0.5" min="0" value="0">
+      <button onclick="saveOrder()">создать</button>
+      <button onclick="showOrdersList()">назад</button>
+    </div>
   `;
 }
 
@@ -275,31 +241,29 @@ function showOrderDetails(orderId) {
   const order = data.orders.find(o => o.ID === orderId);
   if (!order) return;
 
-  const screen = document.getElementById("ordersListScreen");
-  let detailsHtml = `
-    <h2>${order.ID}</h2>
-    <p>деталь: ${order.Detail || '-'}</p>
-    <p>дата: ${order.Date}</p>
-    <p>тип: ${order.Type}</p>
-    <p>кол-во: ${order.Quantity}</p>
-    <p>м²: ${order.M2}</p>
-    <p>п.м: ${order.PM}</p>
-    <p>время: ${order.Time}</p>
+  document.body.innerHTML = `
+    <div class="screen">
+      <h2>${order.ID}</h2>
+      <p>деталь: ${order.Detail || '-'}</p>
+      <p>дата: ${order.Date}</p>
+      <p>тип: ${order.Type}</p>
+      <p>кол-во: ${order.Quantity}</p>
+      <p>м²: ${order.M2}</p>
+      <p>п.м: ${order.PM}</p>
+      <p>время: ${order.Time}</p>
   `;
 
   if (order.Status === 'closed') {
-    detailsHtml += `<p>цена: ${Math.round(parseFloat(order.Price) * 100) / 100}₽</p>`;
+    document.body.innerHTML += `<p>цена: ${Math.round(parseFloat(order.Price) * 100) / 100}₽</p>`;
   } else {
-    detailsHtml += `<button onclick="finishOrder('${orderId}')">завершить</button>`;
+    document.body.innerHTML += `<button onclick="finishOrder('${orderId}')">завершить</button>`;
   }
 
-  detailsHtml += `
-    <button onclick="deleteOrder('${orderId}')">удалить</button>
-    <button onclick="showOrdersList()">назад</button>
+  document.body.innerHTML += `
+      <button onclick="deleteOrder('${orderId}')">удалить</button>
+      <button onclick="showOrdersList()">назад</button>
+    </div>
   `;
-  screen.innerHTML = detailsHtml;
-
-  switchScreen('ordersListScreen');
 }
 
 async function deleteOrder(orderId) {
@@ -354,4 +318,40 @@ async function finishOrder(orderId) {
   } catch (e) {
     alert('Ошибка завершения заказа');
   }
+}
+
+function showShiftsScreen() {
+  document.body.innerHTML = `
+    <div class="screen">
+      <h2>введите дату</h2>
+      <input type="date" id="dateInput" value="${new Date().toISOString().split('T')[0]}">
+      <button onclick="showOrdersForDay()">показать</button>
+      <div id="ordersOfDay"></div>
+      <div id="totalOfDay"></div>
+      <button onclick="showMainScreen()">назад</button>
+    </div>
+  `;
+}
+
+function showOrdersForDay() {
+  const date = document.getElementById("dateInput").value;
+  const orders = data.orders.filter(o => o.Date === date);
+  const container = document.getElementById("ordersOfDay");
+  container.innerHTML = "";
+
+  let total = 0;
+
+  orders.forEach(order => {
+    const item = document.createElement("div");
+    item.className = "list-item";
+    let priceDisplay = order.Status === 'closed' ? `${Math.round(parseFloat(order.Price) * 100) / 100}₽` : '—';
+    if (order.Status === 'closed') {
+      total += parseFloat(order.Price) || 0;
+    }
+    item.innerHTML = `<span>${order.ID}</span><span class="price-tag">${priceDisplay}</span>`;
+    container.appendChild(item);
+  });
+
+  total = Math.round(total * 100) / 100;
+  document.getElementById("totalOfDay").innerHTML = `<h3>итого: ${total}₽</h3>`;
 }
