@@ -1,52 +1,51 @@
-﻿let data = JSON.parse(localStorage.getItem('ordersData')) || {
+// Укажите ваш URL из Google Apps Script
+const API_URL = 'https://script.google.com/macros/s/AKfycbznPs8QNbUqFHwgci7msTMTk04K0uNBMc6U9sqY20MPcYm6JTFpdF5bCa-DruKTWVFCfA/exec';
+
+let data = {
   orders: []
 };
-let appData = JSON.parse(localStorage.getItem('appData')) || {
-  createdCount: 0,
-  activationKeyUsed: false
-};
-let notifications = JSON.parse(localStorage.getItem('notifications')) || [];
+let notifications = [];
 
 // История экранов
 let screenHistory = ['mainScreen'];
 
-function createNotification(orderId, message) {
-  const now = new Date().toISOString();
-  const notification = {
-    id: `notif-${Date.now()}`,
-    orderId: orderId,
-    message: message,
-    timestamp: now,
-    read: false
-  };
-  notifications.push(notification);
-  localStorage.setItem('notifications', JSON.stringify(notifications));
-  updateNotificationBadge();
-  updateNotificationIcon();
-}
+// Загрузка данных при запуске
+document.addEventListener("DOMContentLoaded", () => {
+  loadAllData();
+  setupEventListeners();
+  setupBackButtonHandler();
+});
 
-function checkOverdueOrders() {
-  const now = new Date();
-  data.orders.forEach(order => {
-    if (order.status === 'open') {
-      // Используем точную дату и время создания заказа
-      let orderDate = new Date(order.createdAt);
-      if ((now - orderDate) > 15 * 60 * 1000) { // 15 минут в миллисекундах
-        const existing = notifications.find(n => n.orderId === order.id && !n.read);
-        if (!existing) {
-          createNotification(order.id, `Ваш заказ ${order.id}, не закрыт`);
-        }
-      }
-    }
-  });
+// Загрузка всех данных из Google Таблиц
+async function loadAllData() {
+  try {
+    const [ordersRes, notifRes] = await Promise.all([
+      fetch(`${API_URL}?action=getOrders`),
+      fetch(`${API_URL}?action=getNotifications`)
+    ]);
+
+    data.orders = await ordersRes.json();
+    notifications = await notifRes.json();
+
+    // Обновляем значки
+    updateNotificationBadge();
+    updateNotificationIcon();
+
+    // Проверяем просроченные заказы
+    checkOverdueOrders();
+
+    loadMainScreen();
+  } catch (e) {
+    console.error('Ошибка загрузки данных:', e);
+  }
 }
 
 function updateNotificationBadge() {
-  const unreadCount = notifications.filter(n => !n.read).length;
-  const badge = document.getElementById('notificationBadgeInList');
+  const unreadCount = notifications.filter(n => !n.Read || n.Read === 'FALSE').length;
+  const badge = document.getElementById('notificationBadge');
   if (badge) {
     badge.textContent = unreadCount > 0 ? unreadCount : '';
-    badge.style.display = unreadCount > 0 ? 'flex' : 'none';
+    badge.style.display = unreadCount > 0 ? 'block' : 'none';
   }
 }
 
@@ -61,6 +60,40 @@ function updateNotificationIcon() {
   }
 }
 
+function createNotification(orderId, message) {
+  const now = new Date().toISOString();
+  const notification = {
+    id: `notif-${Date.now()}`,
+    orderId: orderId,
+    message: message,
+    timestamp: now,
+    read: false
+  };
+  // Добавляем в локальный массив
+  notifications.push(notification);
+  // Отправляем в Google Таблицы
+  fetch(`${API_URL}?action=createNotification&data=${JSON.stringify(notification)}`)
+    .then(() => {
+      updateNotificationBadge();
+      updateNotificationIcon();
+    });
+}
+
+function checkOverdueOrders() {
+  const now = new Date();
+  data.orders.forEach(order => {
+    if (order.Status === 'open') {
+      let orderDate = new Date(order.CreatedAt);
+      if ((now - orderDate) > 15 * 60 * 1000) { // 15 минут
+        const existing = notifications.find(n => n.OrderID === order.ID && n.Read === 'FALSE');
+        if (!existing) {
+          createNotification(order.ID, `Ваш заказ ${order.ID}, не закрыт`);
+        }
+      }
+    }
+  });
+}
+
 function showNotificationsScreen() {
   let screen = document.getElementById("notificationsScreen");
   if (!screen) {
@@ -68,26 +101,24 @@ function showNotificationsScreen() {
     screen.className = "screen";
     screen.id = "notificationsScreen";
     screen.innerHTML = `
-      <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto;">
-        <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 20px;">УВЕДОМЛЕНИЯ</h2>
-        <button onclick="clearAllNotifications()" style="padding: 8px 16px; background: #ffd700; border: none; border-radius: 4px; font-weight: bold; margin-bottom: 10px;">очистить все</button>
-        <div id="notificationsList"></div>
-        <button onclick="goToPrevious()" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin-top: 20px; cursor: pointer;">назад</button>
-      </div>
+      <h2>Уведомления</h2>
+      <button onclick="clearAllNotifications()" style="padding: 8px 16px; background: #ffd700; border: none; border-radius: 4px; font-weight: bold; margin-bottom: 10px;">очистить все</button>
+      <div id="notificationsList"></div>
+      <button onclick="goToPrevious()">назад</button>
     `;
     document.body.appendChild(screen);
 
     const list = document.getElementById("notificationsList");
-    list.innerHTML = ""; // Очищаем перед заполнением
+    list.innerHTML = "";
 
     if (notifications.length === 0) {
       list.innerHTML = `<p>Нет уведомлений</p>`;
     } else {
       notifications.forEach(notification => {
         const item = document.createElement("div");
-        item.className = `notification-item ${notification.read ? 'read' : 'unread'}`;
-        item.innerHTML = `<span>${notification.message}</span>`;
-        item.onclick = () => markAsRead(notification.id);
+        item.className = `notification-item ${notification.Read === 'TRUE' ? 'read' : 'unread'}`;
+        item.innerHTML = `<span>${notification.Message}</span>`;
+        item.onclick = () => markAsRead(notification.ID);
         list.appendChild(item);
       });
     }
@@ -96,39 +127,30 @@ function showNotificationsScreen() {
 }
 
 function markAsRead(notificationId) {
-  const notification = notifications.find(n => n.id === notificationId);
+  // Обновляем локально
+  const notification = notifications.find(n => n.ID === notificationId);
   if (notification) {
-    notification.read = true;
-    localStorage.setItem('notifications', JSON.stringify(notifications));
-    updateNotificationBadge();
-    updateNotificationIcon();
-    showNotificationsScreen(); // Обновляем список
+    notification.Read = 'TRUE';
+    // Отправляем в Google Таблицы
+    fetch(`${API_URL}?action=markNotificationAsRead&id=${notificationId}`, {
+      method: 'POST'
+    }).then(() => {
+      updateNotificationBadge();
+      updateNotificationIcon();
+      showNotificationsScreen();
+    });
   }
 }
 
 function clearAllNotifications() {
   if (confirm("Вы уверены, что хотите очистить все уведомления?")) {
     notifications = [];
-    localStorage.setItem('notifications', JSON.stringify(notifications));
+    // В Google Таблицах нужно будет вручную обновить столбец Read
+    // или удалить все строки (в скрипте добавьте действие clearNotifications)
     updateNotificationBadge();
     updateNotificationIcon();
-    showNotificationsScreen(); // Обновляем список
+    showNotificationsScreen();
   }
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  // Проверяем просроченные заказы при загрузке
-  checkOverdueOrders();
-  updateNotificationBadge();
-  updateNotificationIcon();
-
-  loadMainScreen();
-  setupEventListeners();
-  setupBackButtonHandler();
-});
-
-function saveData() {
-  localStorage.setItem('ordersData', JSON.stringify(data));
 }
 
 function setupEventListeners() {
@@ -149,41 +171,36 @@ function setupEventListeners() {
 function setupBackButtonHandler() {
   window.addEventListener('popstate', (event) => {
     if (screenHistory.length > 1) {
-      screenHistory.pop(); // Удаляем текущий экран
-      const previousScreen = screenHistory[screenHistory.length - 1]; // Берём предыдущий
+      screenHistory.pop();
+      const previousScreen = screenHistory[screenHistory.length - 1];
       switchScreen(previousScreen);
     } else {
-      // Если история пуста — оставляем главный экран
       switchScreen('mainScreen');
     }
   });
 }
 
 function addToHistory(screenId) {
-  // Если текущий экран не совпадает с последним в истории
   if (screenHistory[screenHistory.length - 1] !== screenId) {
     screenHistory.push(screenId);
-    // Обновляем историю браузера
     history.pushState({}, '', '#' + screenId);
   }
 }
 
 function loadMainScreen() {
-  // Общий заработок
   let total = 0;
   let today = new Date().toISOString().split('T')[0];
   let daily = 0;
 
   data.orders.forEach(order => {
-    if (order.status === 'closed') {
-      total += order.price || 0;
-      if (order.date === today) {
-        daily += order.price || 0;
+    if (order.Status === 'closed') {
+      total += parseFloat(order.Price) || 0;
+      if (order.Date === today) {
+        daily += parseFloat(order.Price) || 0;
       }
     }
   });
 
-  // Округляем до 2 знаков
   total = Math.round(total * 100) / 100;
   daily = Math.round(daily * 100) / 100;
 
@@ -194,17 +211,12 @@ function loadMainScreen() {
 }
 
 function switchScreen(id) {
-  // Скрываем все экраны
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-
-  // Ищем или создаём экран
   let screen = document.getElementById(id);
   if (!screen) {
     console.error(`Screen with id '${id}' not found.`);
     return;
   }
-
-  // Показываем нужный
   screen.classList.add('active');
 }
 
@@ -215,18 +227,15 @@ function showShiftsScreen() {
     screen.className = "screen";
     screen.id = "shiftScreen";
     screen.innerHTML = `
-      <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto;">
-        <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 20px;">введите дату</h2>
-        <input type="date" id="dateInput" value="${new Date().toISOString().split('T')[0]}" style="padding: 10px; width: 100%; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-        <button id="showOrdersForDay" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">показать</button>
-        <div id="ordersOfDay"></div>
-        <div id="totalOfDay"></div>
-        <button onclick="goToPrevious()" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">назад</button>
-      </div>
+      <h2>введите дату</h2>
+      <input type="date" id="dateInput" value="${new Date().toISOString().split('T')[0]}">
+      <button id="showOrdersForDay">показать</button>
+      <div id="ordersOfDay"></div>
+      <div id="totalOfDay"></div>
+      <button onclick="goToPrevious()">назад</button>
     `;
     document.body.appendChild(screen);
 
-    // Привязываем обработчик события
     document.getElementById("showOrdersForDay").addEventListener("click", () => {
       const date = document.getElementById("dateInput").value;
       showOrdersForDay(date);
@@ -236,7 +245,7 @@ function showShiftsScreen() {
 }
 
 function showOrdersForDay(date) {
-  const orders = data.orders.filter(o => o.date === date);
+  const orders = data.orders.filter(o => o.Date === date);
   const container = document.getElementById("ordersOfDay");
   container.innerHTML = "";
 
@@ -245,17 +254,16 @@ function showOrdersForDay(date) {
   orders.forEach(order => {
     const item = document.createElement("div");
     item.className = "list-item";
-    let priceDisplay = order.status === 'closed' ? `${Math.round(order.price * 100) / 100}₽` : '—';
-    if (order.status === 'closed') {
-      total += order.price;
+    let priceDisplay = order.Status === 'closed' ? `${Math.round(parseFloat(order.Price) * 100) / 100}₽` : '—';
+    if (order.Status === 'closed') {
+      total += parseFloat(order.Price) || 0;
     }
-    item.innerHTML = `<span>${order.id}</span><span class="price-tag">${priceDisplay}</span>`;
+    item.innerHTML = `<span>${order.ID}</span><span class="price-tag">${priceDisplay}</span>`;
     container.appendChild(item);
   });
 
-  // Округляем итог
   total = Math.round(total * 100) / 100;
-  document.getElementById("totalOfDay").innerHTML = `<h3 style="margin-top: 10px;">итого: ${total}₽</h3>`;
+  document.getElementById("totalOfDay").innerHTML = `<h3>итого: ${total}₽</h3>`;
 }
 
 function showOrdersList() {
@@ -265,23 +273,20 @@ function showOrdersList() {
     screen.className = "screen";
     screen.id = "ordersListScreen";
     screen.innerHTML = `
-      <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-          <h2 style="font-size: 18px; font-weight: bold;">СПИСОК ЗАКАЗОВ</h2>
-          <button id="btnNotificationsInList" onclick="showNotificationsScreen()" style="background: none; border: none; cursor: pointer; font-size: 20px; position: relative;">
-            <span id="notificationIcon" style="color: black;">✉️</span>
-            <span id="notificationBadgeInList" style="position: absolute; top: -8px; right: -8px; background: red; color: white; border-radius: 50%; width: 18px; height: 18px; display: none; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;"></span>
-          </button>
-        </div>
-        <input type="text" id="searchInput" placeholder="поиск по номеру заказа" style="padding: 10px; width: 100%; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-        <button id="btnCreateNew" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">создать новый</button>
-        <button id="btnBack" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">назад</button>
-        <div id="allOrdersList" style="margin-top: 20px;"></div>
+      <h2>список заказов</h2>
+      <input type="text" id="searchInput" placeholder="поиск по номеру заказа" style="padding: 10px; width: 100%; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">
+      <div style="position: relative;">
+        <button id="btnNotificationsInList" onclick="showNotificationsScreen()" style="position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 20px; cursor: pointer;">
+          <span id="notificationIcon" style="color: black;">🔔</span>
+          <span id="notificationBadgeInList" style="position: absolute; top: -8px; right: -8px; background: red; color: white; border-radius: 50%; width: 18px; height: 18px; display: none; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;"></span>
+        </button>
       </div>
+      <div id="allOrdersList"></div>
+      <button id="btnCreateNew">создать новый</button>
+      <button onclick="goToPrevious()">назад</button>
     `;
     document.body.appendChild(screen);
 
-    // Привязываем обработчик события для поиска
     const searchInput = document.getElementById("searchInput");
     searchInput.addEventListener("input", function() {
       const query = this.value.trim().toLowerCase();
@@ -292,23 +297,16 @@ function showOrdersList() {
       }
     });
 
-    // Привязываем обработчик события для создания нового заказа
     document.getElementById("btnCreateNew").addEventListener("click", () => {
       createOrderForm();
       addToHistory('createOrderScreen');
     });
 
-    // Привязываем обработчик события для кнопки "назад"
-    document.getElementById("btnBack").addEventListener("click", goToPrevious);
-
-    // Обновляем значок уведомлений
     updateNotificationIcon();
     updateNotificationBadge();
 
-    // Отображаем заказы по датам
     displayOrdersGroupedByDate();
   } else {
-    // Обновляем список при возврате на экран
     const searchInput = document.getElementById("searchInput");
     const query = searchInput.value.trim().toLowerCase();
     if (query) {
@@ -316,8 +314,6 @@ function showOrdersList() {
     } else {
       displayOrdersGroupedByDate();
     }
-
-    // Обновляем значок уведомлений
     updateNotificationIcon();
     updateNotificationBadge();
   }
@@ -327,23 +323,22 @@ function showOrdersList() {
 
 function displayOrdersGroupedByDate() {
   const container = document.getElementById("allOrdersList");
-  container.innerHTML = ""; // Очищаем перед заполнением
+  container.innerHTML = "";
 
   const grouped = {};
 
   data.orders.forEach(order => {
-    if (!grouped[order.date]) grouped[order.date] = [];
-    grouped[order.date].push(order);
+    if (!grouped[order.Date]) grouped[order.Date] = [];
+    grouped[order.Date].push(order);
   });
 
-  // Сортируем даты по убыванию (свежие сверху)
   const sortedDates = Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a));
 
   sortedDates.forEach(date => {
     const title = document.createElement("div");
     title.className = "date-header";
     title.innerHTML = `
-      <h3 style="cursor: pointer; font-size: 16px; font-weight: bold; margin: 10px 0;" onclick="toggleDateSection('${date}')">
+      <h3 style="cursor: pointer;" onclick="toggleDateSection('${date}')">
         ${date} <span id="arrow-${date}" class="arrow">▼</span>
       </h3>
       <div id="list-${date}" class="date-list" style="display:none;">
@@ -355,9 +350,9 @@ function displayOrdersGroupedByDate() {
     grouped[date].forEach(order => {
       const item = document.createElement("div");
       item.className = "list-item";
-      item.innerHTML = `<span>${order.id}</span>`;
+      item.innerHTML = `<span>${order.ID}</span>`;
       item.onclick = () => {
-        showOrderDetails(order.id);
+        showOrderDetails(order.ID);
         addToHistory('orderDetailsScreen');
       };
       list.appendChild(item);
@@ -379,19 +374,19 @@ function toggleDateSection(date) {
 
 function searchOrders(query) {
   const container = document.getElementById("allOrdersList");
-  container.innerHTML = ""; // Очищаем перед заполнением
+  container.innerHTML = "";
 
-  const results = data.orders.filter(order => order.id.toLowerCase().includes(query));
+  const results = data.orders.filter(order => order.ID.toLowerCase().includes(query));
 
   if (results.length === 0) {
-    container.innerHTML = `<p style="text-align: center;">Заказ с номером "${query}" не найден.</p>`;
+    container.innerHTML = `<p>Заказ с номером "${query}" не найден.</p>`;
   } else {
     results.forEach(order => {
       const item = document.createElement("div");
       item.className = "list-item";
-      item.innerHTML = `<span>${order.id}</span>`;
+      item.innerHTML = `<span>${order.ID}</span>`;
       item.onclick = () => {
-        showOrderDetails(order.id);
+        showOrderDetails(order.ID);
         addToHistory('orderDetailsScreen');
       };
       container.appendChild(item);
@@ -406,32 +401,29 @@ function createOrderForm() {
     screen.className = "screen";
     screen.id = "createOrderScreen";
     screen.innerHTML = `
-      <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto;">
-        <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 20px;">создать заказ</h2>
-        <input type="text" id="orderNumber" placeholder="номер заказа" style="padding: 10px; width: 100%; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-        <input type="text" id="orderDetail" placeholder="деталь" style="padding: 10px; width: 100%; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-        <input type="date" id="orderDate" value="${new Date().toISOString().split('T')[0]}" style="padding: 10px; width: 100%; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-        <select id="orderType" style="padding: 10px; width: 100%; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-          <option value="Распил">Распил — 65₽/м²</option>
-          <option value="Линейный">Линейный — 26₽/п.м</option>
-          <option value="Склейка простая">Склейка простая — 165₽/м²</option>
-          <option value="Склейка с обгоном">Склейка с обгоном — 210₽/м²</option>
-          <option value="Фрезер фаски">Фрезер фаски — 16₽/п.м</option>
-          <option value="Пазовка">Пазовка — 30₽/п.м</option>
-          <option value="Время">Время — 330₽</option>
-        </select>
-        <input type="number" id="quantity" placeholder="Количество" step="1" min="1" value="1" style="padding: 10px; width: 100%; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-        <input type="number" id="m2" placeholder="м²" step="0.1" min="0" value="0" style="padding: 10px; width: 100%; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-        <input type="number" id="pm" placeholder="п.м" step="0.1" min="0" value="0" style="padding: 10px; width: 100%; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-        <input type="number" id="time" placeholder="Часы" step="0.5" min="0" value="0" style="padding: 10px; width: 100%; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-        <button id="saveOrder" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">создать</button>
-        <button onclick="goToPrevious()" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">назад</button>
-      </div>
+      <h2>создать заказ</h2>
+      <input type="text" id="orderNumber" placeholder="номер заказа">
+      <input type="text" id="orderDetail" placeholder="деталь">
+      <input type="date" id="orderDate" value="${new Date().toISOString().split('T')[0]}">
+      <select id="orderType">
+        <option value="Распил">Распил — 65₽/м²</option>
+        <option value="Линейный">Линейный — 26₽/п.м</option>
+        <option value="Склейка простая">Склейка простая — 165₽/м²</option>
+        <option value="Склейка с обгоном">Склейка с обгоном — 210₽/м²</option>
+        <option value="Фрезер фаски">Фрезер фаски — 16₽/п.м</option>
+        <option value="Пазовка">Пазовка — 30₽/п.м</option>
+        <option value="Время">Время — 330₽</option>
+      </select>
+      <input type="number" id="quantity" placeholder="Количество" step="1" min="1" value="1">
+      <input type="number" id="m2" placeholder="м²" step="0.1" min="0" value="0">
+      <input type="number" id="pm" placeholder="п.м" step="0.1" min="0" value="0">
+      <input type="number" id="time" placeholder="Часы" step="0.5" min="0" value="0">
+      <button id="saveOrder">создать</button>
+      <button onclick="goToPrevious()">назад</button>
     `;
     document.body.appendChild(screen);
 
-    // Привязываем обработчик события
-    document.getElementById("saveOrder").addEventListener("click", () => {
+    document.getElementById("saveOrder").addEventListener("click", async () => {
       const id = document.getElementById("orderNumber").value.trim();
       if (!id) {
         alert("Введите номер заказа");
@@ -466,10 +458,9 @@ function createOrderForm() {
         price += time * rates[type];
       }
 
-      // Округляем цену
       price = Math.round(price * 100) / 100;
 
-      data.orders.push({
+      const order = {
         id,
         detail,
         date,
@@ -479,14 +470,19 @@ function createOrderForm() {
         pm,
         time,
         status: 'open',
-        price: price,
-        createdAt: new Date().toISOString() // Сохраняем точную дату и время создания
-      });
+        price,
+        createdAt: new Date().toISOString()
+      };
 
-      saveData();
-      alert(`Заказ создан: ${id}`);
-
-      goToPrevious(); // Возвращаемся к списку заказов
+      try {
+        await fetch(`${API_URL}?action=createOrder&data=${JSON.stringify(order)}`);
+        alert(`Заказ создан: ${id}`);
+        // Обновляем локальные данные
+        data.orders.push(order);
+        goToPrevious();
+      } catch (e) {
+        alert('Ошибка сохранения заказа');
+      }
     });
   }
   switchScreen('createOrderScreen');
@@ -498,91 +494,92 @@ function showOrderDetails(orderId) {
     screen = document.createElement("div");
     screen.className = "screen";
     screen.id = "orderDetailsScreen";
-    const order = data.orders.find(o => o.id === orderId);
+    const order = data.orders.find(o => o.ID === orderId);
     if (!order) return;
 
     let detailsHtml = `
-      <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto;">
-        <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">${order.id}</h2>
-        <p style="margin: 5px 0;">деталь: ${order.detail || '-'}</p>
-        <p style="margin: 5px 0;">дата: ${order.date}</p>
-        <p style="margin: 5px 0;">тип: ${order.type}</p>
-        <p style="margin: 5px 0;">кол-во: ${order.quantity}</p>
-        <p style="margin: 5px 0;">м²: ${order.m2}</p>
-        <p style="margin: 5px 0;">п.м: ${order.pm}</p>
-        <p style="margin: 5px 0;">время: ${order.time}</p>
+      <h2>${order.ID}</h2>
+      <p>деталь: ${order.Detail || '-'}</p>
+      <p>дата: ${order.Date}</p>
+      <p>тип: ${order.Type}</p>
+      <p>кол-во: ${order.Quantity}</p>
+      <p>м²: ${order.M2}</p>
+      <p>п.м: ${order.PM}</p>
+      <p>время: ${order.Time}</p>
     `;
 
-    if (order.status === 'closed') {
-      detailsHtml += `<p style="margin: 5px 0;">цена: ${Math.round(order.price * 100) / 100}₽</p>`;
+    if (order.Status === 'closed') {
+      detailsHtml += `<p>цена: ${Math.round(parseFloat(order.Price) * 100) / 100}₽</p>`;
     } else {
-      detailsHtml += `<button id="btnFinishOrder" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">завершить</button>`;
+      detailsHtml += `<button id="btnFinishOrder">завершить</button>`;
     }
 
     detailsHtml += `
-        <button id="btnDeleteOrder" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">удалить</button>
-        <button onclick="goToPrevious()" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">назад</button>
-      </div>
+      <button id="btnDeleteOrder">удалить</button>
+      <button onclick="goToPrevious()">назад</button>
     `;
     screen.innerHTML = detailsHtml;
     document.body.appendChild(screen);
 
-    if (order.status !== 'closed') {
-      document.getElementById("btnFinishOrder").addEventListener("click", () => finishOrder(orderId));
+    if (order.Status !== 'closed') {
+      document.getElementById("btnFinishOrder").addEventListener("click", () => finishOrder(order.ID));
     }
 
-    // Привязываем обработчик удаления
-    document.getElementById("btnDeleteOrder").addEventListener("click", () => deleteOrder(orderId));
+    document.getElementById("btnDeleteOrder").addEventListener("click", () => deleteOrder(order.ID));
   } else {
-    // Если экран уже существует, обновляем его содержимое
-    const order = data.orders.find(o => o.id === orderId);
+    const order = data.orders.find(o => o.ID === orderId);
     if (!order) return;
 
     screen.innerHTML = `
-      <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto;">
-        <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">${order.id}</h2>
-        <p style="margin: 5px 0;">деталь: ${order.detail || '-'}</p>
-        <p style="margin: 5px 0;">дата: ${order.date}</p>
-        <p style="margin: 5px 0;">тип: ${order.type}</p>
-        <p style="margin: 5px 0;">кол-во: ${order.quantity}</p>
-        <p style="margin: 5px 0;">м²: ${order.m2}</p>
-        <p style="margin: 5px 0;">п.м: ${order.pm}</p>
-        <p style="margin: 5px 0;">время: ${order.time}</p>
+      <h2>${order.ID}</h2>
+      <p>деталь: ${order.Detail || '-'}</p>
+      <p>дата: ${order.Date}</p>
+      <p>тип: ${order.Type}</p>
+      <p>кол-во: ${order.Quantity}</p>
+      <p>м²: ${order.M2}</p>
+      <p>п.м: ${order.PM}</p>
+      <p>время: ${order.Time}</p>
     `;
 
-    if (order.status === 'closed') {
-      screen.innerHTML += `<p style="margin: 5px 0;">цена: ${Math.round(order.price * 100) / 100}₽</p>`;
+    if (order.Status === 'closed') {
+      screen.innerHTML += `<p>цена: ${Math.round(parseFloat(order.Price) * 100) / 100}₽</p>`;
     } else {
-      screen.innerHTML += `<button id="btnFinishOrder" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">завершить</button>`;
+      screen.innerHTML += `<button id="btnFinishOrder">завершить</button>`;
     }
 
     screen.innerHTML += `
-        <button id="btnDeleteOrder" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">удалить</button>
-        <button onclick="goToPrevious()" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">назад</button>
-      </div>
+      <button id="btnDeleteOrder">удалить</button>
+      <button onclick="goToPrevious()">назад</button>
     `;
 
-    if (order.status !== 'closed') {
-      document.getElementById("btnFinishOrder").addEventListener("click", () => finishOrder(orderId));
+    if (order.Status !== 'closed') {
+      document.getElementById("btnFinishOrder").addEventListener("click", () => finishOrder(order.ID));
     }
 
-    // Привязываем обработчик удаления
-    document.getElementById("btnDeleteOrder").addEventListener("click", () => deleteOrder(orderId));
+    document.getElementById("btnDeleteOrder").addEventListener("click", () => deleteOrder(order.ID));
   }
   switchScreen('orderDetailsScreen');
 }
 
 function deleteOrder(orderId) {
   if (confirm("Вы уверены, что хотите удалить этот заказ?")) {
-    data.orders = data.orders.filter(order => order.id !== orderId);
-    saveData();
-    alert("Заказ удалён");
-    goToPrevious(); // Возвращаемся к списку заказов
+    fetch(`${API_URL}?action=deleteOrder&id=${orderId}`, {
+      method: 'POST'
+    })
+    .then(() => {
+      // Обновляем локальные данные
+      data.orders = data.orders.filter(order => order.ID !== orderId);
+      alert("Заказ удалён");
+      goToPrevious();
+    })
+    .catch(e => {
+      alert('Ошибка удаления');
+    });
   }
 }
 
 function finishOrder(orderId) {
-  const order = data.orders.find(o => o.id === orderId);
+  const order = data.orders.find(o => o.ID === orderId);
   if (!order) return;
 
   const rates = {
@@ -596,33 +593,43 @@ function finishOrder(orderId) {
   };
 
   let price = 0;
-  if (["Распил", "Склейка простая", "Склейка с обгоном"].includes(order.type)) {
-    price += order.m2 * rates[order.type];
+  if (["Распил", "Склейка простая", "Склейка с обгоном"].includes(order.Type)) {
+    price += parseFloat(order.M2) * rates[order.Type];
   }
-  if (["Линейный", "Фрезер фаски", "Пазовка"].includes(order.type)) {
-    price += order.pm * rates[order.type];
+  if (["Линейный", "Фрезер фаски", "Пазовка"].includes(order.Type)) {
+    price += parseFloat(order.PM) * rates[order.Type];
   }
-  if (order.type === "Время") {
-    price += order.time * rates[order.type];
+  if (order.Type === "Время") {
+    price += parseFloat(order.Time) * rates[order.Type];
   }
 
-  order.price = Math.round(price * 100) / 100;
-  order.status = 'closed';
-  saveData();
-  alert(`Заказ завершён. Цена: ${order.price}₽`);
-  showOrderDetails(orderId);
+  price = Math.round(price * 100) / 100;
+
+  fetch(`${API_URL}?action=updateOrderStatus&id=${orderId}&status=closed`, {
+    method: 'POST'
+  })
+  .then(() => {
+    // Обновляем локальные данные
+    order.Status = 'closed';
+    order.Price = price;
+    alert(`Заказ завершён. Цена: ${price}₽`);
+    showOrderDetails(orderId);
+  })
+  .catch(e => {
+    alert('Ошибка завершения заказа');
+  });
 }
 
 function goToMain() {
   screenHistory = ['mainScreen'];
   switchScreen('mainScreen');
-  history.replaceState({}, '', window.location.pathname); // Очищаем историю
-  loadMainScreen(); // Обновляем главный экран
+  history.replaceState({}, '', window.location.pathname);
+  loadMainScreen();
 }
 
 function goToPrevious() {
   if (screenHistory.length > 1) {
-    screenHistory.pop(); // Удаляем текущий экран
+    screenHistory.pop();
     const previousScreen = screenHistory[screenHistory.length - 1];
     switchScreen(previousScreen);
   } else {
