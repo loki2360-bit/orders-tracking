@@ -1,5 +1,5 @@
 // Укажите ваш URL из Google Apps Script
-const API_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbznPs8QNbUqFHwgci7msTMTk04K0uNBMc6U9sqY20MPcYm6JTFpdF5bCa-DruKTWVFCfA/exec';
 
 let data = {
   orders: []
