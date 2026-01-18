@@ -1,6 +1,5 @@
 // Укажите ваш URL из Google Apps Script
 const API_URL = 'https://script.google.com/macros/s/AKfycbzxLfXzKbsIQIUsUWytSHrTNsC9SSkmqsYIUkvjbi8Oao7YlRPvMNp-pRz4T6lggLwnQg/exec';
-
 let data = {
   orders: []
 };
@@ -265,6 +264,7 @@ async function saveOrder() {
   try {
     await fetch(`${API_URL}?action=createOrder&data=${JSON.stringify(order)}`);
     alert(`Заказ создан: ${id}`);
+    await loadData();
     showOrdersList();
   } catch (e) {
     alert('Ошибка сохранения заказа');
