@@ -1,13 +1,13 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Учёт заказов</title>
   <link rel="stylesheet" href="style.css" />
-  <link rel="manifest" href="manifest.json">
 </head>
 <body>
+  <!-- Главный экран -->
   <div class="screen active" id="mainScreen">
     <div class="profile">
       <div class="avatar">👤</div>
@@ -26,6 +26,53 @@
     </div>
     <button id="btnOrders">список заказов</button>
     <button id="btnShifts">смены</button>
+  </div>
+
+  <!-- Экран "Смены" -->
+  <div class="screen" id="shiftScreen">
+    <h2>введите дату</h2>
+    <input type="date" id="dateInput" value="">
+    <button id="showOrdersForDay">показать</button>
+    <div id="ordersOfDay"></div>
+    <div id="totalOfDay"></div>
+    <button onclick="goToPrevious()">назад</button>
+  </div>
+
+  <!-- Экран "Список заказов" -->
+  <div class="screen" id="ordersListScreen">
+    <h2>список заказов</h2>
+    <input type="text" id="searchInput" placeholder="поиск по номеру заказа" style="padding: 10px; width: 100%; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">
+    <div id="allOrdersList"></div>
+    <button id="btnCreateNew">создать новый</button>
+    <button onclick="goToPrevious()">назад</button>
+  </div>
+
+  <!-- Экран "Создать заказ" -->
+  <div class="screen" id="createOrderScreen">
+    <h2>создать заказ</h2>
+    <input type="text" id="orderNumber" placeholder="номер заказа">
+    <input type="text" id="orderDetail" placeholder="деталь">
+    <input type="date" id="orderDate" value="">
+    <select id="orderType">
+      <option value="Распил">Распил — 65₽/м²</option>
+      <option value="Линейный">Линейный — 26₽/п.м</option>
+      <option value="Склейка простая">Склейка простая — 165₽/м²</option>
+      <option value="Склейка с обгоном">Склейка с обгоном — 210₽/м²</option>
+      <option value="Фрезер фаски">Фрезер фаски — 16₽/п.м</option>
+      <option value="Пазовка">Пазовка — 30₽/п.м</option>
+      <option value="Время">Время — 330₽</option>
+    </select>
+    <input type="number" id="quantity" placeholder="Количество" step="1" min="1" value="1">
+    <input type="number" id="m2" placeholder="м²" step="0.1" min="0" value="0">
+    <input type="number" id="pm" placeholder="п.м" step="0.1" min="0" value="0">
+    <input type="number" id="time" placeholder="Часы" step="0.5" min="0" value="0">
+    <button id="saveOrder">создать</button>
+    <button onclick="goToPrevious()">назад</button>
+  </div>
+
+  <!-- Экран "Детали заказа" -->
+  <div class="screen" id="orderDetailsScreen">
+    <!-- Содержимое генерируется в script.js -->
   </div>
 
   <script src="script.js"></script>
