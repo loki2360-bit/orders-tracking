@@ -567,12 +567,18 @@ function deleteOrder(orderId) {
       method: 'POST'
     })
     .then(async () => {
-      // Обновляем локальные данные
-      data.orders = data.orders.filter(order => order.ID !== orderId);
       alert("Заказ удалён");
 
       // Обновляем данные из таблицы
       await refreshOrdersFromTable();
+
+      // Обновляем список заказов на экране
+      const screen = document.getElementById("ordersListScreen");
+      if (screen && screen.classList.contains('active')) {
+        // Если мы на экране списка заказов — перерисуем его
+        displayOrdersGroupedByDate();
+      }
+
       goToPrevious();
     })
     .catch(e => {
@@ -612,13 +618,18 @@ function finishOrder(orderId) {
     method: 'POST'
   })
   .then(async () => {
-    // Обновляем локальные данные
-    order.Status = 'closed';
-    order.Price = price;
     alert(`Заказ завершён. Цена: ${price}₽`);
 
     // Обновляем данные из таблицы
     await refreshOrdersFromTable();
+
+    // Обновляем список заказов на экране
+    const screen = document.getElementById("ordersListScreen");
+    if (screen && screen.classList.contains('active')) {
+      // Если мы на экране списка заказов — перерисуем его
+      displayOrdersGroupedByDate();
+    }
+
     showOrderDetails(orderId);
   })
   .catch(e => {
