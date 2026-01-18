@@ -21,9 +21,6 @@ async function loadAllData() {
     const res = await fetch(`${API_URL}?action=getOrders`);
     data.orders = await res.json();
 
-    // Проверяем просроченные заказы (если нужно)
-    // checkOverdueOrders(); // Убираем, если не нужно
-
     loadMainScreen();
   } catch (e) {
     console.error('Ошибка загрузки данных:', e);
@@ -434,6 +431,9 @@ function deleteOrder(orderId) {
       // Обновляем данные из таблицы
       await refreshOrdersFromTable();
 
+      // Обновляем главный экран
+      loadMainScreen();
+
       // Если пользователь на экране списка заказов — обновляем список
       const screen = document.getElementById("ordersListScreen");
       if (screen && screen.classList.contains('active')) {
@@ -483,6 +483,9 @@ function finishOrder(orderId) {
 
     // Обновляем данные из таблицы
     await refreshOrdersFromTable();
+
+    // Обновляем главный экран
+    loadMainScreen();
 
     // Если пользователь на экране списка заказов — обновляем список
     const screen = document.getElementById("ordersListScreen");
