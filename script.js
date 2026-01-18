@@ -81,7 +81,12 @@ function loadMainScreen() {
 }
 
 function switchScreen(id) {
+  // Скрываем все экраны
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+
+  // Удаляем все экраны, кроме mainScreen
+  document.querySelectorAll('.screen:not(#mainScreen)').forEach(el => el.remove());
+
   let screen = document.getElementById(id);
   if (!screen) {
     console.error(`Screen with id '${id}' not found.`);
@@ -386,6 +391,7 @@ function showOrderDetails(orderId) {
 
     document.getElementById("btnDeleteOrder").addEventListener("click", () => deleteOrder(order.ID));
   } else {
+    // Обновляем содержимое экрана деталей
     const order = data.orders.find(o => o.ID === orderId);
     if (!order) return;
 
@@ -493,6 +499,7 @@ function finishOrder(orderId) {
       displayOrdersGroupedByDate();
     }
 
+    // Обновляем детали заказа
     showOrderDetails(orderId);
   })
   .catch(e => {
