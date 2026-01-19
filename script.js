@@ -9,7 +9,7 @@ let screenHistory = ['mainScreen'];
 
 // === GOOGLE SHEETS ===
 // 🔴 ОБЯЗАТЕЛЬНО ЗАМЕНИ НА СВОЙ URL!
-const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwwYGsb7W2zUDpbUqPThkNoIefIUpj5tgO1AdivjFPf-BjCc4zUBkZ7NFSZhhXLRVc-sg/exec';
+const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwms8nimXqNd-jJfNQ1-QHcgIB0kUWiEre1pJ4R6cuTEZm1aJuhQSxmM-m3ax0-Xrpcdg/exec';
 
 // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
 
@@ -378,6 +378,35 @@ async function saveReportToGoogleSheet(date) {
   }
 }
 
+// === ЗАГРУЗКА ИЗ GOOGLE ТАБЛИЦЫ ===
+
+async function loadOrdersFromGoogle() {
+  try {
+    const response = await fetch(GOOGLE_SHEET_WEB_APP_URL);
+    const result = await response.json();
+
+    if (result.error) {
+      alert("Ошибка загрузки: " + result.error);
+      return;
+    }
+
+    if (result.orders && result.orders.length > 0) {
+      // Добавляем только новые заказы (без дублей)
+      const existingIds = new Set(data.orders.map(o => o.id));
+      const newOrders = result.orders.filter(o => !existingIds.has(o.id));
+      data.orders = [...data.orders, ...newOrders];
+      saveData();
+      displayOrdersGroupedByDate();
+      alert(`Загружено ${newOrders.length} заказов из Google Таблицы.`);
+    } else {
+      alert("Нет данных для загрузки.");
+    }
+  } catch (err) {
+    console.error("Ошибка:", err);
+    alert("Не удалось загрузить данные из Google Таблицы.");
+  }
+}
+
 // === СПИСОК ЗАКАЗОВ ===
 
 function showOrdersList() {
@@ -397,6 +426,7 @@ function showOrdersList() {
         </div>
         <input type="text" id="searchInput" placeholder="поиск по номеру заказа" style="padding: 10px; width: 100%; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
         <button id="btnCreateNew" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">создать новый</button>
+        <button id="btnLoadFromGoogle" style="width: 100%; padding: 12px; background: #4CAF50; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer; color: white;">загрузить из google</button>
         <button id="btnBack" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">назад</button>
         <div id="allOrdersList" style="margin-top: 20px;"></div>
       </div>
@@ -411,6 +441,12 @@ function showOrdersList() {
     document.getElementById("btnCreateNew").addEventListener("click", () => {
       createOrderForm();
       addToHistory('createOrderScreen');
+    });
+
+    document.getElementById("btnLoadFromGoogle").addEventListener("click", () => {
+      if (confirm("Загрузить заказы из Google Таблицы?")) {
+        loadOrdersFromGoogle();
+      }
     });
 
     document.getElementById("btnBack").addEventListener("click", goToPrevious);
