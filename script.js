@@ -391,12 +391,38 @@ async function loadOrdersFromGoogle() {
     }
 
     if (result.orders && result.orders.length > 0) {
-      // Добавляем только новые заказы (без дублей)
+      // 🔁 Нормализация даты: из "2026-01-15T21:00:00.000Z" → "2026-01-15"
+      const normalizedOrders = result.orders.map(order => {
+        if (order.date && typeof order.date === 'string') {
+          if (order.date.includes('T')) {
+            order.date = order.date.split('T')[0]; // ISO → ГГГГ-ММ-ДД
+          } else if (order.date.includes('.')) {
+            // Поддержка формата DD.MM.YYYY (если вдруг)
+            const parts = order.date.split('.');
+            if (parts.length === 3) {
+              order.date = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+            }
+          }
+        }
+        return order;
+      });
+
       const existingIds = new Set(data.orders.map(o => o.id));
-      const newOrders = result.orders.filter(o => !existingIds.has(o.id));
+      const newOrders = normalizedOrders.filter(o => !existingIds.has(o.id));
       data.orders = [...data.orders, ...newOrders];
       saveData();
-      displayOrdersGroupedByDate();
+
+      // Обновляем интерфейс
+      if (document.getElementById('ordersListScreen')?.classList.contains('active')) {
+        displayOrdersGroupedByDate();
+      }
+      if (document.getElementById('shiftScreen')?.classList.contains('active')) {
+        const dateInput = document.getElementById('dateInput');
+        if (dateInput) {
+          showOrdersForDay(dateInput.value);
+        }
+      }
+
       alert(`Загружено ${newOrders.length} заказов из Google Таблицы.`);
     } else {
       alert("Нет данных для загрузки.");
