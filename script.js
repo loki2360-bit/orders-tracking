@@ -10,13 +10,12 @@ let screenHistory = ['mainScreen'];
 // === GOOGLE SHEETS ===
 // 🔴 ОБЯЗАТЕЛЬНО ЗАМЕНИ НА СВОЙ URL!
 const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyOPF67Wd3TGIF04cRHrrsd-uTlKDzBEh_awl7vnU061RLVdT2KPtYSLZKMGZosts-wwQ/exec';
-
 // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
 
 function saveData() {
   localStorage.setItem('ordersData', JSON.stringify(data));
   localStorage.setItem('notifications', JSON.stringify(notifications));
-  localStorage.setItem('sentReports', JSON.stringify(sentReports)); // ← сохраняем список отправленных
+  localStorage.setItem('sentReports', JSON.stringify(sentReports));
 }
 
 function calculateOrderPrice(operations) {
@@ -258,7 +257,6 @@ function showShiftsScreen() {
     `;
     document.body.appendChild(screen);
 
-    // Обработчики
     document.getElementById("showOrdersForDay").addEventListener("click", () => {
       const date = document.getElementById("dateInput").value;
       showOrdersForDay(date);
@@ -273,13 +271,10 @@ function showShiftsScreen() {
       saveReportToGoogleSheet(date);
     });
 
-    // Скрытая кнопка — привязываем обработчик
     document.getElementById("resetReportsBtn").addEventListener("click", resetSentReports);
 
-    // === СЕКРЕТНЫЙ ТРИГГЕР: 3 клика на заголовок ===
     let clickCount = 0;
     let lastClickTime = 0;
-
     document.getElementById("shiftTitle").addEventListener("click", () => {
       const now = Date.now();
       if (now - lastClickTime < 500) {
@@ -288,7 +283,6 @@ function showShiftsScreen() {
         clickCount = 1;
       }
       lastClickTime = now;
-
       if (clickCount >= 3) {
         document.getElementById("resetReportsBtn").style.display = "block";
         clickCount = 0;
@@ -320,29 +314,25 @@ function showOrdersForDay(date) {
   document.getElementById("totalOfDay").innerHTML = `<h3 style="margin-top: 10px;">итого: ${total}₽</h3>`;
 }
 
-// === ОТПРАВКА ОТЧЁТА (С ЗАЩИТОЙ ОТ ПОВТОРОВ) ===
+// === ОТПРАВКА ОТЧЁТА ===
 
 async function saveReportToGoogleSheet(date) {
-  // 🔒 Проверка: уже отправляли?
   if (sentReports.includes(date)) {
-    alert(`Отчёт за ${date} уже отправлен в Google Таблицу.`);
+    alert(`Отчёт за ${date} уже отправлен.`);
     return;
   }
 
   const orders = data.orders.filter(o => o.date === date);
-
   if (orders.length === 0) {
     alert("Нет заказов за эту дату.");
     return;
   }
 
   const reportData = [];
-
   orders.forEach(order => {
     const price = order.status === 'closed'
       ? (order.price || calculateOrderPrice(order.operations))
       : calculateOrderPrice(order.operations);
-
     order.operations.forEach(op => {
       reportData.push({
         date: order.date,
@@ -366,14 +356,11 @@ async function saveReportToGoogleSheet(date) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ report: reportData })
     });
-
-    // ✅ Запоминаем, что отчёт за эту дату отправлен
     sentReports.push(date);
     saveData();
-
-    alert(`Отчёт за ${date} успешно отправлен в Google Таблицу!`);
+    alert(`Отчёт за ${date} отправлен!`);
   } catch (err) {
-    console.error('Ошибка отправки:', err);
+    console.error('Ошибка:', err);
     alert('Не удалось отправить отчёт.');
   }
 }
@@ -391,20 +378,31 @@ async function loadOrdersFromGoogle() {
     }
 
     if (result.orders && result.orders.length > 0) {
-      // 🔁 Нормализуем дату: из "2026-01-15T21:00:00.000Z" → "2026-01-15"
       const normalizedOrders = result.orders.map(order => {
-        if (order.date && typeof order.date === 'string') {
-          if (order.date.includes('T')) {
-            order.date = order.date.split('T')[0]; // ISO → ГГГГ-ММ-ДД
-          } else if (order.date.includes('.')) {
-            // Если вдруг формат DD.MM.YYYY
-            const parts = order.date.split('.');
-            if (parts.length === 3) {
-              order.date = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+        let dateStr = '';
+        if (order.date) {
+          if (typeof order.date === 'string') {
+            if (order.date.includes('T')) {
+              dateStr = order.date.split('T')[0];
+            } else if (order.date.includes('.')) {
+              const parts = order.date.split('.');
+              if (parts.length === 3) {
+                dateStr = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+              }
+            } else {
+              dateStr = order.date;
             }
+          } else if (typeof order.date === 'object' && order.date instanceof Date) {
+            dateStr = order.date.toISOString().split('T')[0];
+          } else if (typeof order.date === 'number') {
+            const jsDate = new Date((order.date - 25569) * 86400 * 1000);
+            dateStr = jsDate.toISOString().split('T')[0];
           }
         }
-        return order;
+        if (!dateStr || dateStr === 'Invalid date') {
+          dateStr = new Date().toISOString().split('T')[0];
+        }
+        return { ...order, date: dateStr };
       });
 
       const existingIds = new Set(data.orders.map(o => o.id));
@@ -412,7 +410,6 @@ async function loadOrdersFromGoogle() {
       data.orders = [...data.orders, ...newOrders];
       saveData();
 
-      // Обновляем интерфейс
       if (document.getElementById('ordersListScreen').classList.contains('active')) {
         displayOrdersGroupedByDate();
       }
@@ -425,11 +422,11 @@ async function loadOrdersFromGoogle() {
 
       alert(`Загружено ${newOrders.length} заказов.`);
     } else {
-      alert("Нет данных для загрузки.");
+      alert("Нет данных.");
     }
   } catch (err) {
     console.error("Ошибка:", err);
-    alert("Не удалось загрузить данные из Google Таблицы.");
+    alert("Не удалось загрузить данные.");
   }
 }
 
@@ -500,7 +497,9 @@ function displayOrdersGroupedByDate() {
     grouped[order.date].push(order);
   });
 
-  const sortedDates = Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a));
+  const sortedDates = Object.keys(grouped)
+    .filter(date => date && date !== 'Invalid date')
+    .sort((a, b) => new Date(b) - new Date(a));
 
   sortedDates.forEach(date => {
     const title = document.createElement("div");
@@ -766,7 +765,6 @@ function finishOrder(orderId) {
 // === ИНИЦИАЛИЗАЦИЯ ===
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Миграция старых заказов
   let migrated = false;
   data.orders.forEach(order => {
     if (!order.operations) {
