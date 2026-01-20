@@ -261,11 +261,6 @@ function showShiftsScreen() {
     // Обработчики
     document.getElementById("showOrdersForDay").addEventListener("click", () => {
       const date = document.getElementById("dateInput").value;
-      if (!date) {
-        alert("Выберите дату");
-        return;
-      }
-      console.log("Показываем заказы за дату:", date);
       showOrdersForDay(date);
     });
 
@@ -304,7 +299,6 @@ function showShiftsScreen() {
 }
 
 function showOrdersForDay(date) {
-  console.log("Фильтруем заказы по дате:", date);
   const orders = data.orders.filter(o => o.date === date);
   const container = document.getElementById("ordersOfDay");
   container.innerHTML = "";
@@ -397,27 +391,19 @@ async function loadOrdersFromGoogle() {
     }
 
     if (result.orders && result.orders.length > 0) {
-      // 🔁 Нормализация даты + защита от undefined
+      // 🔁 Нормализуем дату: из "2026-01-15T21:00:00.000Z" → "2026-01-15"
       const normalizedOrders = result.orders.map(order => {
-        let orderDate = order.date;
-
-        // Если дата отсутствует — используем текущую
-        if (!orderDate || typeof orderDate !== 'string' || orderDate.trim() === '') {
-          console.warn("Заказ без даты, используется текущая:", order.id);
-          orderDate = new Date().toISOString().split('T')[0];
-        } else {
-          orderDate = orderDate.trim();
-          if (orderDate.includes('T')) {
-            orderDate = orderDate.split('T')[0]; // ISO → ГГГГ-ММ-ДД
-          } else if (orderDate.includes('.')) {
-            const parts = orderDate.split('.');
+        if (order.date && typeof order.date === 'string') {
+          if (order.date.includes('T')) {
+            order.date = order.date.split('T')[0]; // ISO → ГГГГ-ММ-ДД
+          } else if (order.date.includes('.')) {
+            // Если вдруг формат DD.MM.YYYY
+            const parts = order.date.split('.');
             if (parts.length === 3) {
-              orderDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+              order.date = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
             }
           }
         }
-
-        order.date = orderDate;
         return order;
       });
 
@@ -426,23 +412,18 @@ async function loadOrdersFromGoogle() {
       data.orders = [...data.orders, ...newOrders];
       saveData();
 
-      console.log("Загружено заказов:", newOrders.length);
-      if (newOrders.length > 0) {
-        console.log("Пример первого заказа:", newOrders[0]);
-      }
-
       // Обновляем интерфейс
-      if (document.getElementById('ordersListScreen')?.classList.contains('active')) {
+      if (document.getElementById('ordersListScreen').classList.contains('active')) {
         displayOrdersGroupedByDate();
       }
-      if (document.getElementById('shiftScreen')?.classList.contains('active')) {
+      if (document.getElementById('shiftScreen').classList.contains('active')) {
         const dateInput = document.getElementById('dateInput');
         if (dateInput) {
           showOrdersForDay(dateInput.value);
         }
       }
 
-      alert(`Загружено ${newOrders.length} заказов из Google Таблицы.`);
+      alert(`Загружено ${newOrders.length} заказов.`);
     } else {
       alert("Нет данных для загрузки.");
     }
@@ -515,10 +496,8 @@ function displayOrdersGroupedByDate() {
   const grouped = {};
 
   data.orders.forEach(order => {
-    // Защита от отсутствующей даты
-    const date = order.date || new Date().toISOString().split('T')[0];
-    if (!grouped[date]) grouped[date] = [];
-    grouped[date].push(order);
+    if (!grouped[order.date]) grouped[order.date] = [];
+    grouped[order.date].push(order);
   });
 
   const sortedDates = Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a));
@@ -622,12 +601,7 @@ function createOrderForm() {
       const m2 = parseFloat(document.getElementById("m2").value) || 0;
       const pm = parseFloat(document.getElementById("pm").value) || 0;
       const time = parseFloat(document.getElementById("time").value) || 0;
-      
-      // ✅ Гарантируем наличие даты
-      let date = document.getElementById("orderDate").value;
-      if (!date) {
-        date = new Date().toISOString().split('T')[0];
-      }
+      const date = document.getElementById("orderDate").value;
 
       data.orders.push({
         id,
@@ -719,14 +693,11 @@ function showOrderDetails(orderId) {
     document.body.appendChild(screen);
   }
 
-  // Защита от отсутствующей даты
-  const displayDate = order.date || '—';
-
   let detailsHtml = `
     <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto;">
       <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">${order.id}</h2>
       <p style="margin: 5px 0;">Общая деталь: ${order.detail || '-'}</p>
-      <p style="margin: 5px 0;">Дата: ${displayDate}</p>
+      <p style="margin: 5px 0;">Дата: ${order.date}</p>
   `;
 
   detailsHtml += `<h3 style="margin: 15px 0 10px; font-size: 16px;">Операции:</h3>`;
@@ -800,10 +771,6 @@ document.addEventListener("DOMContentLoaded", () => {
   data.orders.forEach(order => {
     if (!order.operations) {
       const globalDetail = order.detail || '-';
-      // Гарантируем наличие даты
-      if (!order.date) {
-        order.date = new Date().toISOString().split('T')[0];
-      }
       order.operations = [{
         detail: globalDetail,
         type: order.type || "Время",
