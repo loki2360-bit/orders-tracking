@@ -9,7 +9,7 @@ let screenHistory = ['mainScreen'];
 
 // === GOOGLE SHEETS ===
 // 🔴 ОБЯЗАТЕЛЬНО ЗАМЕНИ НА СВОЙ URL!
-const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyOPF67Wd3TGIF04cRHrrsd-uTlKDzBEh_awl7vnU061RLVdT2KPtYSLZKMGZosts-wwQ/exec';
+const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwCPd71T7Ui2Y_JBKclVluhXOa7z8Y_815xp0Rufxi1gSOmXGHl5t6tJLwWj0R1qN4-/exec';
 // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
 
 function saveData() {
