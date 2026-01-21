@@ -2,14 +2,15 @@
 let data = JSON.parse(localStorage.getItem('ordersData')) || { orders: [] };
 let appData = JSON.parse(localStorage.getItem('appData')) || { createdCount: 0, activationKeyUsed: false };
 let notifications = JSON.parse(localStorage.getItem('notifications')) || [];
-let sentReports = JSON.parse(localStorage.getItem('sentReports')) || []; // ← ЗАПОМИНАЕМ ОТПРАВЛЕННЫЕ ДАТЫ
+let sentReports = JSON.parse(localStorage.getItem('sentReports')) || [];
 
 // История экранов
 let screenHistory = ['mainScreen'];
 
 // === GOOGLE SHEETS ===
 // 🔴 ОБЯЗАТЕЛЬНО ЗАМЕНИ НА СВОЙ URL!
-const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwCPd71T7Ui2Y_JBKclVluhXOa7z8Y_815xp0Rufxi1gSOmXGHl5t6tJLwWj0R1qN4-/exec';
+const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwms8nimXqNd-jJfNQ1-QHcgIB0kUWiEre1pJ4R6cuTEZm1aJuhQSxmM-m3ax0-Xrpcdg/exec';
+
 // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
 
 function saveData() {
@@ -370,64 +371,87 @@ async function saveReportToGoogleSheet(date) {
 async function loadOrdersFromGoogle() {
   try {
     const response = await fetch(GOOGLE_SHEET_WEB_APP_URL);
-    const result = await response.json();
+    const text = await response.text();
+    console.log("📥 Ответ от Google:", text);
+
+    const result = JSON.parse(text);
 
     if (result.error) {
-      alert("Ошибка загрузки: " + result.error);
+      alert("Ошибка: " + result.error);
       return;
     }
 
-    if (result.orders && result.orders.length > 0) {
-      const normalizedOrders = result.orders.map(order => {
-        let dateStr = '';
-        if (order.date) {
-          if (typeof order.date === 'string') {
-            if (order.date.includes('T')) {
-              dateStr = order.date.split('T')[0];
-            } else if (order.date.includes('.')) {
-              const parts = order.date.split('.');
-              if (parts.length === 3) {
-                dateStr = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-              }
-            } else {
-              dateStr = order.date;
-            }
-          } else if (typeof order.date === 'object' && order.date instanceof Date) {
-            dateStr = order.date.toISOString().split('T')[0];
-          } else if (typeof order.date === 'number') {
-            const jsDate = new Date((order.date - 25569) * 86400 * 1000);
-            dateStr = jsDate.toISOString().split('T')[0];
-          }
-        }
-        if (!dateStr || dateStr === 'Invalid date') {
-          dateStr = new Date().toISOString().split('T')[0];
-        }
-        return { ...order, date: dateStr };
-      });
-
-      const existingIds = new Set(data.orders.map(o => o.id));
-      const newOrders = normalizedOrders.filter(o => !existingIds.has(o.id));
-      data.orders = [...data.orders, ...newOrders];
-      saveData();
-
-      if (document.getElementById('ordersListScreen').classList.contains('active')) {
-        displayOrdersGroupedByDate();
-      }
-      if (document.getElementById('shiftScreen').classList.contains('active')) {
-        const dateInput = document.getElementById('dateInput');
-        if (dateInput) {
-          showOrdersForDay(dateInput.value);
-        }
-      }
-
-      alert(`Загружено ${newOrders.length} заказов.`);
-    } else {
+    if (!result.orders || result.orders.length === 0) {
       alert("Нет данных.");
+      return;
     }
+
+    const normalizedOrders = result.orders.map(order => {
+      let dateStr = '';
+
+      if (order.date) {
+        dateStr = normalizeDate(order.date);
+      } else if (order['Дата']) {
+        dateStr = normalizeDate(order['Дата']);
+      }
+
+      if (!dateStr || dateStr === 'Invalid date') {
+        dateStr = '';
+      }
+
+      return {
+        ...order,
+        date: dateStr,
+        id: order.id || order['Заказ №'] || 'NO_ID',
+        detail: order.detail || order['Общая деталь'] || '-',
+        status: 'closed',
+        operations: order.operations || [{
+          detail: order.detail || '-',
+          type: order.operationType || order['Операция'] || 'Время',
+          quantity: order.quantity || 1,
+          m2: order.m2 || 0,
+          pm: order.pm || 0,
+          time: order.time || 0
+        }]
+      };
+    });
+
+    const validOrders = normalizedOrders.filter(o => o.date);
+    const existingIds = new Set(data.orders.map(o => o.id));
+    const newOrders = validOrders.filter(o => !existingIds.has(o.id));
+
+    data.orders = [...data.orders, ...newOrders];
+    saveData();
+
+    if (document.getElementById('ordersListScreen').classList.contains('active')) {
+      displayOrdersGroupedByDate();
+    }
+
+    alert(`Загружено ${newOrders.length} заказов.`);
   } catch (err) {
-    console.error("Ошибка:", err);
-    alert("Не удалось загрузить данные.");
+    console.error("💥 Ошибка:", err);
+    alert("Не удалось загрузить данные. Подробности в консоли (F12).");
   }
+}
+
+function normalizeDate(dateVal) {
+  if (!dateVal) return '';
+  if (typeof dateVal === 'string') {
+    if (dateVal.includes('T')) {
+      return dateVal.split('T')[0];
+    } else if (dateVal.includes('.')) {
+      const parts = dateVal.split('.');
+      if (parts.length === 3) {
+        return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+      }
+    } else {
+      return dateVal;
+    }
+  } else if (typeof dateVal === 'number') {
+    const jsDate = new Date((dateVal - 25569) * 86400 * 1000);
+    return jsDate.toISOString().split('T')[0];
+  }
+  return '';
 }
 
 // === СПИСОК ЗАКАЗОВ ===
@@ -493,13 +517,13 @@ function displayOrdersGroupedByDate() {
   const grouped = {};
 
   data.orders.forEach(order => {
-    if (!grouped[order.date]) grouped[order.date] = [];
-    grouped[order.date].push(order);
+    if (order.date && order.date !== 'Invalid date') {
+      if (!grouped[order.date]) grouped[order.date] = [];
+      grouped[order.date].push(order);
+    }
   });
 
-  const sortedDates = Object.keys(grouped)
-    .filter(date => date && date !== 'Invalid date')
-    .sort((a, b) => new Date(b) - new Date(a));
+  const sortedDates = Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a));
 
   sortedDates.forEach(date => {
     const title = document.createElement("div");
@@ -678,7 +702,7 @@ function showAddOperationForm(orderId) {
   });
 }
 
-// === ДЕТАЛИ ЗАКАЗА ===
+// === ДЕТАЛИ ЗАКАЗА (С РЕДАКТИРУЕМЫМ ПОЛЕМ ДАТЫ) ===
 
 function showOrderDetails(orderId) {
   const order = data.orders.find(o => o.id === orderId);
@@ -692,14 +716,20 @@ function showOrderDetails(orderId) {
     document.body.appendChild(screen);
   }
 
+  const displayDate = order.date || new Date().toISOString().split('T')[0];
+
   let detailsHtml = `
     <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto;">
       <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">${order.id}</h2>
       <p style="margin: 5px 0;">Общая деталь: ${order.detail || '-'}</p>
-      <p style="margin: 5px 0;">Дата: ${order.date}</p>
+      
+      <label style="display: block; margin: 10px 0 5px; font-weight: bold;">Дата:</label>
+      <input type="date" id="editOrderDate" value="${displayDate}" 
+             style="padding: 8px; width: 100%; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+      
+      <h3 style="margin: 15px 0 10px; font-size: 16px;">Операции:</h3>
   `;
 
-  detailsHtml += `<h3 style="margin: 15px 0 10px; font-size: 16px;">Операции:</h3>`;
   order.operations.forEach((op, idx) => {
     detailsHtml += `
       <div style="background:#f9f9f9; padding:8px; border-radius:4px; margin:5px 0;">
@@ -723,6 +753,7 @@ function showOrderDetails(orderId) {
   }
 
   detailsHtml += `
+      <button id="btnSaveDate" style="width: 100%; padding: 10px; background: #4CAF50; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer; color: white;">сохранить дату</button>
       <button id="btnDeleteOrder" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">удалить</button>
       <button onclick="goToPrevious()" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">назад</button>
     </div>
@@ -737,6 +768,18 @@ function showOrderDetails(orderId) {
   }
 
   document.getElementById("btnDeleteOrder").addEventListener("click", () => deleteOrder(orderId));
+
+  document.getElementById("btnSaveDate").addEventListener("click", () => {
+    const newDate = document.getElementById("editOrderDate").value;
+    if (!newDate) {
+      alert("Выберите дату");
+      return;
+    }
+    order.date = newDate;
+    saveData();
+    alert("Дата обновлена!");
+    showOrderDetails(orderId);
+  });
 }
 
 // === УПРАВЛЕНИЕ ЗАКАЗАМИ ===
