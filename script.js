@@ -4,12 +4,18 @@ let appData = JSON.parse(localStorage.getItem('appData')) || { createdCount: 0, 
 let notifications = JSON.parse(localStorage.getItem('notifications')) || [];
 let sentReports = JSON.parse(localStorage.getItem('sentReports')) || [];
 
+// === ТЕМА ===
+let currentTheme = localStorage.getItem('theme') || 'light';
+if (currentTheme === 'dark') {
+  document.body.classList.add('dark-theme');
+}
+
 // История экранов
 let screenHistory = ['mainScreen'];
 
 // === GOOGLE SHEETS ===
-// 🔴 ОБЯЗАТЕЛЬНО ЗАМЕНИ НА СВОЙ URL!
 const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwms8nimXqNd-jJfNQ1-QHcgIB0kUWiEre1pJ4R6cuTEZm1aJuhQSxmM-m3ax0-Xrpcdg/exec';
+
 // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
 
 function saveData() {
@@ -68,6 +74,12 @@ function calculateSingleOperationPrice(op) {
     price += op.time * rates[op.type] * qty;
   }
   return Math.round(price * 100) / 100;
+}
+
+function toggleTheme(theme) {
+  currentTheme = theme;
+  localStorage.setItem('theme', theme);
+  document.body.classList.toggle('dark-theme', theme === 'dark');
 }
 
 // === УВЕДОМЛЕНИЯ ===
@@ -273,7 +285,6 @@ function showShiftsScreen() {
 
     document.getElementById("resetReportsBtn").addEventListener("click", resetSentReports);
 
-    // Триггер скрытой кнопки
     let clickCount = 0;
     let lastClickTime = 0;
     document.querySelector("#shiftScreen .title").addEventListener("click", () => {
@@ -544,7 +555,6 @@ function displayOrdersGroupedByDate() {
     });
   });
 
-  // Обработчик раскрытия дат
   document.querySelectorAll(".date-title").forEach(el => {
     el.addEventListener("click", () => {
       const date = el.dataset.date;
@@ -793,6 +803,37 @@ function finishOrder(orderId) {
   showOrderDetails(orderId);
 }
 
+// === НАСТРОЙКИ ===
+
+function showSettings() {
+  const modal = document.createElement('div');
+  modal.className = 'settings-modal';
+  modal.innerHTML = `
+    <div class="settings-content">
+      <h3>Настройки</h3>
+      <div class="theme-option" data-theme="light">
+        <span>Светлая тема</span>
+      </div>
+      <div class="theme-option" data-theme="dark">
+        <span>Тёмная тема</span>
+      </div>
+      <button style="width:100%; margin-top:15px;" onclick="this.parentElement.parentElement.remove()">Закрыть</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  modal.querySelectorAll('.theme-option').forEach(option => {
+    if (option.dataset.theme === currentTheme) {
+      option.classList.add('active');
+    }
+    option.onclick = () => {
+      modal.querySelectorAll('.theme-option').forEach(el => el.classList.remove('active'));
+      option.classList.add('active');
+      toggleTheme(option.dataset.theme);
+    };
+  });
+}
+
 // === ИНИЦИАЛИЗАЦИЯ ===
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -831,6 +872,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   loadMainScreen();
   setupEventListeners();
+
+  // Добавляем кнопку настроек
+  const settingsBtn = document.createElement('button');
+  settingsBtn.className = 'settings-btn';
+  settingsBtn.innerHTML = '⚙️';
+  settingsBtn.onclick = () => showSettings();
+  document.body.appendChild(settingsBtn);
 });
 
 function setupEventListeners() {
