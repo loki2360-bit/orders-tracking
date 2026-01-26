@@ -1,13 +1,18 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Учёт заказов</title>
   <link rel="stylesheet" href="style.css" />
+  
+  <!-- PWA -->
   <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#ffd700">
+  <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
+  <!-- Главный экран -->
   <div class="screen active" id="mainScreen">
     <div class="profile">
       <div class="avatar">👤</div>
@@ -29,5 +34,16 @@
   </div>
 
   <script src="script.js"></script>
+  
+  <!-- PWA Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+          .then(reg => console.log('SW registered:', reg))
+          .catch(err => console.log('SW failed:', err));
+      });
+    }
+  </script>
 </body>
 </html>
