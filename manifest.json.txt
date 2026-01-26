@@ -1,15 +1,16 @@
-﻿{
-  "name": "Учёт заказов",
-  "short_name": "Заказы",
-  "start_url": "./index.html",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ffd700",
+{
+  "short_name": "Учёт заказов",
+  "name": "Учёт заказов — Александр",
   "icons": [
     {
-      "src": "icon.png",
-      "sizes": "192x192",
-      "type": "image/png"
+      "src": "icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
     }
-  ]
+  ],
+  "start_url": "/",
+  "background_color": "#f5f5f5",
+  "display": "standalone",
+  "scope": "/",
+  "theme_color": "#ffd700"
 }
