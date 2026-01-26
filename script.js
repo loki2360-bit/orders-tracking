@@ -10,7 +10,6 @@ let screenHistory = ['mainScreen'];
 // === GOOGLE SHEETS ===
 // 🔴 ОБЯЗАТЕЛЬНО ЗАМЕНИ НА СВОЙ URL!
 const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwms8nimXqNd-jJfNQ1-QHcgIB0kUWiEre1pJ4R6cuTEZm1aJuhQSxmM-m3ax0-Xrpcdg/exec';
-
 // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
 
 function saveData() {
@@ -126,14 +125,14 @@ function showNotificationsScreen() {
     screen.className = "screen";
     screen.id = "notificationsScreen";
     screen.innerHTML = `
-      <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto;">
-        <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 20px;">УВЕДОМЛЕНИЯ</h2>
-        <button onclick="clearAllNotifications()" style="padding: 8px 16px; background: #ffd700; border: none; border-radius: 4px; font-weight: bold; margin-bottom: 10px;">очистить все</button>
-        <div id="notificationsList"></div>
-        <button onclick="goToPrevious()" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin-top: 20px; cursor: pointer;">назад</button>
-      </div>
+      <h2>УВЕДОМЛЕНИЯ</h2>
+      <button id="btnClearNotifications">очистить все</button>
+      <div id="notificationsList"></div>
+      <button onclick="goToPrevious()">назад</button>
     `;
     document.body.appendChild(screen);
+
+    document.getElementById("btnClearNotifications").addEventListener("click", clearAllNotifications);
 
     const list = document.getElementById("notificationsList");
     list.innerHTML = "";
@@ -245,18 +244,18 @@ function showShiftsScreen() {
     screen.className = "screen";
     screen.id = "shiftScreen";
     screen.innerHTML = `
-      <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto;">
-        <h2 id="shiftTitle" style="font-size: 18px; font-weight: bold; margin-bottom: 20px; cursor: pointer;">введите дату</h2>
-        <input type="date" id="dateInput" value="${new Date().toISOString().split('T')[0]}" style="padding: 10px; width: 100%; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-        <button id="showOrdersForDay" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">показать</button>
-        <div id="ordersOfDay"></div>
-        <div id="totalOfDay"></div>
-        <button id="btnSaveReport" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">сохранить отчёт</button>
-        <button id="resetReportsBtn" style="width: 100%; padding: 6px; background: #eee; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; margin-top: 10px; display: none; cursor: pointer;">сбросить отчёты</button>
-        <button onclick="goToPrevious()" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">назад</button>
-      </div>
+      <h2 class="title">введите дату</h2>
+      <input type="date" id="dateInput">
+      <button id="showOrdersForDay">показать</button>
+      <div id="ordersOfDay"></div>
+      <div id="totalOfDay"></div>
+      <button id="btnSaveReport">сохранить отчёт</button>
+      <button id="resetReportsBtn" style="display:none;">сбросить отчёты</button>
+      <button onclick="goToPrevious()">назад</button>
     `;
     document.body.appendChild(screen);
+
+    document.getElementById("dateInput").value = new Date().toISOString().split('T')[0];
 
     document.getElementById("showOrdersForDay").addEventListener("click", () => {
       const date = document.getElementById("dateInput").value;
@@ -274,9 +273,10 @@ function showShiftsScreen() {
 
     document.getElementById("resetReportsBtn").addEventListener("click", resetSentReports);
 
+    // Триггер скрытой кнопки
     let clickCount = 0;
     let lastClickTime = 0;
-    document.getElementById("shiftTitle").addEventListener("click", () => {
+    document.querySelector("#shiftScreen .title").addEventListener("click", () => {
       const now = Date.now();
       if (now - lastClickTime < 500) {
         clickCount++;
@@ -312,7 +312,7 @@ function showOrdersForDay(date) {
   });
 
   total = Math.round(total * 100) / 100;
-  document.getElementById("totalOfDay").innerHTML = `<h3 style="margin-top: 10px;">итого: ${total}₽</h3>`;
+  document.getElementById("totalOfDay").innerHTML = `<h3>итого: ${total}₽</h3>`;
 }
 
 // === ОТПРАВКА ОТЧЁТА ===
@@ -463,20 +463,15 @@ function showOrdersList() {
     screen.className = "screen";
     screen.id = "ordersListScreen";
     screen.innerHTML = `
-      <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-          <h2 style="font-size: 18px; font-weight: bold;">СПИСОК ЗАКАЗОВ</h2>
-          <button id="btnNotificationsInList" onclick="showNotificationsScreen()" style="background: none; border: none; cursor: pointer; font-size: 20px; position: relative;">
-            <span id="notificationIcon" style="color: black;">✉️</span>
-            <span id="notificationBadgeInList" style="position: absolute; top: -8px; right: -8px; background: red; color: white; border-radius: 50%; width: 18px; height: 18px; display: none; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;"></span>
-          </button>
-        </div>
-        <input type="text" id="searchInput" placeholder="поиск по номеру заказа" style="padding: 10px; width: 100%; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-        <button id="btnCreateNew" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">создать новый</button>
-        <button id="btnLoadFromGoogle" style="width: 100%; padding: 12px; background: #4CAF50; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer; color: white;">загрузить из google</button>
-        <button id="btnBack" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">назад</button>
-        <div id="allOrdersList" style="margin-top: 20px;"></div>
+      <div class="header-with-notif">
+        <h2 class="title">СПИСОК ЗАКАЗОВ</h2>
+        <button id="btnNotificationsInList" class="notification-btn">✉️</button>
       </div>
+      <input type="text" id="searchInput" placeholder="поиск по номеру заказа">
+      <button id="btnCreateNew">создать новый</button>
+      <button id="btnLoadFromGoogle">загрузить из google</button>
+      <button id="btnBack">назад</button>
+      <div id="allOrdersList"></div>
     `;
     document.body.appendChild(screen);
 
@@ -497,6 +492,8 @@ function showOrdersList() {
     });
 
     document.getElementById("btnBack").addEventListener("click", goToPrevious);
+
+    document.getElementById("btnNotificationsInList").addEventListener("click", showNotificationsScreen);
 
     updateNotificationIcon();
     updateNotificationBadge();
@@ -529,10 +526,8 @@ function displayOrdersGroupedByDate() {
     const title = document.createElement("div");
     title.className = "date-header";
     title.innerHTML = `
-      <h3 style="cursor: pointer; font-size: 16px; font-weight: bold; margin: 10px 0;" onclick="toggleDateSection('${date}')">
-        ${date} <span id="arrow-${date}" class="arrow">▼</span>
-      </h3>
-      <div id="list-${date}" class="date-list" style="display:none;"></div>
+      <h3 class="date-title" data-date="${date}">${date} <span class="arrow">▼</span></h3>
+      <div class="date-list" id="list-${date}" style="display:none;"></div>
     `;
     container.appendChild(title);
 
@@ -548,18 +543,22 @@ function displayOrdersGroupedByDate() {
       list.appendChild(item);
     });
   });
-}
 
-function toggleDateSection(date) {
-  const list = document.getElementById(`list-${date}`);
-  const arrow = document.getElementById(`arrow-${date}`);
-  if (list.style.display === "none") {
-    list.style.display = "block";
-    arrow.textContent = "▲";
-  } else {
-    list.style.display = "none";
-    arrow.textContent = "▼";
-  }
+  // Обработчик раскрытия дат
+  document.querySelectorAll(".date-title").forEach(el => {
+    el.addEventListener("click", () => {
+      const date = el.dataset.date;
+      const list = document.getElementById(`list-${date}`);
+      const arrow = el.querySelector(".arrow");
+      if (list.style.display === "none") {
+        list.style.display = "block";
+        arrow.textContent = "▲";
+      } else {
+        list.style.display = "none";
+        arrow.textContent = "▼";
+      }
+    });
+  });
 }
 
 function searchOrders(query) {
@@ -567,7 +566,7 @@ function searchOrders(query) {
   container.innerHTML = "";
   const results = data.orders.filter(order => order.id.toLowerCase().includes(query));
   if (results.length === 0) {
-    container.innerHTML = `<p style="text-align: center;">Заказ "${query}" не найден.</p>`;
+    container.innerHTML = `<p class="no-results">Заказ "${query}" не найден.</p>`;
   } else {
     results.forEach(order => {
       const item = document.createElement("div");
@@ -591,29 +590,29 @@ function createOrderForm() {
     screen.className = "screen";
     screen.id = "createOrderScreen";
     screen.innerHTML = `
-      <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto;">
-        <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 20px;">создать заказ</h2>
-        <input type="text" id="orderNumber" placeholder="номер заказа" style="padding: 10px; width: 100%; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-        <input type="text" id="orderDetail" placeholder="деталь" style="padding: 10px; width: 100%; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-        <input type="date" id="orderDate" value="${new Date().toISOString().split('T')[0]}" style="padding: 10px; width: 100%; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-        <select id="orderType" style="padding: 10px; width: 100%; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-          <option value="Распил">Распил — 65₽/м²</option>
-          <option value="Линейный">Линейный — 26₽/п.м</option>
-          <option value="Склейка простая">Склейка простая — 165₽/м²</option>
-          <option value="Склейка с обгоном">Склейка с обгоном — 210₽/м²</option>
-          <option value="Фрезер фаски">Фрезер фаски — 16₽/п.м</option>
-          <option value="Пазовка">Пазовка — 30₽/п.м</option>
-          <option value="Время">Время — 330₽</option>
-        </select>
-        <input type="number" id="quantity" placeholder="Количество" step="1" min="1" value="1" style="padding: 10px; width: 100%; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-        <input type="number" id="m2" placeholder="м²" step="0.1" min="0" value="0" style="padding: 10px; width: 100%; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-        <input type="number" id="pm" placeholder="п.м" step="0.1" min="0" value="0" style="padding: 10px; width: 100%; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-        <input type="number" id="time" placeholder="Часы" step="0.5" min="0" value="0" style="padding: 10px; width: 100%; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-        <button id="saveOrder" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">создать</button>
-        <button onclick="goToPrevious()" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">назад</button>
-      </div>
+      <h2 class="title">создать заказ</h2>
+      <input type="text" id="orderNumber" placeholder="номер заказа">
+      <input type="text" id="orderDetail" placeholder="деталь">
+      <input type="date" id="orderDate">
+      <select id="orderType">
+        <option value="Распил">Распил — 65₽/м²</option>
+        <option value="Линейный">Линейный — 26₽/п.м</option>
+        <option value="Склейка простая">Склейка простая — 165₽/м²</option>
+        <option value="Склейка с обгоном">Склейка с обгоном — 210₽/м²</option>
+        <option value="Фрезер фаски">Фрезер фаски — 16₽/п.м</option>
+        <option value="Пазовка">Пазовка — 30₽/п.м</option>
+        <option value="Время">Время — 330₽</option>
+      </select>
+      <input type="number" id="quantity" placeholder="Количество" value="1" min="1" step="1">
+      <input type="number" id="m2" placeholder="м²" value="0" min="0" step="0.1">
+      <input type="number" id="pm" placeholder="п.м" value="0" min="0" step="0.1">
+      <input type="number" id="time" placeholder="Часы" value="0" min="0" step="0.5">
+      <button id="saveOrder">создать</button>
+      <button onclick="goToPrevious()">назад</button>
     `;
     document.body.appendChild(screen);
+
+    document.getElementById("orderDate").value = new Date().toISOString().split('T')[0];
 
     document.getElementById("saveOrder").addEventListener("click", () => {
       const id = document.getElementById("orderNumber").value.trim();
@@ -648,20 +647,12 @@ function createOrderForm() {
 function showAddOperationForm(orderId) {
   const modal = document.createElement("div");
   modal.id = "operationModal";
-  modal.style = `
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-  `;
+  modal.className = "modal";
   modal.innerHTML = `
-    <div style="background:white; padding:20px; border-radius:12px; width:90%; max-width:400px;">
-      <h3 style="margin-bottom:15px;">Новая операция</h3>
-      <input type="text" id="newOpDetail" placeholder="Деталь (например, столешка, ножка)" style="width:100%; padding:10px; margin:5px 0; border:1px solid #ddd; border-radius:4px;">
-      <select id="newOpType" style="width:100%; padding:10px; margin:5px 0; border:1px solid #ddd; border-radius:4px;">
+    <div class="modal-content">
+      <h3>Новая операция</h3>
+      <input type="text" id="newOpDetail" placeholder="Деталь (например, столешка, ножка)">
+      <select id="newOpType">
         <option value="Распил">Распил — 65₽/м²</option>
         <option value="Линейный">Линейный — 26₽/п.м</option>
         <option value="Склейка простая">Склейка простая — 165₽/м²</option>
@@ -670,12 +661,12 @@ function showAddOperationForm(orderId) {
         <option value="Пазовка">Пазовка — 30₽/п.м</option>
         <option value="Время">Время — 330₽</option>
       </select>
-      <input type="number" id="newOpQuantity" placeholder="Количество" value="1" min="1" step="1" style="width:100%; padding:10px; margin:5px 0; border:1px solid #ddd; border-radius:4px;">
-      <input type="number" id="newOpM2" placeholder="м²" value="0" min="0" step="0.1" style="width:100%; padding:10px; margin:5px 0; border:1px solid #ddd; border-radius:4px;">
-      <input type="number" id="newOpPM" placeholder="п.м" value="0" min="0" step="0.1" style="width:100%; padding:10px; margin:5px 0; border:1px solid #ddd; border-radius:4px;">
-      <input type="number" id="newOpTime" placeholder="Часы" value="0" min="0" step="0.5" style="width:100%; padding:10px; margin:5px 0; border:1px solid #ddd; border-radius:4px;">
-      <button id="saveNewOp" style="width:100%; padding:12px; background:#ffd700; border:none; border-radius:8px; font-weight:bold; margin:8px 0; cursor:pointer;">добавить</button>
-      <button id="cancelNewOp" style="width:100%; padding:12px; background:#ccc; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">отмена</button>
+      <input type="number" id="newOpQuantity" placeholder="Количество" value="1" min="1" step="1">
+      <input type="number" id="newOpM2" placeholder="м²" value="0" min="0" step="0.1">
+      <input type="number" id="newOpPM" placeholder="п.м" value="0" min="0" step="0.1">
+      <input type="number" id="newOpTime" placeholder="Часы" value="0" min="0" step="0.5">
+      <button id="saveNewOp">добавить</button>
+      <button id="cancelNewOp">отмена</button>
     </div>
   `;
   document.body.appendChild(modal);
@@ -719,20 +710,18 @@ function showOrderDetails(orderId) {
   const displayDate = order.date || new Date().toISOString().split('T')[0];
 
   let detailsHtml = `
-    <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto;">
-      <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">${order.id}</h2>
-      <p style="margin: 5px 0;">Общая деталь: ${order.detail || '-'}</p>
-      
-      <label style="display: block; margin: 10px 0 5px; font-weight: bold;">Дата:</label>
-      <input type="date" id="editOrderDate" value="${displayDate}" 
-             style="padding: 8px; width: 100%; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-      
-      <h3 style="margin: 15px 0 10px; font-size: 16px;">Операции:</h3>
+    <h2 class="title">${order.id}</h2>
+    <p>Общая деталь: ${order.detail || '-'}</p>
+    
+    <label class="field-label">Дата:</label>
+    <input type="date" id="editOrderDate" value="${displayDate}">
+    
+    <h3 class="section-title">Операции:</h3>
   `;
 
   order.operations.forEach((op, idx) => {
     detailsHtml += `
-      <div style="background:#f9f9f9; padding:8px; border-radius:4px; margin:5px 0;">
+      <div class="operation-item">
         <small>${idx + 1}. ${op.type}</small><br>
         <small>Деталь: ${op.detail || '-'}</small><br>
         <small>Кол-во: ${op.quantity} | м²: ${op.m2} | п.м: ${op.pm} | ч: ${op.time}</small>
@@ -743,20 +732,19 @@ function showOrderDetails(orderId) {
   const currentPrice = order.status === 'closed'
     ? (order.price || calculateOrderPrice(order.operations))
     : calculateOrderPrice(order.operations);
-  detailsHtml += `<p style="margin: 10px 0; font-weight: bold;">Текущая сумма: ${currentPrice}₽</p>`;
+  detailsHtml += `<p class="price-total">Текущая сумма: ${currentPrice}₽</p>`;
 
   if (order.status !== 'closed') {
-    detailsHtml += `<button id="btnAddOperation" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">добавить операцию</button>`;
-    detailsHtml += `<button id="btnFinishOrder" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">завершить</button>`;
+    detailsHtml += `<button id="btnAddOperation">добавить операцию</button>`;
+    detailsHtml += `<button id="btnFinishOrder">завершить</button>`;
   } else {
-    detailsHtml += `<p style="margin: 10px 0;">Итоговая цена: ${order.price}₽</p>`;
+    detailsHtml += `<p class="price-final">Итоговая цена: ${order.price}₽</p>`;
   }
 
   detailsHtml += `
-      <button id="btnSaveDate" style="width: 100%; padding: 10px; background: #4CAF50; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer; color: white;">сохранить дату</button>
-      <button id="btnDeleteOrder" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">удалить</button>
-      <button onclick="goToPrevious()" style="width: 100%; padding: 12px; background: #ffd700; border: none; border-radius: 8px; font-weight: bold; margin: 8px 0; cursor: pointer;">назад</button>
-    </div>
+    <button id="btnSaveDate">сохранить дату</button>
+    <button id="btnDeleteOrder">удалить</button>
+    <button onclick="goToPrevious()">назад</button>
   `;
 
   screen.innerHTML = detailsHtml;
