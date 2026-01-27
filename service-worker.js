@@ -1,11 +1,11 @@
-const CACHE_NAME = 'orders-app-v1';
+const CACHE_NAME = 'orders-app-v2';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/style.css',
-  '/script.js',
-  '/manifest.json',
-  '/icon-192.png'
+  '/orders-tracking/',
+  '/orders-tracking/index.html',
+  '/orders-tracking/style.css',
+  '/orders-tracking/script.js',
+  '/orders-tracking/manifest.json',
+  '/orders-tracking/icon-192.png'
 ];
 
 self.addEventListener('install', event => {
