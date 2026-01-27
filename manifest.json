@@ -3,14 +3,14 @@
   "name": "Учёт заказов — Александр",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "/orders-tracking/icon-192.png",
       "type": "image/png",
       "sizes": "192x192"
     }
   ],
-  "start_url": "/",
+  "start_url": "/orders-tracking/",
   "background_color": "#f5f5f5",
   "display": "standalone",
-  "scope": "/",
+  "scope": "/orders-tracking/",
   "theme_color": "#ffd700"
 }
