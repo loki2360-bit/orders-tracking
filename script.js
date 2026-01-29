@@ -14,7 +14,7 @@ if (currentTheme === 'dark') {
 let screenHistory = ['mainScreen'];
 
 // === GOOGLE SHEETS ===
-const GOOGLE_SHEET_WEB_APP_URL = '1IVQTlkgSJfjK63mgbXwQWK7cxVOE5TFJ1fQW3w579qk';
+const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwms8nimXqNd-jJfNQ1-QHcgIB0kUWiEre1pJ4R6cuTEZm1aJuhQSxmM-m3ax0-Xrpcdg/exec';
 
 // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
 
@@ -922,7 +922,7 @@ document.addEventListener("DOMContentLoaded", () => {
   settingsBtn.onclick = () => showSettings();
   document.body.appendChild(settingsBtn);
 
-  // Кнопка калькулятора (меню)
+  // Кнопка калькулятора
   const menuBtn = document.createElement('button');
   menuBtn.className = 'menu-btn-bottom';
   menuBtn.innerHTML = '☰';
