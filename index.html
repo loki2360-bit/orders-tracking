@@ -12,6 +12,19 @@
   <link rel="apple-touch-icon" href="/orders-tracking/icon-192.png">
 </head>
 <body>
+
+  <!-- Кнопка бокового меню -->
+  <button id="menuBtn" class="menu-btn">☰</button>
+
+  <!-- Боковое меню -->
+  <div id="sideMenu" class="side-menu">
+    <div class="menu-content">
+      <h3>Меню</h3>
+      <button id="openCalculator">Калькулятор м²</button>
+      <button id="closeMenu">Закрыть</button>
+    </div>
+  </div>
+
   <!-- Главный экран -->
   <div class="screen active" id="mainScreen">
     <div class="profile">
@@ -36,14 +49,14 @@
   <script src="script.js"></script>
   
   <!-- PWA Service Worker -->
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/orders-tracking/service-worker.js')
-        .then(reg => console.log('SW registered:', reg))
-        .catch(err => console.log('SW failed:', err));
-    });
-  }
-</script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/orders-tracking/service-worker.js')
+          .then(reg => console.log('SW registered:', reg))
+          .catch(err => console.log('SW failed:', err));
+      });
+    }
+  </script>
 </body>
 </html>
