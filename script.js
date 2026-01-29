@@ -14,7 +14,7 @@ if (currentTheme === 'dark') {
 let screenHistory = ['mainScreen'];
 
 // === GOOGLE SHEETS ===
-const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/ТВОЙ_УНИКАЛЬНЫЙ_URL/exec';
+const GOOGLE_SHEET_WEB_APP_URL = '1IVQTlkgSJfjK63mgbXwQWK7cxVOE5TFJ1fQW3w579qk';
 
 // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
 
@@ -876,13 +876,6 @@ function openCalculator() {
   });
 }
 
-// === БОКОВОЕ МЕНЮ ===
-
-function toggleMenu() {
-  const menu = document.getElementById('sideMenu');
-  menu.classList.toggle('active');
-}
-
 // === ИНИЦИАЛИЗАЦИЯ ===
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -929,17 +922,12 @@ document.addEventListener("DOMContentLoaded", () => {
   settingsBtn.onclick = () => showSettings();
   document.body.appendChild(settingsBtn);
 
-  // Боковое меню
-  const menuBtn = document.getElementById('menuBtn');
-  const closeMenuBtn = document.getElementById('closeMenu');
-  const openCalculatorBtn = document.getElementById('openCalculator');
-
-  if (menuBtn) menuBtn.addEventListener('click', toggleMenu);
-  if (closeMenuBtn) closeMenuBtn.addEventListener('click', toggleMenu);
-  if (openCalculatorBtn) openCalculatorBtn.addEventListener('click', () => {
-    toggleMenu();
-    openCalculator();
-  });
+  // Кнопка калькулятора (меню)
+  const menuBtn = document.createElement('button');
+  menuBtn.className = 'menu-btn-bottom';
+  menuBtn.innerHTML = '☰';
+  menuBtn.onclick = () => openCalculator();
+  document.body.appendChild(menuBtn);
 });
 
 function setupEventListeners() {
