@@ -14,7 +14,7 @@ if (currentTheme === 'dark') {
 let screenHistory = ['mainScreen'];
 
 // === GOOGLE SHEETS ===
-const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwms8nimXqNd-jJfNQ1-QHcgIB0kUWiEre1pJ4R6cuTEZm1aJuhQSxmM-m3ax0-Xrpcdg/exec';
+const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/ТВОЙ_УНИКАЛЬНЫЙ_URL/exec';
 
 // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
 
@@ -834,6 +834,55 @@ function showSettings() {
   });
 }
 
+// === КАЛЬКУЛЯТОР М² ===
+
+function openCalculator() {
+  const modal = document.createElement('div');
+  modal.className = 'calculator-modal';
+  modal.innerHTML = `
+    <div class="calculator-content">
+      <h3>Калькулятор м²</h3>
+      <input type="number" id="calcLength" placeholder="Длина (мм)" min="1">
+      <input type="number" id="calcWidth" placeholder="Ширина (мм)" min="1">
+      <input type="number" id="calcQuantity" placeholder="Количество" value="1" min="1">
+      <div class="result" id="calcResult">0 м²</div>
+      <button id="copyResult" class="copy-btn">Скопировать результат</button>
+      <button id="closeCalc">Закрыть</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const updateResult = () => {
+    const length = parseFloat(document.getElementById('calcLength').value) || 0;
+    const width = parseFloat(document.getElementById('calcWidth').value) || 0;
+    const quantity = parseFloat(document.getElementById('calcQuantity').value) || 1;
+    const m2 = (length * width / 1_000_000) * quantity;
+    document.getElementById('calcResult').textContent = m2.toFixed(4) + ' м²';
+  };
+
+  ['calcLength', 'calcWidth', 'calcQuantity'].forEach(id => {
+    document.getElementById(id).addEventListener('input', updateResult);
+  });
+
+  document.getElementById('copyResult').addEventListener('click', () => {
+    const result = document.getElementById('calcResult').textContent;
+    navigator.clipboard.writeText(result).then(() => {
+      alert('Результат скопирован!');
+    });
+  });
+
+  document.getElementById('closeCalc').addEventListener('click', () => {
+    document.body.removeChild(modal);
+  });
+}
+
+// === БОКОВОЕ МЕНЮ ===
+
+function toggleMenu() {
+  const menu = document.getElementById('sideMenu');
+  menu.classList.toggle('active');
+}
+
 // === ИНИЦИАЛИЗАЦИЯ ===
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -873,12 +922,24 @@ document.addEventListener("DOMContentLoaded", () => {
   loadMainScreen();
   setupEventListeners();
 
-  // Добавляем кнопку настроек
+  // Кнопка настроек
   const settingsBtn = document.createElement('button');
   settingsBtn.className = 'settings-btn';
   settingsBtn.innerHTML = '⚙️';
   settingsBtn.onclick = () => showSettings();
   document.body.appendChild(settingsBtn);
+
+  // Боковое меню
+  const menuBtn = document.getElementById('menuBtn');
+  const closeMenuBtn = document.getElementById('closeMenu');
+  const openCalculatorBtn = document.getElementById('openCalculator');
+
+  if (menuBtn) menuBtn.addEventListener('click', toggleMenu);
+  if (closeMenuBtn) closeMenuBtn.addEventListener('click', toggleMenu);
+  if (openCalculatorBtn) openCalculatorBtn.addEventListener('click', () => {
+    toggleMenu();
+    openCalculator();
+  });
 });
 
 function setupEventListeners() {
