@@ -11,7 +11,7 @@ body {
   color: #000;
 }
 
-/* === СВЕТЛАЯ ТЕМА (по умолчанию) === */
+/* === СВЕТЛАЯ ТЕМА === */
 .screen {
   max-width: 400px;
   margin: 0 auto;
@@ -283,4 +283,120 @@ body.dark-theme .theme-option {
 
 .theme-option span {
   margin-left: 10px;
+}
+
+/* === БОКОВОЕ МЕНЮ === */
+.menu-btn {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  width: 40px;
+  height: 40px;
+  background: #ffffff;
+  border: none;
+  border-radius: 50%;
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: 4px 4px 8px rgba(0,0,0,0.2), -4px -4px 8px rgba(255,255,255,0.8);
+  z-index: 1000;
+}
+
+body.dark-theme .menu-btn {
+  background: #2d2d2d;
+  box-shadow: 4px 4px 8px rgba(0,0,0,0.4), -4px -4px 8px rgba(255,255,255,0.05);
+  color: #f0f0f0;
+}
+
+.side-menu {
+  position: fixed;
+  top: 0;
+  left: -300px;
+  width: 280px;
+  height: 100%;
+  background: #ffffff;
+  box-shadow: 6px 0 12px rgba(0,0,0,0.1);
+  transition: left 0.3s ease;
+  z-index: 1500;
+}
+
+body.dark-theme .side-menu {
+  background: #2d2d2d;
+}
+
+.side-menu.active {
+  left: 0;
+}
+
+.menu-content {
+  padding: 20px;
+}
+
+.menu-content h3 {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.menu-content button {
+  width: 100%;
+  margin: 10px 0;
+}
+
+/* === КАЛЬКУЛЯТОР === */
+.calculator-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.calculator-content {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 350px;
+  box-shadow: 6px 6px 12px rgba(0,0,0,0.2), -6px -6px 12px rgba(255,255,255,0.8);
+}
+
+body.dark-theme .calculator-content {
+  background: #2d2d2d;
+  box-shadow: 6px 6px 12px rgba(0,0,0,0.5), -6px -6px 12px rgba(255,255,255,0.05);
+}
+
+.calculator-content h3 {
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.calculator-content input {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0;
+  border-radius: 12px;
+  border: none;
+  background: #f9f9f9;
+  box-shadow: inset 2px 2px 4px rgba(0,0,0,0.1), inset -2px -2px 4px rgba(255,255,255,0.8);
+}
+
+body.dark-theme .calculator-content input {
+  background: #3a3a3a;
+  color: #f0f0f0;
+}
+
+.result {
+  font-size: 18px;
+  font-weight: bold;
+  margin: 15px 0;
+  text-align: center;
+}
+
+.copy-btn {
+  background: #4CAF50 !important;
+  color: white !important;
 }
