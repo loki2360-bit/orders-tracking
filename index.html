@@ -6,6 +6,9 @@
   <title>Учёт заказов</title>
   <link rel="stylesheet" href="style.css" />
   
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
   <!-- PWA -->
   <link rel="manifest" href="/orders-tracking/manifest.json">
   <meta name="theme-color" content="#ffd700">
@@ -15,8 +18,8 @@
 
   <!-- Главный экран -->
   <div class="screen active" id="mainScreen">
-    <div class="profile">
-     <div class="avatar" id="avatarBtn">👤</div>
+    <div class="profile" id="profile">
+      <div class="avatar" id="avatarBtn">👤</div>
       <div class="info">
         <h2>Александр</h2>
         <p>folder оператор №1Е2 352726 030</p>
@@ -30,6 +33,12 @@
       <p>заработано за смену:</p>
       <h2 id="dailyEarnings">0₽</h2>
     </div>
+
+    <!-- График -->
+    <div class="chart-container">
+      <canvas id="earningsChart"></canvas>
+    </div>
+
     <button id="btnOrders">список заказов</button>
     <button id="btnShifts">смены</button>
   </div>
