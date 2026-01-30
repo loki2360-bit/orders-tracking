@@ -14,7 +14,7 @@ if (currentTheme === 'dark') {
 let screenHistory = ['mainScreen'];
 
 // === GOOGLE SHEETS ===
-const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwms8nimXqNd-jJfNQ1-QHcgIB0kUWiEre1pJ4R6cuTEZm1aJuhQSxmM-m3ax0-Xrpcdg/exec';
+const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/ТВОЙ_УНИКАЛЬНЫЙ_URL/exec';
 
 // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
 
@@ -215,6 +215,83 @@ function addToHistory(screenId) {
   }
 }
 
+// === ГРАФИК ЗАРАБОТКА ===
+
+function getLast7DaysEarnings() {
+  const today = new Date();
+  const dates = [];
+  const earnings = [];
+
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    const dateStr = date.toISOString().split('T')[0];
+    dates.push(dateStr);
+
+    let sum = 0;
+    data.orders.forEach(order => {
+      if (order.status === 'closed' && order.date === dateStr) {
+        sum += order.price || calculateOrderPrice(order.operations || []);
+      }
+    });
+    earnings.push(Math.round(sum * 100) / 100);
+  }
+
+  return { dates, earnings };
+}
+
+let earningsChart = null;
+
+function renderEarningsChart() {
+  const ctx = document.getElementById('earningsChart').getContext('2d');
+
+  if (earningsChart) {
+    earningsChart.destroy();
+  }
+
+  const { dates, earnings } = getLast7DaysEarnings();
+
+  earningsChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: dates,
+      datasets: [{
+        label: 'Заработок, ₽',
+        data: earnings,
+        backgroundColor: '#ffd700',
+        borderColor: '#000',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            color: document.body.classList.contains('dark-theme') ? '#f0f0f0' : '#333'
+          },
+          grid: {
+            color: document.body.classList.contains('dark-theme') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
+          }
+        },
+        x: {
+          ticks: {
+            color: document.body.classList.contains('dark-theme') ? '#f0f0f0' : '#333'
+          },
+          grid: {
+            display: false
+          }
+        }
+      }
+    }
+  });
+}
+
 // === ЭКРАНЫ ===
 
 function loadMainScreen() {
@@ -237,6 +314,19 @@ function loadMainScreen() {
 
   document.getElementById("totalEarnings").textContent = `${total}₽`;
   document.getElementById("dailyEarnings").textContent = `${daily}₽`;
+
+  // Рендерим график
+  renderEarningsChart();
+
+  // Автоматическое уведомление о плане
+  const planNotified = localStorage.getItem('planNotifiedToday') === today;
+  if (daily >= 3000 && !planNotified) {
+    setTimeout(() => {
+      alert('🎉 План на смену выполнен!');
+      localStorage.setItem('planNotifiedToday', today);
+    }, 1000);
+  }
+
   switchScreen('mainScreen');
 }
 
@@ -703,7 +793,7 @@ function showAddOperationForm(orderId) {
   });
 }
 
-// === ДЕТАЛИ ЗАКАЗА (С РЕДАКТИРУЕМЫМ ПОЛЕМ ДАТЫ) ===
+// === ДЕТАЛИ ЗАКАЗА ===
 
 function showOrderDetails(orderId) {
   const order = data.orders.find(o => o.id === orderId);
@@ -876,6 +966,7 @@ function openCalculator() {
   });
 }
 
+// === ПЛАН (аватарка) ===
 function openPlanModal() {
   const today = new Date().toISOString().split('T')[0];
   let daily = 0;
@@ -891,7 +982,6 @@ function openPlanModal() {
   const planAchieved = daily >= 3000;
   const progressPercent = Math.min(100, (daily / 3000) * 100);
 
-  // Создаём модальное окно
   const modal = document.createElement('div');
   modal.className = 'plan-modal';
   modal.innerHTML = `
@@ -911,7 +1001,6 @@ function openPlanModal() {
 
   const progressFill = modal.querySelector('.progress-fill');
 
-  // Добавляем свечение при выполнении
   if (planAchieved) {
     progressFill.classList.add('glowing');
     
