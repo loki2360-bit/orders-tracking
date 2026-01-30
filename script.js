@@ -14,7 +14,7 @@ if (currentTheme === 'dark') {
 let screenHistory = ['mainScreen'];
 
 // === GOOGLE SHEETS ===
-const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwms8nimXqNd-jJfNQ1-QHcgIB0kUWiEre1pJ4R6cuTEZm1aJuhQSxmM-m3ax0-Xrpcdg/exec';
+const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/ТВОЙ_УНИКАЛЬНЫЙ_URL/exec';
 
 // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
 
@@ -876,6 +876,49 @@ function openCalculator() {
   });
 }
 
+// === ПЛАН (аватарка) ===
+
+function openPlanModal() {
+  const today = new Date().toISOString().split('T')[0];
+  let daily = 0;
+
+  data.orders.forEach(order => {
+    if (order.status === 'closed' && order.date === today) {
+      const price = order.price || calculateOrderPrice(order.operations || []);
+      daily += price;
+    }
+  });
+
+  daily = Math.round(daily * 100) / 100;
+  const planAchieved = daily >= 3000;
+
+  const modal = document.createElement('div');
+  modal.className = 'plan-modal';
+  modal.innerHTML = `
+    <div class="plan-content">
+      <div class="plan-title">План на смену</div>
+      <div class="plan-amount ${planAchieved ? 'achieved' : 'under'}">
+        ${daily}₽ / 3000₽
+      </div>
+      ${planAchieved ? '<div class="gift-icon" id="giftIcon">🎁</div>' : ''}
+      <button style="margin-top:20px;" onclick="this.parentElement.parentElement.remove()">Закрыть</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  if (planAchieved) {
+    document.getElementById('giftIcon').addEventListener('click', () => {
+      const gift = document.getElementById('giftIcon');
+      gift.classList.add('animate');
+
+      setTimeout(() => {
+        alert('🎉 План выполнен! Молодец!');
+        modal.remove();
+      }, 1200);
+    });
+  }
+}
+
 // === ИНИЦИАЛИЗАЦИЯ ===
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -928,6 +971,9 @@ document.addEventListener("DOMContentLoaded", () => {
   menuBtn.innerHTML = '☰';
   menuBtn.onclick = () => openCalculator();
   document.body.appendChild(menuBtn);
+
+  // Аватарка → план
+  document.getElementById('avatarBtn').addEventListener('click', openPlanModal);
 });
 
 function setupEventListeners() {
