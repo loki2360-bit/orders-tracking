@@ -495,3 +495,13 @@ body.dark-theme .progress-bar {
 body.dark-theme .progress-fill {
   background: linear-gradient(90deg, #ffd700, #4CAF50);
 }
+/* === ГРАФИК ЗАРАБОТКА === */
+.chart-container {
+  position: relative;
+  height: 150px;
+  margin: 20px 0;
+}
+
+body.dark-theme .chart-container {
+  background: transparent;
+}
