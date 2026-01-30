@@ -877,7 +877,6 @@ function openCalculator() {
 }
 
 // === ПЛАН (аватарка) ===
-
 function openPlanModal() {
   const today = new Date().toISOString().split('T')[0];
   let daily = 0;
@@ -901,7 +900,7 @@ function openPlanModal() {
         ${daily}₽ / 3000₽
       </div>
       ${planAchieved ? '<div class="gift-icon" id="giftIcon">🎁</div>' : ''}
-      <button style="margin-top:20px;" onclick="this.parentElement.parentElement.remove()">Закрыть</button>
+      <button style="margin-top:16px; width:100%; padding:10px; background:#ffd700; border:none; border-radius:8px; font-weight:bold;" onclick="this.parentElement.parentElement.remove()">Закрыть</button>
     </div>
   `;
   document.body.appendChild(modal);
