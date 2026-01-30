@@ -876,7 +876,6 @@ function openCalculator() {
   });
 }
 
-// === ПЛАН (аватарка) ===
 function openPlanModal() {
   const today = new Date().toISOString().split('T')[0];
   let daily = 0;
@@ -890,7 +889,9 @@ function openPlanModal() {
 
   daily = Math.round(daily * 100) / 100;
   const planAchieved = daily >= 3000;
+  const progressPercent = Math.min(100, (daily / 3000) * 100);
 
+  // Создаём модальное окно
   const modal = document.createElement('div');
   modal.className = 'plan-modal';
   modal.innerHTML = `
@@ -899,13 +900,21 @@ function openPlanModal() {
       <div class="plan-amount ${planAchieved ? 'achieved' : 'under'}">
         ${daily}₽ / 3000₽
       </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: ${progressPercent}%"></div>
+      </div>
       ${planAchieved ? '<div class="gift-icon" id="giftIcon">🎁</div>' : ''}
       <button style="margin-top:16px; width:100%; padding:10px; background:#ffd700; border:none; border-radius:8px; font-weight:bold;" onclick="this.parentElement.parentElement.remove()">Закрыть</button>
     </div>
   `;
   document.body.appendChild(modal);
 
+  const progressFill = modal.querySelector('.progress-fill');
+
+  // Добавляем свечение при выполнении
   if (planAchieved) {
+    progressFill.classList.add('glowing');
+    
     document.getElementById('giftIcon').addEventListener('click', () => {
       const gift = document.getElementById('giftIcon');
       gift.classList.add('animate');
