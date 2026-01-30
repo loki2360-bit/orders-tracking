@@ -11,7 +11,7 @@ if (currentTheme === 'dark') {
 }
 
 // === ГРАФИК ===
-let isChartVisible = false; // ← изначально скрыт
+let isChartVisible = false; // изначально скрыт
 
 // История экранов
 let screenHistory = ['mainScreen'];
@@ -220,6 +220,33 @@ function addToHistory(screenId) {
 
 // === ГРАФИК ЗАРАБОТКА ===
 
+function normalizeDateForComparison(dateStr) {
+  if (!dateStr) return '';
+  if (typeof dateStr !== 'string') return '';
+
+  // Уже в формате ГГГГ-ММ-ДД
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    return dateStr;
+  }
+
+  // Формат ДД.ММ.ГГГГ
+  if (dateStr.includes('.')) {
+    const parts = dateStr.split('.');
+    if (parts.length === 3) {
+      const [d, m, y] = parts;
+      return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+    }
+  }
+
+  // Попытка распарсить как Date
+  const d = new Date(dateStr);
+  if (!isNaN(d.getTime())) {
+    return d.toISOString().split('T')[0];
+  }
+
+  return '';
+}
+
 function getLast7DaysEarnings() {
   const today = new Date();
   const dates = [];
@@ -228,13 +255,16 @@ function getLast7DaysEarnings() {
   for (let i = 6; i >= 0; i--) {
     const date = new Date(today);
     date.setDate(date.getDate() - i);
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = date.toISOString().split('T')[0]; // "2026-01-24"
     dates.push(dateStr);
 
     let sum = 0;
     data.orders.forEach(order => {
-      if (order.status === 'closed' && order.date === dateStr) {
-        sum += order.price || calculateOrderPrice(order.operations || []);
+      if (order.status === 'closed') {
+        const normalizedOrderDate = normalizeDateForComparison(order.date);
+        if (normalizedOrderDate === dateStr) {
+          sum += order.price || calculateOrderPrice(order.operations || []);
+        }
       }
     });
     earnings.push(Math.round(sum * 100) / 100);
@@ -256,7 +286,7 @@ function renderEarningsChart() {
 
   earningsChart = new Chart(ctx, {
     type: 'bar',
-    data: {
+     {
       labels: dates,
       datasets: [{
         label: 'Заработок, ₽',
@@ -306,7 +336,8 @@ function loadMainScreen() {
     if (order.status === 'closed') {
       const price = order.price || calculateOrderPrice(order.operations || []);
       total += price;
-      if (order.date === today) {
+      const normalizedOrderDate = normalizeDateForComparison(order.date);
+      if (normalizedOrderDate === today) {
         daily += price;
       }
     }
@@ -408,7 +439,7 @@ function showShiftsScreen() {
 }
 
 function showOrdersForDay(date) {
-  const orders = data.orders.filter(o => o.date === date);
+  const orders = data.orders.filter(o => normalizeDateForComparison(o.date) === date);
   const container = document.getElementById("ordersOfDay");
   container.innerHTML = "";
   let total = 0;
@@ -437,7 +468,7 @@ async function saveReportToGoogleSheet(date) {
     return;
   }
 
-  const orders = data.orders.filter(o => o.date === date);
+  const orders = data.orders.filter(o => normalizeDateForComparison(o.date) === date);
   if (orders.length === 0) {
     alert("Нет заказов за эту дату.");
     return;
@@ -504,9 +535,9 @@ async function loadOrdersFromGoogle() {
       let dateStr = '';
 
       if (order.date) {
-        dateStr = normalizeDate(order.date);
+        dateStr = normalizeDateForComparison(order.date);
       } else if (order['Дата']) {
-        dateStr = normalizeDate(order['Дата']);
+        dateStr = normalizeDateForComparison(order['Дата']);
       }
 
       if (!dateStr || dateStr === 'Invalid date') {
@@ -546,26 +577,6 @@ async function loadOrdersFromGoogle() {
     console.error("💥 Ошибка:", err);
     alert("Не удалось загрузить данные. Подробности в консоли (F12).");
   }
-}
-
-function normalizeDate(dateVal) {
-  if (!dateVal) return '';
-  if (typeof dateVal === 'string') {
-    if (dateVal.includes('T')) {
-      return dateVal.split('T')[0];
-    } else if (dateVal.includes('.')) {
-      const parts = dateVal.split('.');
-      if (parts.length === 3) {
-        return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-      }
-    } else {
-      return dateVal;
-    }
-  } else if (typeof dateVal === 'number') {
-    const jsDate = new Date((dateVal - 25569) * 86400 * 1000);
-    return jsDate.toISOString().split('T')[0];
-  }
-  return '';
 }
 
 // === СПИСОК ЗАКАЗОВ ===
@@ -628,9 +639,10 @@ function displayOrdersGroupedByDate() {
   const grouped = {};
 
   data.orders.forEach(order => {
-    if (order.date && order.date !== 'Invalid date') {
-      if (!grouped[order.date]) grouped[order.date] = [];
-      grouped[order.date].push(order);
+    const normalizedDate = normalizeDateForComparison(order.date);
+    if (normalizedDate && normalizedDate !== 'Invalid date') {
+      if (!grouped[normalizedDate]) grouped[normalizedDate] = [];
+      grouped[normalizedDate].push(order);
     }
   });
 
@@ -820,7 +832,7 @@ function showOrderDetails(orderId) {
     document.body.appendChild(screen);
   }
 
-  const displayDate = order.date || new Date().toISOString().split('T')[0];
+  const displayDate = normalizeDateForComparison(order.date) || new Date().toISOString().split('T')[0];
 
   let detailsHtml = `
     <h2 class="title">${order.id}</h2>
@@ -985,9 +997,12 @@ function openPlanModal() {
   let daily = 0;
 
   data.orders.forEach(order => {
-    if (order.status === 'closed' && order.date === today) {
-      const price = order.price || calculateOrderPrice(order.operations || []);
-      daily += price;
+    if (order.status === 'closed') {
+      const normalizedOrderDate = normalizeDateForComparison(order.date);
+      if (normalizedOrderDate === today) {
+        const price = order.price || calculateOrderPrice(order.operations || []);
+        daily += price;
+      }
     }
   });
 
@@ -1032,6 +1047,14 @@ function openPlanModal() {
 // === ИНИЦИАЛИЗАЦИЯ ===
 
 document.addEventListener("DOMContentLoaded", () => {
+  // === НОРМАЛИЗАЦИЯ ДАТ ПРИ ЗАПУСКЕ ===
+  data.orders.forEach(order => {
+    if (typeof order.date === 'string') {
+      order.date = normalizeDateForComparison(order.date);
+    }
+  });
+  saveData();
+
   let migrated = false;
   data.orders.forEach(order => {
     if (!order.operations) {
