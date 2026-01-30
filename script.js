@@ -10,11 +10,14 @@ if (currentTheme === 'dark') {
   document.body.classList.add('dark-theme');
 }
 
+// === ГРАФИК ===
+let isChartVisible = false; // ← изначально скрыт
+
 // История экранов
 let screenHistory = ['mainScreen'];
 
 // === GOOGLE SHEETS ===
-const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/ТВОЙ_УНИКАЛЬНЫЙ_URL/exec';
+const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwms8nimXqNd-jJfNQ1-QHcgIB0kUWiEre1pJ4R6cuTEZm1aJuhQSxmM-m3ax0-Xrpcdg/exec';
 
 // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
 
@@ -257,7 +260,7 @@ function renderEarningsChart() {
       labels: dates,
       datasets: [{
         label: 'Заработок, ₽',
-        data: earnings,
+         earnings,
         backgroundColor: '#ffd700',
         borderColor: '#000',
         borderWidth: 1
@@ -315,8 +318,18 @@ function loadMainScreen() {
   document.getElementById("totalEarnings").textContent = `${total}₽`;
   document.getElementById("dailyEarnings").textContent = `${daily}₽`;
 
-  // Рендерим график
-  renderEarningsChart();
+  // Управление видимостью графика
+  const chartContainer = document.getElementById('chartContainer');
+  const toggleBtn = document.getElementById('toggleChart');
+  
+  if (isChartVisible) {
+    chartContainer.style.display = 'block';
+    toggleBtn.textContent = 'Скрыть график';
+    renderEarningsChart();
+  } else {
+    chartContainer.style.display = 'none';
+    toggleBtn.textContent = 'Показать график';
+  }
 
   // Автоматическое уведомление о плане
   const planNotified = localStorage.getItem('planNotifiedToday') === today;
@@ -1071,6 +1084,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Аватарка → план
   document.getElementById('avatarBtn').addEventListener('click', openPlanModal);
+
+  // Переключение графика
+  document.getElementById('toggleChart').addEventListener('click', () => {
+    isChartVisible = !isChartVisible;
+    loadMainScreen();
+  });
 });
 
 function setupEventListeners() {
