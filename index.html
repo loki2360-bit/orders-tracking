@@ -29,13 +29,14 @@
       <p>за все время</p>
       <h1 id="totalEarnings">0₽</h1>
     </div>
+    <button id="toggleChart" class="toggle-chart-btn">Показать график</button>
     <div class="today-earnings">
       <p>заработано за смену:</p>
       <h2 id="dailyEarnings">0₽</h2>
     </div>
 
-    <!-- График -->
-    <div class="chart-container">
+    <!-- График (изначально скрыт) -->
+    <div class="chart-container" id="chartContainer" style="display:none;">
       <canvas id="earningsChart"></canvas>
     </div>
 
