@@ -505,21 +505,3 @@ body.dark-theme .progress-fill {
 body.dark-theme .chart-container {
   background: transparent;
 }
-/* === КНОПКА ПЕРЕКЛЮЧЕНИЯ ГРАФИКА === */
-.toggle-chart-btn {
-  background: #eee;
-  color: #333;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-size: 12px;
-  cursor: pointer;
-  margin: 8px 0;
-  box-shadow: 2px 2px 4px rgba(0,0,0,0.1), -2px -2px 4px rgba(255,255,255,0.8);
-}
-
-body.dark-theme .toggle-chart-btn {
-  background: #3a3a3a;
-  color: #f0f0f0;
-  box-shadow: 2px 2px 4px rgba(0,0,0,0.3), -2px -2px 4px rgba(255,255,255,0.05);
-}
