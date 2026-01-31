@@ -1,5 +1,6 @@
 // === ДАННЫЕ ===
 let data = JSON.parse(localStorage.getItem('ordersData')) || { orders: [] };
+let appData = JSON.parse(localStorage.getItem('appData')) || { createdCount: 0, activationKeyUsed: false };
 let notifications = JSON.parse(localStorage.getItem('notifications')) || [];
 let sentReports = JSON.parse(localStorage.getItem('sentReports')) || [];
 
@@ -10,13 +11,13 @@ if (currentTheme === 'dark') {
 }
 
 // === ГРАФИК ===
-let isChartVisible = false;
+let isChartVisible = false; // ← изначально скрыт
 
 // История экранов
 let screenHistory = ['mainScreen'];
 
 // === GOOGLE SHEETS ===
-const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwms8nimXqNd-jJfNQ1-QHcgIB0kUWiEre1pJ4R6cuTEZm1aJuhQSxmM-m3ax0-Xrpcdg/exec';
+const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/ТВОЙ_УНИКАЛЬНЫЙ_URL/exec';
 
 // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
 
@@ -53,12 +54,137 @@ function calculateOrderPrice(operations) {
   return Math.round(total * 100) / 100;
 }
 
+function calculateSingleOperationPrice(op) {
+  const rates = {
+    "Распил": 65,
+    "Линейный": 26,
+    "Склейка простая": 165,
+    "Склейка с обгоном": 210,
+    "Фрезер фаски": 16,
+    "Пазовка": 30,
+    "Время": 330
+  };
+
+  let price = 0;
+  const qty = op.quantity || 1;
+  if (["Распил", "Склейка простая", "Склейка с обгоном"].includes(op.type)) {
+    price += op.m2 * rates[op.type] * qty;
+  }
+  if (["Линейный", "Фрезер фаски", "Пазовка"].includes(op.type)) {
+    price += op.pm * rates[op.type] * qty;
+  }
+  if (op.type === "Время") {
+    price += op.time * rates[op.type] * qty;
+  }
+  return Math.round(price * 100) / 100;
+}
+
+function toggleTheme(theme) {
+  currentTheme = theme;
+  localStorage.setItem('theme', theme);
+  document.body.classList.toggle('dark-theme', theme === 'dark');
+}
+
+// === УВЕДОМЛЕНИЯ ===
+
+function createNotification(orderId, message) {
+  const now = new Date().toISOString();
+  const notification = {
+    id: `notif-${Date.now()}`,
+    orderId: orderId,
+    message: message,
+    timestamp: now,
+    read: false
+  };
+  notifications.push(notification);
+  saveData();
+  updateNotificationBadge();
+  updateNotificationIcon();
+}
+
+function checkOverdueOrders() {
+  const now = new Date();
+  data.orders.forEach(order => {
+    if (order.status === 'open') {
+      let orderDate = new Date(order.createdAt);
+      if ((now - orderDate) > 15 * 60 * 1000) {
+        const existing = notifications.find(n => n.orderId === order.id && !n.read);
+        if (!existing) {
+          createNotification(order.id, `Ваш заказ ${order.id}, не закрыт`);
+        }
+      }
+    }
+  });
+}
+
 function updateNotificationBadge() {
   const unreadCount = notifications.filter(n => !n.read).length;
   const badge = document.getElementById('notificationBadgeInList');
   if (badge) {
     badge.textContent = unreadCount > 0 ? unreadCount : '';
     badge.style.display = unreadCount > 0 ? 'flex' : 'none';
+  }
+}
+
+function updateNotificationIcon() {
+  const icon = document.getElementById('notificationIcon');
+  if (icon) {
+    icon.style.color = notifications.length > 0 ? 'red' : 'black';
+  }
+}
+
+function showNotificationsScreen() {
+  let screen = document.getElementById("notificationsScreen");
+  if (!screen) {
+    screen = document.createElement("div");
+    screen.className = "screen";
+    screen.id = "notificationsScreen";
+    screen.innerHTML = `
+      <h2>УВЕДОМЛЕНИЯ</h2>
+      <button id="btnClearNotifications">очистить все</button>
+      <div id="notificationsList"></div>
+      <button onclick="goToPrevious()">назад</button>
+    `;
+    document.body.appendChild(screen);
+
+    document.getElementById("btnClearNotifications").addEventListener("click", clearAllNotifications);
+
+    const list = document.getElementById("notificationsList");
+    list.innerHTML = "";
+
+    if (notifications.length === 0) {
+      list.innerHTML = `<p>Нет уведомлений</p>`;
+    } else {
+      notifications.forEach(notification => {
+        const item = document.createElement("div");
+        item.className = `notification-item ${notification.read ? 'read' : 'unread'}`;
+        item.innerHTML = `<span>${notification.message}</span>`;
+        item.onclick = () => markAsRead(notification.id);
+        list.appendChild(item);
+      });
+    }
+  }
+  switchScreen('notificationsScreen');
+}
+
+function markAsRead(notificationId) {
+  const notification = notifications.find(n => n.id === notificationId);
+  if (notification) {
+    notification.read = true;
+    saveData();
+    updateNotificationBadge();
+    updateNotificationIcon();
+    showNotificationsScreen();
+  }
+}
+
+function clearAllNotifications() {
+  if (confirm("Вы уверены, что хотите очистить все уведомления?")) {
+    notifications = [];
+    saveData();
+    updateNotificationBadge();
+    updateNotificationIcon();
+    showNotificationsScreen();
   }
 }
 
@@ -85,17 +211,16 @@ function goToPrevious() {
   }
 }
 
+function addToHistory(screenId) {
+  if (screenHistory[screenHistory.length - 1] !== screenId) {
+    screenHistory.push(screenId);
+    history.pushState({}, '', '#' + screenId);
+  }
+}
+
 // === ГРАФИК ЗАРАБОТКА ===
 
-let earningsChart = null;
-
-function renderEarningsChart() {
-  const ctx = document.getElementById('earningsChart').getContext('2d');
-
-  if (earningsChart) {
-    earningsChart.destroy();
-  }
-
+function getLast7DaysEarnings() {
   const today = new Date();
   const dates = [];
   const earnings = [];
@@ -115,9 +240,23 @@ function renderEarningsChart() {
     earnings.push(Math.round(sum * 100) / 100);
   }
 
+  return { dates, earnings };
+}
+
+let earningsChart = null;
+
+function renderEarningsChart() {
+  const ctx = document.getElementById('earningsChart').getContext('2d');
+
+  if (earningsChart) {
+    earningsChart.destroy();
+  }
+
+  const { dates, earnings } = getLast7DaysEarnings();
+
   earningsChart = new Chart(ctx, {
     type: 'bar',
-     {
+    data: {
       labels: dates,
       datasets: [{
         label: 'Заработок, ₽',
@@ -138,11 +277,17 @@ function renderEarningsChart() {
           beginAtZero: true,
           ticks: {
             color: document.body.classList.contains('dark-theme') ? '#f0f0f0' : '#333'
+          },
+          grid: {
+            color: document.body.classList.contains('dark-theme') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
           }
         },
         x: {
           ticks: {
             color: document.body.classList.contains('dark-theme') ? '#f0f0f0' : '#333'
+          },
+          grid: {
+            display: false
           }
         }
       }
@@ -173,20 +318,20 @@ function loadMainScreen() {
   document.getElementById("totalEarnings").textContent = `${total}₽`;
   document.getElementById("dailyEarnings").textContent = `${daily}₽`;
 
+  // Управление видимостью графика
   const chartContainer = document.getElementById('chartContainer');
   const toggleBtn = document.getElementById('toggleChart');
   
-  if (chartContainer && toggleBtn) {
-    if (isChartVisible) {
-      chartContainer.style.display = 'block';
-      toggleBtn.textContent = 'Скрыть график';
-      renderEarningsChart();
-    } else {
-      chartContainer.style.display = 'none';
-      toggleBtn.textContent = 'Показать график';
-    }
+  if (isChartVisible) {
+    chartContainer.style.display = 'block';
+    toggleBtn.textContent = 'Скрыть график';
+    renderEarningsChart();
+  } else {
+    chartContainer.style.display = 'none';
+    toggleBtn.textContent = 'Показать график';
   }
 
+  // Автоматическое уведомление о плане
   const planNotified = localStorage.getItem('planNotifiedToday') === today;
   if (daily >= 3000 && !planNotified) {
     setTimeout(() => {
@@ -198,7 +343,14 @@ function loadMainScreen() {
   switchScreen('mainScreen');
 }
 
-// === СМЕНЫ ===
+// === ФУНКЦИЯ СБРОСА ОТЧЁТОВ ===
+function resetSentReports() {
+  if (confirm("Вы уверены? Это позволит отправить отчёты за все даты заново.")) {
+    sentReports = [];
+    saveData();
+    alert("История отправленных отчётов очищена.");
+  }
+}
 
 function showShiftsScreen() {
   let screen = document.getElementById("shiftScreen");
@@ -207,16 +359,14 @@ function showShiftsScreen() {
     screen.className = "screen";
     screen.id = "shiftScreen";
     screen.innerHTML = `
-      <h2 class="title">Смена</h2>
+      <h2 class="title">введите дату</h2>
       <input type="date" id="dateInput">
-      <button id="showOrdersForDay">Показать</button>
+      <button id="showOrdersForDay">показать</button>
       <div id="ordersOfDay"></div>
       <div id="totalOfDay"></div>
-      
-      <button id="btnExportShift">Сохранить смену</button>
-      <button id="btnImportShift">Загрузить смену</button>
-      
-      <button onclick="goToPrevious()">Назад</button>
+      <button id="btnSaveReport">сохранить отчёт</button>
+      <button id="resetReportsBtn" style="display:none;">сбросить отчёты</button>
+      <button onclick="goToPrevious()">назад</button>
     `;
     document.body.appendChild(screen);
 
@@ -227,14 +377,31 @@ function showShiftsScreen() {
       showOrdersForDay(date);
     });
 
-    document.getElementById("btnExportShift").addEventListener("click", () => {
+    document.getElementById("btnSaveReport").addEventListener("click", () => {
       const date = document.getElementById("dateInput").value;
-      if (date) exportShiftData(date);
+      if (!date) {
+        alert("Выберите дату");
+        return;
+      }
+      saveReportToGoogleSheet(date);
     });
 
-    document.getElementById("btnImportShift").addEventListener("click", () => {
-      const date = document.getElementById("dateInput").value;
-      if (date) importShiftData(date);
+    document.getElementById("resetReportsBtn").addEventListener("click", resetSentReports);
+
+    let clickCount = 0;
+    let lastClickTime = 0;
+    document.querySelector("#shiftScreen .title").addEventListener("click", () => {
+      const now = Date.now();
+      if (now - lastClickTime < 500) {
+        clickCount++;
+      } else {
+        clickCount = 1;
+      }
+      lastClickTime = now;
+      if (clickCount >= 3) {
+        document.getElementById("resetReportsBtn").style.display = "block";
+        clickCount = 0;
+      }
     });
   }
   switchScreen('shiftScreen');
@@ -262,147 +429,54 @@ function showOrdersForDay(date) {
   document.getElementById("totalOfDay").innerHTML = `<h3>итого: ${total}₽</h3>`;
 }
 
-// === ЭКСПОРТ/ИМПОРТ СМЕНЫ ===
+// === ОТПРАВКА ОТЧЁТА ===
 
-function exportShiftData(date) {
-  const orders = data.orders.filter(o => o.date === date);
-  if (orders.length === 0) {
-    alert("Нет заказов за эту дату");
+async function saveReportToGoogleSheet(date) {
+  if (sentReports.includes(date)) {
+    alert(`Отчёт за ${date} уже отправлен.`);
     return;
   }
 
-  const jsonStr = JSON.stringify({ date, orders }, null, 2);
-  navigator.clipboard.writeText(jsonStr).then(() => {
-    alert(`✅ Смена ${date} скопирована!\nВставьте в заметку или файл.`);
-  }).catch(() => {
-    alert('Скопируйте вручную:\n\n' + jsonStr);
-  });
-}
-
-function importShiftData(targetDate) {
-  navigator.clipboard.readText().then(text => {
-    try {
-      const shiftData = JSON.parse(text);
-      if (!shiftData.orders) throw new Error('Нет заказов');
-
-      data.orders = data.orders.filter(o => o.date !== targetDate);
-      const newOrders = shiftData.orders.map(order => ({ ...order, date: targetDate }));
-      data.orders = [...data.orders, ...newOrders];
-      saveData();
-      alert(`✅ Смена загружена за ${targetDate}`);
-      showOrdersForDay(targetDate);
-    } catch (err) {
-      alert('❌ Ошибка: ' + err.message);
-    }
-  }).catch(() => {
-    alert('Не удалось прочитать буфер. Убедитесь, что там JSON-данные.');
-  });
-}
-
-// === СПИСОК ЗАКАЗОВ ===
-
-function showOrdersList() {
-  let screen = document.getElementById("ordersListScreen");
-  if (!screen) {
-    screen = document.createElement("div");
-    screen.className = "screen";
-    screen.id = "ordersListScreen";
-    screen.innerHTML = `
-      <div class="header-with-notif">
-        <h2 class="title">СПИСОК ЗАКАЗОВ</h2>
-        <button id="btnNotificationsInList" class="notification-btn">✉️</button>
-      </div>
-      <input type="text" id="searchInput" placeholder="поиск по номеру заказа">
-      <button id="btnCreateNew">создать новый</button>
-      <button id="btnLoadFromGoogle">загрузить из google</button>
-      <button id="btnBack">назад</button>
-      <div id="allOrdersList"></div>
-    `;
-    document.body.appendChild(screen);
-
-    document.getElementById("searchInput").addEventListener("input", function() {
-      const query = this.value.trim().toLowerCase();
-      if (query) searchOrders(query); else displayOrdersGroupedByDate();
-    });
-
-    document.getElementById("btnCreateNew").addEventListener("click", createOrderForm);
-    document.getElementById("btnLoadFromGoogle").addEventListener("click", loadOrdersFromGoogle);
-    document.getElementById("btnBack").addEventListener("click", goToPrevious);
-
-    updateNotificationBadge();
-    displayOrdersGroupedByDate();
-  } else {
-    const query = document.getElementById("searchInput").value.trim().toLowerCase();
-    if (query) searchOrders(query); else displayOrdersGroupedByDate();
-    updateNotificationBadge();
+  const orders = data.orders.filter(o => o.date === date);
+  if (orders.length === 0) {
+    alert("Нет заказов за эту дату.");
+    return;
   }
 
-  switchScreen('ordersListScreen');
-}
-
-function displayOrdersGroupedByDate() {
-  const container = document.getElementById("allOrdersList");
-  container.innerHTML = "";
-  const grouped = {};
-
-  data.orders.forEach(order => {
-    if (order.date && order.date !== 'Invalid date') {
-      if (!grouped[order.date]) grouped[order.date] = [];
-      grouped[order.date].push(order);
-    }
-  });
-
-  const sortedDates = Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a));
-
-  sortedDates.forEach(date => {
-    const title = document.createElement("div");
-    title.className = "date-header";
-    title.innerHTML = `
-      <h3 class="date-title" data-date="${date}">${date} <span class="arrow">▼</span></h3>
-      <div class="date-list" id="list-${date}" style="display:none;"></div>
-    `;
-    container.appendChild(title);
-
-    const list = document.getElementById(`list-${date}`);
-    grouped[date].forEach(order => {
-      const item = document.createElement("div");
-      item.className = "list-item";
-      item.innerHTML = `<span>${order.id}</span>`;
-      item.onclick = () => showOrderDetails(order.id);
-      list.appendChild(item);
+  const reportData = [];
+  orders.forEach(order => {
+    const price = order.status === 'closed'
+      ? (order.price || calculateOrderPrice(order.operations))
+      : calculateOrderPrice(order.operations);
+    order.operations.forEach(op => {
+      reportData.push({
+        date: order.date,
+        orderId: order.id,
+        detail: op.detail || '-',
+        operationType: op.type,
+        quantity: op.quantity,
+        m2: op.m2,
+        pm: op.pm,
+        time: op.time,
+        pricePerOperation: calculateSingleOperationPrice(op),
+        totalOrderPrice: price
+      });
     });
   });
 
-  document.querySelectorAll(".date-title").forEach(el => {
-    el.addEventListener("click", () => {
-      const date = el.dataset.date;
-      const list = document.getElementById(`list-${date}`);
-      const arrow = el.querySelector(".arrow");
-      if (list.style.display === "none") {
-        list.style.display = "block";
-        arrow.textContent = "▲";
-      } else {
-        list.style.display = "none";
-        arrow.textContent = "▼";
-      }
+  try {
+    await fetch(GOOGLE_SHEET_WEB_APP_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ report: reportData })
     });
-  });
-}
-
-function searchOrders(query) {
-  const container = document.getElementById("allOrdersList");
-  container.innerHTML = "";
-  const results = data.orders.filter(order => order.id.toLowerCase().includes(query));
-  if (results.length === 0) {
-    container.innerHTML = `<p class="no-results">Заказ "${query}" не найден.</p>`;
-  } else {
-    results.forEach(order => {
-      const item = document.createElement("div");
-      item.className = "list-item";
-      item.innerHTML = `<span>${order.id}</span>`;
-      item.onclick = () => showOrderDetails(order.id);
-      container.appendChild(item);
-    });
+    sentReports.push(date);
+    saveData();
+    alert(`Отчёт за ${date} отправлен!`);
+  } catch (err) {
+    console.error('Ошибка:', err);
+    alert('Не удалось отправить отчёт.');
   }
 }
 
@@ -412,6 +486,8 @@ async function loadOrdersFromGoogle() {
   try {
     const response = await fetch(GOOGLE_SHEET_WEB_APP_URL);
     const text = await response.text();
+    console.log("📥 Ответ от Google:", text);
+
     const result = JSON.parse(text);
 
     if (result.error) {
@@ -468,7 +544,7 @@ async function loadOrdersFromGoogle() {
     alert(`Загружено ${newOrders.length} заказов.`);
   } catch (err) {
     console.error("💥 Ошибка:", err);
-    alert("Не удалось загрузить данные.");
+    alert("Не удалось загрузить данные. Подробности в консоли (F12).");
   }
 }
 
@@ -490,6 +566,132 @@ function normalizeDate(dateVal) {
     return jsDate.toISOString().split('T')[0];
   }
   return '';
+}
+
+// === СПИСОК ЗАКАЗОВ ===
+
+function showOrdersList() {
+  let screen = document.getElementById("ordersListScreen");
+  if (!screen) {
+    screen = document.createElement("div");
+    screen.className = "screen";
+    screen.id = "ordersListScreen";
+    screen.innerHTML = `
+      <div class="header-with-notif">
+        <h2 class="title">СПИСОК ЗАКАЗОВ</h2>
+        <button id="btnNotificationsInList" class="notification-btn">✉️</button>
+      </div>
+      <input type="text" id="searchInput" placeholder="поиск по номеру заказа">
+      <button id="btnCreateNew">создать новый</button>
+      <button id="btnLoadFromGoogle">загрузить из google</button>
+      <button id="btnBack">назад</button>
+      <div id="allOrdersList"></div>
+    `;
+    document.body.appendChild(screen);
+
+    document.getElementById("searchInput").addEventListener("input", function() {
+      const query = this.value.trim().toLowerCase();
+      if (query) searchOrders(query); else displayOrdersGroupedByDate();
+    });
+
+    document.getElementById("btnCreateNew").addEventListener("click", () => {
+      createOrderForm();
+      addToHistory('createOrderScreen');
+    });
+
+    document.getElementById("btnLoadFromGoogle").addEventListener("click", () => {
+      if (confirm("Загрузить заказы из Google Таблицы?")) {
+        loadOrdersFromGoogle();
+      }
+    });
+
+    document.getElementById("btnBack").addEventListener("click", goToPrevious);
+
+    document.getElementById("btnNotificationsInList").addEventListener("click", showNotificationsScreen);
+
+    updateNotificationIcon();
+    updateNotificationBadge();
+    displayOrdersGroupedByDate();
+  } else {
+    const query = document.getElementById("searchInput").value.trim().toLowerCase();
+    if (query) searchOrders(query); else displayOrdersGroupedByDate();
+    updateNotificationIcon();
+    updateNotificationBadge();
+  }
+
+  switchScreen('ordersListScreen');
+}
+
+function displayOrdersGroupedByDate() {
+  const container = document.getElementById("allOrdersList");
+  container.innerHTML = "";
+  const grouped = {};
+
+  data.orders.forEach(order => {
+    if (order.date && order.date !== 'Invalid date') {
+      if (!grouped[order.date]) grouped[order.date] = [];
+      grouped[order.date].push(order);
+    }
+  });
+
+  const sortedDates = Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a));
+
+  sortedDates.forEach(date => {
+    const title = document.createElement("div");
+    title.className = "date-header";
+    title.innerHTML = `
+      <h3 class="date-title" data-date="${date}">${date} <span class="arrow">▼</span></h3>
+      <div class="date-list" id="list-${date}" style="display:none;"></div>
+    `;
+    container.appendChild(title);
+
+    const list = document.getElementById(`list-${date}`);
+    grouped[date].forEach(order => {
+      const item = document.createElement("div");
+      item.className = "list-item";
+      item.innerHTML = `<span>${order.id}</span>`;
+      item.onclick = () => {
+        showOrderDetails(order.id);
+        addToHistory('orderDetailsScreen');
+      };
+      list.appendChild(item);
+    });
+  });
+
+  document.querySelectorAll(".date-title").forEach(el => {
+    el.addEventListener("click", () => {
+      const date = el.dataset.date;
+      const list = document.getElementById(`list-${date}`);
+      const arrow = el.querySelector(".arrow");
+      if (list.style.display === "none") {
+        list.style.display = "block";
+        arrow.textContent = "▲";
+      } else {
+        list.style.display = "none";
+        arrow.textContent = "▼";
+      }
+    });
+  });
+}
+
+function searchOrders(query) {
+  const container = document.getElementById("allOrdersList");
+  container.innerHTML = "";
+  const results = data.orders.filter(order => order.id.toLowerCase().includes(query));
+  if (results.length === 0) {
+    container.innerHTML = `<p class="no-results">Заказ "${query}" не найден.</p>`;
+  } else {
+    results.forEach(order => {
+      const item = document.createElement("div");
+      item.className = "list-item";
+      item.innerHTML = `<span>${order.id}</span>`;
+      item.onclick = () => {
+        showOrderDetails(order.id);
+        addToHistory('orderDetailsScreen');
+      };
+      container.appendChild(item);
+    });
+  }
 }
 
 // === СОЗДАНИЕ ЗАКАЗА ===
@@ -551,6 +753,57 @@ function createOrderForm() {
     });
   }
   switchScreen('createOrderScreen');
+}
+
+// === МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ ОПЕРАЦИИ ===
+
+function showAddOperationForm(orderId) {
+  const modal = document.createElement("div");
+  modal.id = "operationModal";
+  modal.className = "modal";
+  modal.innerHTML = `
+    <div class="modal-content">
+      <h3>Новая операция</h3>
+      <input type="text" id="newOpDetail" placeholder="Деталь (например, столешка, ножка)">
+      <select id="newOpType">
+        <option value="Распил">Распил — 65₽/м²</option>
+        <option value="Линейный">Линейный — 26₽/п.м</option>
+        <option value="Склейка простая">Склейка простая — 165₽/м²</option>
+        <option value="Склейка с обгоном">Склейка с обгоном — 210₽/м²</option>
+        <option value="Фрезер фаски">Фрезер фаски — 16₽/п.м</option>
+        <option value="Пазовка">Пазовка — 30₽/п.м</option>
+        <option value="Время">Время — 330₽</option>
+      </select>
+      <input type="number" id="newOpQuantity" placeholder="Количество" value="1" min="1" step="1">
+      <input type="number" id="newOpM2" placeholder="м²" value="0" min="0" step="0.1">
+      <input type="number" id="newOpPM" placeholder="п.м" value="0" min="0" step="0.1">
+      <input type="number" id="newOpTime" placeholder="Часы" value="0" min="0" step="0.5">
+      <button id="saveNewOp">добавить</button>
+      <button id="cancelNewOp">отмена</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  document.getElementById("saveNewOp").addEventListener("click", () => {
+    const detail = document.getElementById("newOpDetail").value.trim() || '-';
+    const type = document.getElementById("newOpType").value;
+    const quantity = parseFloat(document.getElementById("newOpQuantity").value) || 1;
+    const m2 = parseFloat(document.getElementById("newOpM2").value) || 0;
+    const pm = parseFloat(document.getElementById("newOpPM").value) || 0;
+    const time = parseFloat(document.getElementById("newOpTime").value) || 0;
+
+    const order = data.orders.find(o => o.id === orderId);
+    if (order) {
+      order.operations.push({ detail, type, quantity, m2, pm, time });
+      saveData();
+      showOrderDetails(orderId);
+    }
+    document.body.removeChild(modal);
+  });
+
+  document.getElementById("cancelNewOp").addEventListener("click", () => {
+    document.body.removeChild(modal);
+  });
 }
 
 // === ДЕТАЛИ ЗАКАЗА ===
@@ -630,57 +883,6 @@ function showOrderDetails(orderId) {
   });
 }
 
-// === МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ ОПЕРАЦИИ ===
-
-function showAddOperationForm(orderId) {
-  const modal = document.createElement("div");
-  modal.id = "operationModal";
-  modal.className = "modal";
-  modal.innerHTML = `
-    <div class="modal-content">
-      <h3>Новая операция</h3>
-      <input type="text" id="newOpDetail" placeholder="Деталь (например, столешка, ножка)">
-      <select id="newOpType">
-        <option value="Распил">Распил — 65₽/м²</option>
-        <option value="Линейный">Линейный — 26₽/п.м</option>
-        <option value="Склейка простая">Склейка простая — 165₽/м²</option>
-        <option value="Склейка с обгоном">Склейка с обгоном — 210₽/м²</option>
-        <option value="Фрезер фаски">Фрезер фаски — 16₽/п.м</option>
-        <option value="Пазовка">Пазовка — 30₽/п.м</option>
-        <option value="Время">Время — 330₽</option>
-      </select>
-      <input type="number" id="newOpQuantity" placeholder="Количество" value="1" min="1" step="1">
-      <input type="number" id="newOpM2" placeholder="м²" value="0" min="0" step="0.1">
-      <input type="number" id="newOpPM" placeholder="п.м" value="0" min="0" step="0.1">
-      <input type="number" id="newOpTime" placeholder="Часы" value="0" min="0" step="0.5">
-      <button id="saveNewOp">добавить</button>
-      <button id="cancelNewOp">отмена</button>
-    </div>
-  `;
-  document.body.appendChild(modal);
-
-  document.getElementById("saveNewOp").addEventListener("click", () => {
-    const detail = document.getElementById("newOpDetail").value.trim() || '-';
-    const type = document.getElementById("newOpType").value;
-    const quantity = parseFloat(document.getElementById("newOpQuantity").value) || 1;
-    const m2 = parseFloat(document.getElementById("newOpM2").value) || 0;
-    const pm = parseFloat(document.getElementById("newOpPM").value) || 0;
-    const time = parseFloat(document.getElementById("newOpTime").value) || 0;
-
-    const order = data.orders.find(o => o.id === orderId);
-    if (order) {
-      order.operations.push({ detail, type, quantity, m2, pm, time });
-      saveData();
-      showOrderDetails(orderId);
-    }
-    document.body.removeChild(modal);
-  });
-
-  document.getElementById("cancelNewOp").addEventListener("click", () => {
-    document.body.removeChild(modal);
-  });
-}
-
 // === УПРАВЛЕНИЕ ЗАКАЗАМИ ===
 
 function deleteOrder(orderId) {
@@ -735,12 +937,6 @@ function showSettings() {
   });
 }
 
-function toggleTheme(theme) {
-  currentTheme = theme;
-  localStorage.setItem('theme', theme);
-  document.body.classList.toggle('dark-theme', theme === 'dark');
-}
-
 // === КАЛЬКУЛЯТОР М² ===
 
 function openCalculator() {
@@ -784,7 +980,6 @@ function openCalculator() {
 }
 
 // === ПЛАН (аватарка) ===
-
 function openPlanModal() {
   const today = new Date().toISOString().split('T')[0];
   let daily = 0;
@@ -866,6 +1061,10 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   if (migrated) saveData();
 
+  checkOverdueOrders();
+  updateNotificationBadge();
+  updateNotificationIcon();
+
   loadMainScreen();
   setupEventListeners();
 
@@ -887,13 +1086,10 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById('avatarBtn').addEventListener('click', openPlanModal);
 
   // Переключение графика
-  const toggleBtn = document.getElementById('toggleChart');
-  if (toggleBtn) {
-    toggleBtn.addEventListener('click', () => {
-      isChartVisible = !isChartVisible;
-      loadMainScreen();
-    });
-  }
+  document.getElementById('toggleChart').addEventListener('click', () => {
+    isChartVisible = !isChartVisible;
+    loadMainScreen();
+  });
 });
 
 function setupEventListeners() {
@@ -905,11 +1101,4 @@ function setupEventListeners() {
     showShiftsScreen();
     addToHistory('shiftScreen');
   });
-}
-
-function addToHistory(screenId) {
-  if (screenHistory[screenHistory.length - 1] !== screenId) {
-    screenHistory.push(screenId);
-    history.pushState({}, '', '#' + screenId);
-  }
 }
