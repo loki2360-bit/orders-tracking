@@ -13,9 +13,6 @@ if (currentTheme === 'dark') {
 // История экранов
 let screenHistory = ['mainScreen'];
 
-// === GOOGLE SHEETS ===
-const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwms8nimXqNd-jJfNQ1-QHcgIB0kUWiEre1pJ4R6cuTEZm1aJuhQSxmM-m3ax0-Xrpcdg/exec';
-
 // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
 
 function saveData() {
@@ -80,6 +77,85 @@ function toggleTheme(theme) {
   currentTheme = theme;
   localStorage.setItem('theme', theme);
   document.body.classList.toggle('dark-theme', theme === 'dark');
+}
+
+// === ПОЛУЧЕНИЕ ЗАРАБОТКА ЗА ПОСЛЕДНИЕ 7 ДНЕЙ ===
+function getLast7DaysEarnings() {
+  const today = new Date();
+  const dates = [];
+  const earnings = [];
+
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    const dateStr = date.toISOString().split('T')[0];
+    dates.push(dateStr);
+
+    let sum = 0;
+    data.orders.forEach(order => {
+      if (order.status === 'closed' && order.date === dateStr) {
+        sum += order.price || calculateOrderPrice(order.operations || []);
+      }
+    });
+    earnings.push(Math.round(sum * 100) / 100);
+  }
+
+  return { dates, earnings };
+}
+
+// === ОТРИСОВКА ГРАФИКА ===
+let earningsChart = null;
+
+function renderEarningsChart() {
+  const ctx = document.getElementById('earningsChart').getContext('2d');
+
+  if (earningsChart) {
+    earningsChart.destroy();
+  }
+
+  const { dates, earnings } = getLast7DaysEarnings();
+
+  earningsChart = new Chart(ctx, {
+    type: 'bar',
+     {
+      labels: dates,
+      datasets: [{
+        label: 'Заработок, ₽',
+        data: earnings,
+        backgroundColor: '#ffd700',
+        borderColor: '#000',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            color: document.body.classList.contains('dark-theme') ? '#f0f0f0' : '#333'
+          },
+          grid: {
+            color: document.body.classList.contains('dark-theme') 
+              ? 'rgba(255,255,255,0.1)' 
+              : 'rgba(0,0,0,0.1)'
+          }
+        },
+        x: {
+          ticks: {
+            color: document.body.classList.contains('dark-theme') ? '#f0f0f0' : '#333'
+          },
+          grid: {
+            display: false
+          }
+        }
+      }
+    }
+  });
 }
 
 // === УВЕДОМЛЕНИЯ ===
@@ -215,83 +291,6 @@ function addToHistory(screenId) {
   }
 }
 
-// === ГРАФИК ЗАРАБОТКА ===
-
-function getLast7DaysEarnings() {
-  const today = new Date();
-  const dates = [];
-  const earnings = [];
-
-  for (let i = 6; i >= 0; i--) {
-    const date = new Date(today);
-    date.setDate(date.getDate() - i);
-    const dateStr = date.toISOString().split('T')[0];
-    dates.push(dateStr);
-
-    let sum = 0;
-    data.orders.forEach(order => {
-      if (order.status === 'closed' && order.date === dateStr) {
-        sum += order.price || calculateOrderPrice(order.operations || []);
-      }
-    });
-    earnings.push(Math.round(sum * 100) / 100);
-  }
-
-  return { dates, earnings };
-}
-
-let earningsChart = null;
-
-function renderEarningsChart() {
-  const ctx = document.getElementById('earningsChart').getContext('2d');
-
-  if (earningsChart) {
-    earningsChart.destroy();
-  }
-
-  const { dates, earnings } = getLast7DaysEarnings();
-
-  earningsChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: dates,
-      datasets: [{
-        label: 'Заработок, ₽',
-        data: earnings,
-        backgroundColor: '#ffd700',
-        borderColor: '#000',
-        borderWidth: 1
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          ticks: {
-            color: document.body.classList.contains('dark-theme') ? '#f0f0f0' : '#333'
-          },
-          grid: {
-            color: document.body.classList.contains('dark-theme') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
-          }
-        },
-        x: {
-          ticks: {
-            color: document.body.classList.contains('dark-theme') ? '#f0f0f0' : '#333'
-          },
-          grid: {
-            display: false
-          }
-        }
-      }
-    }
-  });
-}
-
 // === ЭКРАНЫ ===
 
 function loadMainScreen() {
@@ -339,6 +338,53 @@ function resetSentReports() {
   }
 }
 
+// === ГЕНЕРАЦИЯ ТЕКСТОВОГО ОТЧЁТА ===
+function generateReportText(date) {
+  const orders = data.orders.filter(o => o.date === date);
+  if (orders.length === 0) return "Нет заказов за эту дату.";
+
+  let total = 0;
+  let report = `ОТЧЁТ за ${date}\n====================\n\n`;
+
+  orders.forEach(order => {
+    const price = order.status === 'closed'
+      ? (order.price || calculateOrderPrice(order.operations))
+      : calculateOrderPrice(order.operations);
+    
+    if (order.status === 'closed') total += price;
+
+    report += `Заказ №${order.id}\n`;
+    report += `Деталь: ${order.detail || '-'}\n`;
+    
+    order.operations.forEach((op, idx) => {
+      report += `  ${idx + 1}. ${op.type} `;
+      if (op.m2 > 0) report += `${op.m2} м² `;
+      if (op.pm > 0) report += `${op.pm} п.м `;
+      if (op.time > 0) report += `${op.time} ч `;
+      if (op.quantity > 1) report += `(×${op.quantity})`;
+      report += `\n`;
+    });
+    
+    report += `Итого: ${Math.round(price * 100) / 100}₽\n\n`;
+  });
+
+  report += `====================\nОбщая сумма: ${Math.round(total * 100) / 100}₽`;
+  return report;
+}
+
+// === СКАЧИВАНИЕ ФАЙЛА ===
+function downloadReport(text, filename) {
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 function showShiftsScreen() {
   let screen = document.getElementById("shiftScreen");
   if (!screen) {
@@ -370,7 +416,9 @@ function showShiftsScreen() {
         alert("Выберите дату");
         return;
       }
-      saveReportToGoogleSheet(date);
+      const reportText = generateReportText(date);
+      const filename = `отчёт_${date}.txt`;
+      downloadReport(reportText, filename);
     });
 
     document.getElementById("resetReportsBtn").addEventListener("click", resetSentReports);
@@ -416,145 +464,6 @@ function showOrdersForDay(date) {
   document.getElementById("totalOfDay").innerHTML = `<h3>итого: ${total}₽</h3>`;
 }
 
-// === ОТПРАВКА ОТЧЁТА ===
-
-async function saveReportToGoogleSheet(date) {
-  if (sentReports.includes(date)) {
-    alert(`Отчёт за ${date} уже отправлен.`);
-    return;
-  }
-
-  const orders = data.orders.filter(o => o.date === date);
-  if (orders.length === 0) {
-    alert("Нет заказов за эту дату.");
-    return;
-  }
-
-  const reportData = [];
-  orders.forEach(order => {
-    const price = order.status === 'closed'
-      ? (order.price || calculateOrderPrice(order.operations))
-      : calculateOrderPrice(order.operations);
-    order.operations.forEach(op => {
-      reportData.push({
-        date: order.date,
-        orderId: order.id,
-        detail: op.detail || '-',
-        operationType: op.type,
-        quantity: op.quantity,
-        m2: op.m2,
-        pm: op.pm,
-        time: op.time,
-        pricePerOperation: calculateSingleOperationPrice(op),
-        totalOrderPrice: price
-      });
-    });
-  });
-
-  try {
-    await fetch(GOOGLE_SHEET_WEB_APP_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ report: reportData })
-    });
-    sentReports.push(date);
-    saveData();
-    alert(`Отчёт за ${date} отправлен!`);
-  } catch (err) {
-    console.error('Ошибка:', err);
-    alert('Не удалось отправить отчёт.');
-  }
-}
-
-// === ЗАГРУЗКА ИЗ GOOGLE ТАБЛИЦЫ ===
-
-async function loadOrdersFromGoogle() {
-  try {
-    const response = await fetch(GOOGLE_SHEET_WEB_APP_URL);
-    const text = await response.text();
-    console.log("📥 Ответ от Google:", text);
-
-    const result = JSON.parse(text);
-
-    if (result.error) {
-      alert("Ошибка: " + result.error);
-      return;
-    }
-
-    if (!result.orders || result.orders.length === 0) {
-      alert("Нет данных.");
-      return;
-    }
-
-    const normalizedOrders = result.orders.map(order => {
-      let dateStr = '';
-
-      if (order.date) {
-        dateStr = normalizeDate(order.date);
-      } else if (order['Дата']) {
-        dateStr = normalizeDate(order['Дата']);
-      }
-
-      if (!dateStr || dateStr === 'Invalid date') {
-        dateStr = '';
-      }
-
-      return {
-        ...order,
-        date: dateStr,
-        id: order.id || order['Заказ №'] || 'NO_ID',
-        detail: order.detail || order['Общая деталь'] || '-',
-        status: 'closed',
-        operations: order.operations || [{
-          detail: order.detail || '-',
-          type: order.operationType || order['Операция'] || 'Время',
-          quantity: order.quantity || 1,
-          m2: order.m2 || 0,
-          pm: order.pm || 0,
-          time: order.time || 0
-        }]
-      };
-    });
-
-    const validOrders = normalizedOrders.filter(o => o.date);
-    const existingIds = new Set(data.orders.map(o => o.id));
-    const newOrders = validOrders.filter(o => !existingIds.has(o.id));
-
-    data.orders = [...data.orders, ...newOrders];
-    saveData();
-
-    if (document.getElementById('ordersListScreen').classList.contains('active')) {
-      displayOrdersGroupedByDate();
-    }
-
-    alert(`Загружено ${newOrders.length} заказов.`);
-  } catch (err) {
-    console.error("💥 Ошибка:", err);
-    alert("Не удалось загрузить данные. Подробности в консоли (F12).");
-  }
-}
-
-function normalizeDate(dateVal) {
-  if (!dateVal) return '';
-  if (typeof dateVal === 'string') {
-    if (dateVal.includes('T')) {
-      return dateVal.split('T')[0];
-    } else if (dateVal.includes('.')) {
-      const parts = dateVal.split('.');
-      if (parts.length === 3) {
-        return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-      }
-    } else {
-      return dateVal;
-    }
-  } else if (typeof dateVal === 'number') {
-    const jsDate = new Date((dateVal - 25569) * 86400 * 1000);
-    return jsDate.toISOString().split('T')[0];
-  }
-  return '';
-}
-
 // === СПИСОК ЗАКАЗОВ ===
 
 function showOrdersList() {
@@ -570,7 +479,6 @@ function showOrdersList() {
       </div>
       <input type="text" id="searchInput" placeholder="поиск по номеру заказа">
       <button id="btnCreateNew">создать новый</button>
-      <button id="btnLoadFromGoogle">загрузить из google</button>
       <button id="btnBack">назад</button>
       <div id="allOrdersList"></div>
     `;
@@ -584,12 +492,6 @@ function showOrdersList() {
     document.getElementById("btnCreateNew").addEventListener("click", () => {
       createOrderForm();
       addToHistory('createOrderScreen');
-    });
-
-    document.getElementById("btnLoadFromGoogle").addEventListener("click", () => {
-      if (confirm("Загрузить заказы из Google Таблицы?")) {
-        loadOrdersFromGoogle();
-      }
     });
 
     document.getElementById("btnBack").addEventListener("click", goToPrevious);
