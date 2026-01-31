@@ -83,6 +83,7 @@ select {
   justify-content: center;
   font-size: 24px;
   box-shadow: 4px 4px 8px #d8c95a, -4px -4px 8px #ffffff;
+  cursor: pointer;
 }
 
 .info h2 {
@@ -128,6 +129,7 @@ select {
   align-items: center;
   background: #fdf6b3;
   box-shadow: 3px 3px 6px #d8c95a, -3px -3px 6px #ffffff;
+  cursor: pointer;
 }
 
 .price-tag {
@@ -136,6 +138,26 @@ select {
   border-radius: 8px;
   font-weight: bold;
   box-shadow: 2px 2px 4px #d8c95a, -2px -2px 4px #ffffff;
+}
+
+.date-header {
+  margin: 16px 0;
+}
+
+.date-title {
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  font-weight: bold;
+}
+
+.operation-item {
+  background: #f0e68c;
+  padding: 10px;
+  border-radius: 10px;
+  margin: 8px 0;
+  font-size: 13px;
 }
 
 /* === ТЁМНАЯ ТЕМА === */
@@ -178,12 +200,9 @@ body.dark-theme button {
   box-shadow: 4px 4px 8px rgba(0,0,0,0.4), -4px -4px 8px rgba(0,0,0,0.2);
 }
 
-body.dark-theme button:hover {
-  box-shadow: 2px 2px 4px rgba(0,0,0,0.3), -2px -2px 4px rgba(0,0,0,0.1);
-}
-
-body.dark-theme button:active {
-  box-shadow: inset 2px 2px 4px rgba(0,0,0,0.3), inset -2px -2px 4px rgba(0,0,0,0.1);
+body.dark-theme .operation-item {
+  background: #333;
+  color: #f0f0f0;
 }
 
 body.dark-theme .earnings p,
@@ -227,7 +246,8 @@ body.dark-theme .menu-btn-bottom {
 /* === МОДАЛЬНЫЕ ОКНА === */
 .settings-modal,
 .calculator-modal,
-.plan-modal {
+.plan-modal,
+.modal {
   position: fixed;
   top: 0;
   left: 0;
@@ -242,7 +262,8 @@ body.dark-theme .menu-btn-bottom {
 
 .settings-content,
 .calculator-content,
-.plan-content {
+.plan-content,
+.modal-content {
   background: #fdf6b3;
   padding: 20px;
   border-radius: 16px;
@@ -253,7 +274,8 @@ body.dark-theme .menu-btn-bottom {
 
 body.dark-theme .settings-content,
 body.dark-theme .calculator-content,
-body.dark-theme .plan-content {
+body.dark-theme .plan-content,
+body.dark-theme .modal-content {
   background: #2d2d2d;
   box-shadow: 6px 6px 12px rgba(0,0,0,0.5), -6px -6px 12px rgba(255,255,255,0.05);
 }
@@ -290,4 +312,15 @@ body.dark-theme .progress-bar { background: #333; }
 .chart-container {
   height: 150px;
   margin: 20px 0;
+}
+
+/* === УВЕДОМЛЕНИЯ === */
+.notification-item.unread {
+  background: #fff3cd;
+  border-left: 4px solid #ffc107;
+}
+
+body.dark-theme .notification-item.unread {
+  background: #3a2c15;
+  border-left: 4px solid #aa8800;
 }
