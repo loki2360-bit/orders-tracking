@@ -184,11 +184,11 @@ function renderEarningsChart() {
 
   earningsChart = new Chart(ctx, {
     type: 'bar',
-     {
+    data: { // ← ИСПРАВЛЕНО: добавлено "data:"
       labels: dates,
       datasets: [{
         label: 'Заработок, ₽',
-         earnings,
+        data: earnings, // ← ИСПРАВЛЕНО: "data:", а не просто "earnings"
         backgroundColor: '#ffd700',
         borderColor: '#000',
         borderWidth: 1
@@ -197,10 +197,27 @@ function renderEarningsChart() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: {
+        legend: { display: false }
+      },
       scales: {
-        y: { beginAtZero: true, ticks: { color: currentTheme === 'dark' ? '#f0f0f0' : '#333' } },
-        x: { ticks: { color: currentTheme === 'dark' ? '#f0f0f0' : '#333' }, grid: { display: false } }
+        y: {
+          beginAtZero: true,
+          ticks: {
+            color: currentTheme === 'dark' ? '#f0f0f0' : '#333'
+          },
+          grid: {
+            color: currentTheme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
+          }
+        },
+        x: {
+          ticks: {
+            color: currentTheme === 'dark' ? '#f0f0f0' : '#333'
+          },
+          grid: {
+            display: false
+          }
+        }
       }
     }
   });
