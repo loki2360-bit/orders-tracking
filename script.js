@@ -10,11 +10,14 @@ if (currentTheme === 'dark') {
   document.body.classList.add('dark-theme');
 }
 
+// === ГРАФИК ===
+let isChartVisible = false;
+
 // История экранов
 let screenHistory = ['mainScreen'];
 
 // === GOOGLE SHEETS ===
-const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwms8nimXqNd-jJfNQ1-QHcgIB0kUWiEre1pJ4R6cuTEZm1aJuhQSxmM-m3ax0-Xrpcdg/exec';
+const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/ТВОЙ_УНИКАЛЬНЫЙ_URL/exec';
 
 // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
 
@@ -222,7 +225,7 @@ function getLast7DaysEarnings() {
   const dates = [];
   const earnings = [];
 
-  for (let i = 6; i >= 0; i--) {
+  for ( let i = 6; i >= 0; i--) {
     const date = new Date(today);
     date.setDate(date.getDate() - i);
     const dateStr = date.toISOString().split('T')[0];
@@ -253,11 +256,11 @@ function renderEarningsChart() {
 
   earningsChart = new Chart(ctx, {
     type: 'bar',
-    data: {
+     {
       labels: dates,
       datasets: [{
         label: 'Заработок, ₽',
-        data: earnings,
+         earnings,
         backgroundColor: '#ffd700',
         borderColor: '#000',
         borderWidth: 1
@@ -315,10 +318,18 @@ function loadMainScreen() {
   document.getElementById("totalEarnings").textContent = `${total}₽`;
   document.getElementById("dailyEarnings").textContent = `${daily}₽`;
 
-  // Рендерим график
-  renderEarningsChart();
+  const chartContainer = document.getElementById('chartContainer');
+  const toggleBtn = document.getElementById('toggleChart');
+  
+  if (isChartVisible) {
+    chartContainer.style.display = 'block';
+    toggleBtn.textContent = 'Скрыть график';
+    renderEarningsChart();
+  } else {
+    chartContainer.style.display = 'none';
+    toggleBtn.textContent = 'Показать график';
+  }
 
-  // Автоматическое уведомление о плане
   const planNotified = localStorage.getItem('planNotifiedToday') === today;
   if (daily >= 3000 && !planNotified) {
     setTimeout(() => {
@@ -339,6 +350,90 @@ function resetSentReports() {
   }
 }
 
+// === ЭКСПОРТ/ИМПОРТ СМЕНЫ ===
+
+function exportShiftData(date) {
+  const orders = data.orders.filter(o => o.date === date);
+  if (orders.length === 0) {
+    alert("Нет заказов за эту дату");
+    return;
+  }
+
+  const shiftData = {
+    date: date,
+    orders: orders
+  };
+
+  const jsonStr = JSON.stringify(shiftData, null, 2);
+
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(jsonStr).then(() => {
+      alert(`✅ Смена ${date} скопирована!\nВставьте в заметку или файл.`);
+    }).catch(err => {
+      alert('Ошибка копирования. Попробуйте вручную.');
+      console.error(err);
+    });
+  } else {
+    const textArea = document.createElement('textarea');
+    textArea.value = jsonStr;
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textArea);
+    alert(`✅ Смена ${date} скопирована!`);
+  }
+}
+
+function importShiftData(targetDate) {
+  if (navigator.clipboard) {
+    navigator.clipboard.readText().then(text => {
+      try {
+        const shiftData = JSON.parse(text);
+        
+        if (!shiftData.date || !shiftData.orders) {
+          alert('❌ Неверный формат данных');
+          return;
+        }
+
+        data.orders = data.orders.filter(o => o.date !== targetDate);
+        const newOrders = shiftData.orders.map(order => ({
+          ...order,
+          date: targetDate
+        }));
+
+        data.orders = [...data.orders, ...newOrders];
+        saveData();
+        alert(`✅ Смена загружена за ${targetDate}`);
+        showOrdersForDay(targetDate);
+      } catch (err) {
+        alert('❌ Ошибка: ' + err.message);
+      }
+    }).catch(err => {
+      alert('Не удалось прочитать буфер. Убедитесь, что там данные смены.');
+    });
+  } else {
+    const input = prompt('Вставьте сюда JSON-данные смены:');
+    if (input) {
+      try {
+        const shiftData = JSON.parse(input);
+        if (shiftData.orders && Array.isArray(shiftData.orders)) {
+          data.orders = data.orders.filter(o => o.date !== targetDate);
+          const newOrders = shiftData.orders.map(order => ({
+            ...order,
+            date: targetDate
+          }));
+          data.orders = [...data.orders, ...newOrders];
+          saveData();
+          alert(`✅ Смена загружена за ${targetDate}`);
+          showOrdersForDay(targetDate);
+        }
+      } catch (err) {
+        alert('❌ Ошибка: ' + err.message);
+      }
+    }
+  }
+}
+
 function showShiftsScreen() {
   let screen = document.getElementById("shiftScreen");
   if (!screen) {
@@ -346,14 +441,18 @@ function showShiftsScreen() {
     screen.className = "screen";
     screen.id = "shiftScreen";
     screen.innerHTML = `
-      <h2 class="title">введите дату</h2>
+      <h2 class="title">Смена</h2>
       <input type="date" id="dateInput">
-      <button id="showOrdersForDay">показать</button>
+      <button id="showOrdersForDay">Показать</button>
       <div id="ordersOfDay"></div>
       <div id="totalOfDay"></div>
-      <button id="btnSaveReport">сохранить отчёт</button>
-      <button id="resetReportsBtn" style="display:none;">сбросить отчёты</button>
-      <button onclick="goToPrevious()">назад</button>
+      
+      <button id="btnExportShift">Сохранить смену</button>
+      <button id="btnImportShift">Загрузить смену</button>
+      
+      <button id="btnSaveReport">Сохранить отчёт</button>
+      <button id="resetReportsBtn" style="display:none;">Сбросить отчёты</button>
+      <button onclick="goToPrevious()">Назад</button>
     `;
     document.body.appendChild(screen);
 
@@ -362,6 +461,24 @@ function showShiftsScreen() {
     document.getElementById("showOrdersForDay").addEventListener("click", () => {
       const date = document.getElementById("dateInput").value;
       showOrdersForDay(date);
+    });
+
+    document.getElementById("btnExportShift").addEventListener("click", () => {
+      const date = document.getElementById("dateInput").value;
+      if (!date) {
+        alert("Выберите дату");
+        return;
+      }
+      exportShiftData(date);
+    });
+
+    document.getElementById("btnImportShift").addEventListener("click", () => {
+      const date = document.getElementById("dateInput").value;
+      if (!date) {
+        alert("Выберите дату");
+        return;
+      }
+      importShiftData(date);
     });
 
     document.getElementById("btnSaveReport").addEventListener("click", () => {
@@ -1071,6 +1188,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Аватарка → план
   document.getElementById('avatarBtn').addEventListener('click', openPlanModal);
+
+  // Переключение графика
+  document.getElementById('toggleChart').addEventListener('click', () => {
+    isChartVisible = !isChartVisible;
+    loadMainScreen();
+  });
 });
 
 function setupEventListeners() {
