@@ -10,9 +10,6 @@ if (currentTheme === 'dark') {
   document.body.classList.add('dark-theme');
 }
 
-// === ГРАФИК ===
-let isChartVisible = false; // ← изначально скрыт
-
 // История экранов
 let screenHistory = ['mainScreen'];
 
@@ -260,7 +257,7 @@ function renderEarningsChart() {
       labels: dates,
       datasets: [{
         label: 'Заработок, ₽',
-         earnings,
+        data: earnings,
         backgroundColor: '#ffd700',
         borderColor: '#000',
         borderWidth: 1
@@ -318,18 +315,8 @@ function loadMainScreen() {
   document.getElementById("totalEarnings").textContent = `${total}₽`;
   document.getElementById("dailyEarnings").textContent = `${daily}₽`;
 
-  // Управление видимостью графика
-  const chartContainer = document.getElementById('chartContainer');
-  const toggleBtn = document.getElementById('toggleChart');
-  
-  if (isChartVisible) {
-    chartContainer.style.display = 'block';
-    toggleBtn.textContent = 'Скрыть график';
-    renderEarningsChart();
-  } else {
-    chartContainer.style.display = 'none';
-    toggleBtn.textContent = 'Показать график';
-  }
+  // Рендерим график
+  renderEarningsChart();
 
   // Автоматическое уведомление о плане
   const planNotified = localStorage.getItem('planNotifiedToday') === today;
@@ -1084,12 +1071,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Аватарка → план
   document.getElementById('avatarBtn').addEventListener('click', openPlanModal);
-
-  // Переключение графика
-  document.getElementById('toggleChart').addEventListener('click', () => {
-    isChartVisible = !isChartVisible;
-    loadMainScreen();
-  });
 });
 
 function setupEventListeners() {
