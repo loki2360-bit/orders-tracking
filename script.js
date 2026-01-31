@@ -1,11 +1,22 @@
-// === ДАННЫЕ ===
-let data = JSON.parse(localStorage.getItem('ordersData')) || { orders: [] };
-let appData = JSON.parse(localStorage.getItem('appData')) || { createdCount: 0, activationKeyUsed: false };
-let notifications = JSON.parse(localStorage.getItem('notifications')) || [];
-let sentReports = JSON.parse(localStorage.getItem('sentReports')) || [];
+// === БЕЗОПАСНОЕ ПОЛУЧЕНИЕ ДАННЫХ ===
+function safeParse(key, defaultValue) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : defaultValue;
+  } catch (e) {
+    console.error(`Ошибка парсинга ${key}:`, e);
+    localStorage.removeItem(key);
+    return defaultValue;
+  }
+}
+
+let data = safeParse('ordersData', { orders: [] });
+let notifications = safeParse('notifications', []);
+let sentReports = safeParse('sentReports', []);
+let appData = safeParse('appData', { createdCount: 0, activationKeyUsed: false });
 
 // === ТЕМА ===
-let currentTheme = localStorage.getItem('theme') || 'light';
+let currentTheme = safeParse('theme', 'light');
 if (currentTheme === 'dark') {
   document.body.classList.add('dark-theme');
 }
@@ -19,6 +30,7 @@ function saveData() {
   localStorage.setItem('ordersData', JSON.stringify(data));
   localStorage.setItem('notifications', JSON.stringify(notifications));
   localStorage.setItem('sentReports', JSON.stringify(sentReports));
+  localStorage.setItem('theme', currentTheme);
 }
 
 function calculateOrderPrice(operations) {
@@ -46,31 +58,6 @@ function calculateOrderPrice(operations) {
     }
   });
   return Math.round(total * 100) / 100;
-}
-
-function calculateSingleOperationPrice(op) {
-  const rates = {
-    "Распил": 65,
-    "Линейный": 26,
-    "Склейка простая": 165,
-    "Склейка с обгоном": 210,
-    "Фрезер фаски": 16,
-    "Пазовка": 30,
-    "Время": 330
-  };
-
-  let price = 0;
-  const qty = op.quantity || 1;
-  if (["Распил", "Склейка простая", "Склейка с обгоном"].includes(op.type)) {
-    price += op.m2 * rates[op.type] * qty;
-  }
-  if (["Линейный", "Фрезер фаски", "Пазовка"].includes(op.type)) {
-    price += op.pm * rates[op.type] * qty;
-  }
-  if (op.type === "Время") {
-    price += op.time * rates[op.type] * qty;
-  }
-  return Math.round(price * 100) / 100;
 }
 
 function toggleTheme(theme) {
@@ -121,7 +108,7 @@ function renderEarningsChart() {
       labels: dates,
       datasets: [{
         label: 'Заработок, ₽',
-        data: earnings,
+         earnings,
         backgroundColor: '#ffd700',
         borderColor: '#000',
         borderWidth: 1
@@ -158,139 +145,6 @@ function renderEarningsChart() {
   });
 }
 
-// === УВЕДОМЛЕНИЯ ===
-
-function createNotification(orderId, message) {
-  const now = new Date().toISOString();
-  const notification = {
-    id: `notif-${Date.now()}`,
-    orderId: orderId,
-    message: message,
-    timestamp: now,
-    read: false
-  };
-  notifications.push(notification);
-  saveData();
-  updateNotificationBadge();
-  updateNotificationIcon();
-}
-
-function checkOverdueOrders() {
-  const now = new Date();
-  data.orders.forEach(order => {
-    if (order.status === 'open') {
-      let orderDate = new Date(order.createdAt);
-      if ((now - orderDate) > 15 * 60 * 1000) {
-        const existing = notifications.find(n => n.orderId === order.id && !n.read);
-        if (!existing) {
-          createNotification(order.id, `Ваш заказ ${order.id}, не закрыт`);
-        }
-      }
-    }
-  });
-}
-
-function updateNotificationBadge() {
-  const unreadCount = notifications.filter(n => !n.read).length;
-  const badge = document.getElementById('notificationBadgeInList');
-  if (badge) {
-    badge.textContent = unreadCount > 0 ? unreadCount : '';
-    badge.style.display = unreadCount > 0 ? 'flex' : 'none';
-  }
-}
-
-function updateNotificationIcon() {
-  const icon = document.getElementById('notificationIcon');
-  if (icon) {
-    icon.style.color = notifications.length > 0 ? 'red' : 'black';
-  }
-}
-
-function showNotificationsScreen() {
-  let screen = document.getElementById("notificationsScreen");
-  if (!screen) {
-    screen = document.createElement("div");
-    screen.className = "screen";
-    screen.id = "notificationsScreen";
-    screen.innerHTML = `
-      <h2>УВЕДОМЛЕНИЯ</h2>
-      <button id="btnClearNotifications">очистить все</button>
-      <div id="notificationsList"></div>
-      <button onclick="goToPrevious()">назад</button>
-    `;
-    document.body.appendChild(screen);
-
-    document.getElementById("btnClearNotifications").addEventListener("click", clearAllNotifications);
-
-    const list = document.getElementById("notificationsList");
-    list.innerHTML = "";
-
-    if (notifications.length === 0) {
-      list.innerHTML = `<p>Нет уведомлений</p>`;
-    } else {
-      notifications.forEach(notification => {
-        const item = document.createElement("div");
-        item.className = `notification-item ${notification.read ? 'read' : 'unread'}`;
-        item.innerHTML = `<span>${notification.message}</span>`;
-        item.onclick = () => markAsRead(notification.id);
-        list.appendChild(item);
-      });
-    }
-  }
-  switchScreen('notificationsScreen');
-}
-
-function markAsRead(notificationId) {
-  const notification = notifications.find(n => n.id === notificationId);
-  if (notification) {
-    notification.read = true;
-    saveData();
-    updateNotificationBadge();
-    updateNotificationIcon();
-    showNotificationsScreen();
-  }
-}
-
-function clearAllNotifications() {
-  if (confirm("Вы уверены, что хотите очистить все уведомления?")) {
-    notifications = [];
-    saveData();
-    updateNotificationBadge();
-    updateNotificationIcon();
-    showNotificationsScreen();
-  }
-}
-
-// === НАВИГАЦИЯ ===
-
-function switchScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  let screen = document.getElementById(id);
-  if (!screen) {
-    console.error(`Screen '${id}' not found.`);
-    return;
-  }
-  screen.classList.add('active');
-}
-
-function goToPrevious() {
-  if (screenHistory.length > 1) {
-    screenHistory.pop();
-    switchScreen(screenHistory[screenHistory.length - 1]);
-  } else {
-    screenHistory = ['mainScreen'];
-    switchScreen('mainScreen');
-    loadMainScreen();
-  }
-}
-
-function addToHistory(screenId) {
-  if (screenHistory[screenHistory.length - 1] !== screenId) {
-    screenHistory.push(screenId);
-    history.pushState({}, '', '#' + screenId);
-  }
-}
-
 // === ЭКРАНЫ ===
 
 function loadMainScreen() {
@@ -314,7 +168,6 @@ function loadMainScreen() {
   document.getElementById("totalEarnings").textContent = `${total}₽`;
   document.getElementById("dailyEarnings").textContent = `${daily}₽`;
 
-  // Рендерим график
   renderEarningsChart();
 
   // Автоматическое уведомление о плане
@@ -329,258 +182,14 @@ function loadMainScreen() {
   switchScreen('mainScreen');
 }
 
-// === ФУНКЦИЯ СБРОСА ОТЧЁТОВ ===
-function resetSentReports() {
-  if (confirm("Вы уверены? Это позволит отправить отчёты за все даты заново.")) {
-    sentReports = [];
-    saveData();
-    alert("История отправленных отчётов очищена.");
-  }
-}
-
-// === ГЕНЕРАЦИЯ ТЕКСТОВОГО ОТЧЁТА ===
-function generateReportText(date) {
-  const orders = data.orders.filter(o => o.date === date);
-  if (orders.length === 0) return "Нет заказов за эту дату.";
-
-  let total = 0;
-  let report = `ОТЧЁТ за ${date}\n====================\n\n`;
-
-  orders.forEach(order => {
-    const price = order.status === 'closed'
-      ? (order.price || calculateOrderPrice(order.operations))
-      : calculateOrderPrice(order.operations);
-    
-    if (order.status === 'closed') total += price;
-
-    report += `Заказ №${order.id}\n`;
-    report += `Деталь: ${order.detail || '-'}\n`;
-    
-    order.operations.forEach((op, idx) => {
-      report += `  ${idx + 1}. ${op.type} `;
-      if (op.m2 > 0) report += `${op.m2} м² `;
-      if (op.pm > 0) report += `${op.pm} п.м `;
-      if (op.time > 0) report += `${op.time} ч `;
-      if (op.quantity > 1) report += `(×${op.quantity})`;
-      report += `\n`;
-    });
-    
-    report += `Итого: ${Math.round(price * 100) / 100}₽\n\n`;
-  });
-
-  report += `====================\nОбщая сумма: ${Math.round(total * 100) / 100}₽`;
-  return report;
-}
-
-// === СКАЧИВАНИЕ ФАЙЛА ===
-function downloadReport(text, filename) {
-  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-function showShiftsScreen() {
-  let screen = document.getElementById("shiftScreen");
+function switchScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  let screen = document.getElementById(id);
   if (!screen) {
-    screen = document.createElement("div");
-    screen.className = "screen";
-    screen.id = "shiftScreen";
-    screen.innerHTML = `
-      <h2 class="title">введите дату</h2>
-      <input type="date" id="dateInput">
-      <button id="showOrdersForDay">показать</button>
-      <div id="ordersOfDay"></div>
-      <div id="totalOfDay"></div>
-      <button id="btnSaveReport">сохранить отчёт</button>
-      <button id="resetReportsBtn" style="display:none;">сбросить отчёты</button>
-      <button onclick="goToPrevious()">назад</button>
-    `;
-    document.body.appendChild(screen);
-
-    document.getElementById("dateInput").value = new Date().toISOString().split('T')[0];
-
-    document.getElementById("showOrdersForDay").addEventListener("click", () => {
-      const date = document.getElementById("dateInput").value;
-      showOrdersForDay(date);
-    });
-
-    document.getElementById("btnSaveReport").addEventListener("click", () => {
-      const date = document.getElementById("dateInput").value;
-      if (!date) {
-        alert("Выберите дату");
-        return;
-      }
-      const reportText = generateReportText(date);
-      const filename = `отчёт_${date}.txt`;
-      downloadReport(reportText, filename);
-    });
-
-    document.getElementById("resetReportsBtn").addEventListener("click", resetSentReports);
-
-    let clickCount = 0;
-    let lastClickTime = 0;
-    document.querySelector("#shiftScreen .title").addEventListener("click", () => {
-      const now = Date.now();
-      if (now - lastClickTime < 500) {
-        clickCount++;
-      } else {
-        clickCount = 1;
-      }
-      lastClickTime = now;
-      if (clickCount >= 3) {
-        document.getElementById("resetReportsBtn").style.display = "block";
-        clickCount = 0;
-      }
-    });
+    console.error(`Screen '${id}' not found.`);
+    return;
   }
-  switchScreen('shiftScreen');
-}
-
-function showOrdersForDay(date) {
-  const orders = data.orders.filter(o => o.date === date);
-  const container = document.getElementById("ordersOfDay");
-  container.innerHTML = "";
-  let total = 0;
-
-  orders.forEach(order => {
-    const price = order.status === 'closed'
-      ? (order.price || calculateOrderPrice(order.operations || []))
-      : 0;
-    if (order.status === 'closed') total += price;
-    const priceDisplay = order.status === 'closed' ? `${Math.round(price * 100) / 100}₽` : '—';
-    const item = document.createElement("div");
-    item.className = "list-item";
-    item.innerHTML = `<span>${order.id}</span><span class="price-tag">${priceDisplay}</span>`;
-    container.appendChild(item);
-  });
-
-  total = Math.round(total * 100) / 100;
-  document.getElementById("totalOfDay").innerHTML = `<h3>итого: ${total}₽</h3>`;
-}
-
-// === СПИСОК ЗАКАЗОВ ===
-
-function showOrdersList() {
-  let screen = document.getElementById("ordersListScreen");
-  if (!screen) {
-    screen = document.createElement("div");
-    screen.className = "screen";
-    screen.id = "ordersListScreen";
-    screen.innerHTML = `
-      <div class="header-with-notif">
-        <h2 class="title">СПИСОК ЗАКАЗОВ</h2>
-        <button id="btnNotificationsInList" class="notification-btn">✉️</button>
-      </div>
-      <input type="text" id="searchInput" placeholder="поиск по номеру заказа">
-      <button id="btnCreateNew">создать новый</button>
-      <button id="btnBack">назад</button>
-      <div id="allOrdersList"></div>
-    `;
-    document.body.appendChild(screen);
-
-    document.getElementById("searchInput").addEventListener("input", function() {
-      const query = this.value.trim().toLowerCase();
-      if (query) searchOrders(query); else displayOrdersGroupedByDate();
-    });
-
-    document.getElementById("btnCreateNew").addEventListener("click", () => {
-      createOrderForm();
-      addToHistory('createOrderScreen');
-    });
-
-    document.getElementById("btnBack").addEventListener("click", goToPrevious);
-
-    document.getElementById("btnNotificationsInList").addEventListener("click", showNotificationsScreen);
-
-    updateNotificationIcon();
-    updateNotificationBadge();
-    displayOrdersGroupedByDate();
-  } else {
-    const query = document.getElementById("searchInput").value.trim().toLowerCase();
-    if (query) searchOrders(query); else displayOrdersGroupedByDate();
-    updateNotificationIcon();
-    updateNotificationBadge();
-  }
-
-  switchScreen('ordersListScreen');
-}
-
-function displayOrdersGroupedByDate() {
-  const container = document.getElementById("allOrdersList");
-  container.innerHTML = "";
-  const grouped = {};
-
-  data.orders.forEach(order => {
-    if (order.date && order.date !== 'Invalid date') {
-      if (!grouped[order.date]) grouped[order.date] = [];
-      grouped[order.date].push(order);
-    }
-  });
-
-  const sortedDates = Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a));
-
-  sortedDates.forEach(date => {
-    const title = document.createElement("div");
-    title.className = "date-header";
-    title.innerHTML = `
-      <h3 class="date-title" data-date="${date}">${date} <span class="arrow">▼</span></h3>
-      <div class="date-list" id="list-${date}" style="display:none;"></div>
-    `;
-    container.appendChild(title);
-
-    const list = document.getElementById(`list-${date}`);
-    grouped[date].forEach(order => {
-      const item = document.createElement("div");
-      item.className = "list-item";
-      item.innerHTML = `<span>${order.id}</span>`;
-      item.onclick = () => {
-        showOrderDetails(order.id);
-        addToHistory('orderDetailsScreen');
-      };
-      list.appendChild(item);
-    });
-  });
-
-  document.querySelectorAll(".date-title").forEach(el => {
-    el.addEventListener("click", () => {
-      const date = el.dataset.date;
-      const list = document.getElementById(`list-${date}`);
-      const arrow = el.querySelector(".arrow");
-      if (list.style.display === "none") {
-        list.style.display = "block";
-        arrow.textContent = "▲";
-      } else {
-        list.style.display = "none";
-        arrow.textContent = "▼";
-      }
-    });
-  });
-}
-
-function searchOrders(query) {
-  const container = document.getElementById("allOrdersList");
-  container.innerHTML = "";
-  const results = data.orders.filter(order => order.id.toLowerCase().includes(query));
-  if (results.length === 0) {
-    container.innerHTML = `<p class="no-results">Заказ "${query}" не найден.</p>`;
-  } else {
-    results.forEach(order => {
-      const item = document.createElement("div");
-      item.className = "list-item";
-      item.innerHTML = `<span>${order.id}</span>`;
-      item.onclick = () => {
-        showOrderDetails(order.id);
-        addToHistory('orderDetailsScreen');
-      };
-      container.appendChild(item);
-    });
-  }
+  screen.classList.add('active');
 }
 
 // === СОЗДАНИЕ ЗАКАЗА ===
@@ -644,55 +253,127 @@ function createOrderForm() {
   switchScreen('createOrderScreen');
 }
 
-// === МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ ОПЕРАЦИИ ===
+function goToPrevious() {
+  if (screenHistory.length > 1) {
+    screenHistory.pop();
+    switchScreen(screenHistory[screenHistory.length - 1]);
+  } else {
+    screenHistory = ['mainScreen'];
+    switchScreen('mainScreen');
+    loadMainScreen();
+  }
+}
 
-function showAddOperationForm(orderId) {
-  const modal = document.createElement("div");
-  modal.id = "operationModal";
-  modal.className = "modal";
-  modal.innerHTML = `
-    <div class="modal-content">
-      <h3>Новая операция</h3>
-      <input type="text" id="newOpDetail" placeholder="Деталь (например, столешка, ножка)">
-      <select id="newOpType">
-        <option value="Распил">Распил — 65₽/м²</option>
-        <option value="Линейный">Линейный — 26₽/п.м</option>
-        <option value="Склейка простая">Склейка простая — 165₽/м²</option>
-        <option value="Склейка с обгоном">Склейка с обгоном — 210₽/м²</option>
-        <option value="Фрезер фаски">Фрезер фаски — 16₽/п.м</option>
-        <option value="Пазовка">Пазовка — 30₽/п.м</option>
-        <option value="Время">Время — 330₽</option>
-      </select>
-      <input type="number" id="newOpQuantity" placeholder="Количество" value="1" min="1" step="1">
-      <input type="number" id="newOpM2" placeholder="м²" value="0" min="0" step="0.1">
-      <input type="number" id="newOpPM" placeholder="п.м" value="0" min="0" step="0.1">
-      <input type="number" id="newOpTime" placeholder="Часы" value="0" min="0" step="0.5">
-      <button id="saveNewOp">добавить</button>
-      <button id="cancelNewOp">отмена</button>
-    </div>
-  `;
-  document.body.appendChild(modal);
+// === СПИСОК ЗАКАЗОВ ===
 
-  document.getElementById("saveNewOp").addEventListener("click", () => {
-    const detail = document.getElementById("newOpDetail").value.trim() || '-';
-    const type = document.getElementById("newOpType").value;
-    const quantity = parseFloat(document.getElementById("newOpQuantity").value) || 1;
-    const m2 = parseFloat(document.getElementById("newOpM2").value) || 0;
-    const pm = parseFloat(document.getElementById("newOpPM").value) || 0;
-    const time = parseFloat(document.getElementById("newOpTime").value) || 0;
+function showOrdersList() {
+  let screen = document.getElementById("ordersListScreen");
+  if (!screen) {
+    screen = document.createElement("div");
+    screen.className = "screen";
+    screen.id = "ordersListScreen";
+    screen.innerHTML = `
+      <div class="header-with-notif">
+        <h2 class="title">СПИСОК ЗАКАЗОВ</h2>
+      </div>
+      <input type="text" id="searchInput" placeholder="поиск по номеру заказа">
+      <button id="btnCreateNew">создать новый</button>
+      <button id="btnBack">назад</button>
+      <div id="allOrdersList"></div>
+    `;
+    document.body.appendChild(screen);
 
-    const order = data.orders.find(o => o.id === orderId);
-    if (order) {
-      order.operations.push({ detail, type, quantity, m2, pm, time });
-      saveData();
-      showOrderDetails(orderId);
+    document.getElementById("searchInput").addEventListener("input", function() {
+      const query = this.value.trim().toLowerCase();
+      if (query) searchOrders(query); else displayOrdersGroupedByDate();
+    });
+
+    document.getElementById("btnCreateNew").addEventListener("click", () => {
+      createOrderForm();
+      screenHistory.push('createOrderScreen');
+    });
+
+    document.getElementById("btnBack").addEventListener("click", goToPrevious);
+
+    displayOrdersGroupedByDate();
+  } else {
+    const query = document.getElementById("searchInput").value.trim().toLowerCase();
+    if (query) searchOrders(query); else displayOrdersGroupedByDate();
+  }
+
+  switchScreen('ordersListScreen');
+}
+
+function displayOrdersGroupedByDate() {
+  const container = document.getElementById("allOrdersList");
+  container.innerHTML = "";
+  const grouped = {};
+
+  data.orders.forEach(order => {
+    if (order.date && order.date !== 'Invalid date') {
+      if (!grouped[order.date]) grouped[order.date] = [];
+      grouped[order.date].push(order);
     }
-    document.body.removeChild(modal);
   });
 
-  document.getElementById("cancelNewOp").addEventListener("click", () => {
-    document.body.removeChild(modal);
+  const sortedDates = Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a));
+
+  sortedDates.forEach(date => {
+    const title = document.createElement("div");
+    title.className = "date-header";
+    title.innerHTML = `
+      <h3 class="date-title" data-date="${date}">${date} <span class="arrow">▼</span></h3>
+      <div class="date-list" id="list-${date}" style="display:none;"></div>
+    `;
+    container.appendChild(title);
+
+    const list = document.getElementById(`list-${date}`);
+    grouped[date].forEach(order => {
+      const item = document.createElement("div");
+      item.className = "list-item";
+      item.innerHTML = `<span>${order.id}</span>`;
+      item.onclick = () => {
+        showOrderDetails(order.id);
+        screenHistory.push('orderDetailsScreen');
+      };
+      list.appendChild(item);
+    });
   });
+
+  document.querySelectorAll(".date-title").forEach(el => {
+    el.addEventListener("click", () => {
+      const date = el.dataset.date;
+      const list = document.getElementById(`list-${date}`);
+      const arrow = el.querySelector(".arrow");
+      if (list.style.display === "none") {
+        list.style.display = "block";
+        arrow.textContent = "▲";
+      } else {
+        list.style.display = "none";
+        arrow.textContent = "▼";
+      }
+    });
+  });
+}
+
+function searchOrders(query) {
+  const container = document.getElementById("allOrdersList");
+  container.innerHTML = "";
+  const results = data.orders.filter(order => order.id.toLowerCase().includes(query));
+  if (results.length === 0) {
+    container.innerHTML = `<p class="no-results">Заказ "${query}" не найден.</p>`;
+  } else {
+    results.forEach(order => {
+      const item = document.createElement("div");
+      item.className = "list-item";
+      item.innerHTML = `<span>${order.id}</span>`;
+      item.onclick = () => {
+        showOrderDetails(order.id);
+        screenHistory.push('orderDetailsScreen');
+      };
+      container.appendChild(item);
+    });
+  }
 }
 
 // === ДЕТАЛИ ЗАКАЗА ===
@@ -772,7 +453,54 @@ function showOrderDetails(orderId) {
   });
 }
 
-// === УПРАВЛЕНИЕ ЗАКАЗАМИ ===
+function showAddOperationForm(orderId) {
+  const modal = document.createElement("div");
+  modal.id = "operationModal";
+  modal.className = "modal";
+  modal.innerHTML = `
+    <div class="modal-content">
+      <h3>Новая операция</h3>
+      <input type="text" id="newOpDetail" placeholder="Деталь (например, столешка, ножка)">
+      <select id="newOpType">
+        <option value="Распил">Распил — 65₽/м²</option>
+        <option value="Линейный">Линейный — 26₽/п.м</option>
+        <option value="Склейка простая">Склейка простая — 165₽/м²</option>
+        <option value="Склейка с обгоном">Склейка с обгоном — 210₽/м²</option>
+        <option value="Фрезер фаски">Фрезер фаски — 16₽/п.м</option>
+        <option value="Пазовка">Пазовка — 30₽/п.м</option>
+        <option value="Время">Время — 330₽</option>
+      </select>
+      <input type="number" id="newOpQuantity" placeholder="Количество" value="1" min="1" step="1">
+      <input type="number" id="newOpM2" placeholder="м²" value="0" min="0" step="0.1">
+      <input type="number" id="newOpPM" placeholder="п.м" value="0" min="0" step="0.1">
+      <input type="number" id="newOpTime" placeholder="Часы" value="0" min="0" step="0.5">
+      <button id="saveNewOp">добавить</button>
+      <button id="cancelNewOp">отмена</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  document.getElementById("saveNewOp").addEventListener("click", () => {
+    const detail = document.getElementById("newOpDetail").value.trim() || '-';
+    const type = document.getElementById("newOpType").value;
+    const quantity = parseFloat(document.getElementById("newOpQuantity").value) || 1;
+    const m2 = parseFloat(document.getElementById("newOpM2").value) || 0;
+    const pm = parseFloat(document.getElementById("newOpPM").value) || 0;
+    const time = parseFloat(document.getElementById("newOpTime").value) || 0;
+
+    const order = data.orders.find(o => o.id === orderId);
+    if (order) {
+      order.operations.push({ detail, type, quantity, m2, pm, time });
+      saveData();
+      showOrderDetails(orderId);
+    }
+    document.body.removeChild(modal);
+  });
+
+  document.getElementById("cancelNewOp").addEventListener("click", () => {
+    document.body.removeChild(modal);
+  });
+}
 
 function deleteOrder(orderId) {
   if (confirm("Удалить заказ?")) {
@@ -795,80 +523,114 @@ function finishOrder(orderId) {
   showOrderDetails(orderId);
 }
 
-// === НАСТРОЙКИ ===
+// === СМЕНЫ ===
 
-function showSettings() {
-  const modal = document.createElement('div');
-  modal.className = 'settings-modal';
-  modal.innerHTML = `
-    <div class="settings-content">
-      <h3>Настройки</h3>
-      <div class="theme-option" data-theme="light">
-        <span>Светлая тема</span>
-      </div>
-      <div class="theme-option" data-theme="dark">
-        <span>Тёмная тема</span>
-      </div>
-      <button style="width:100%; margin-top:15px;" onclick="this.parentElement.parentElement.remove()">Закрыть</button>
-    </div>
-  `;
-  document.body.appendChild(modal);
+function showShiftsScreen() {
+  let screen = document.getElementById("shiftScreen");
+  if (!screen) {
+    screen = document.createElement("div");
+    screen.className = "screen";
+    screen.id = "shiftScreen";
+    screen.innerHTML = `
+      <h2 class="title">введите дату</h2>
+      <input type="date" id="dateInput">
+      <button id="showOrdersForDay">показать</button>
+      <div id="ordersOfDay"></div>
+      <div id="totalOfDay"></div>
+      <button id="btnSaveReport">сохранить отчёт</button>
+      <button onclick="goToPrevious()">назад</button>
+    `;
+    document.body.appendChild(screen);
 
-  modal.querySelectorAll('.theme-option').forEach(option => {
-    if (option.dataset.theme === currentTheme) {
-      option.classList.add('active');
-    }
-    option.onclick = () => {
-      modal.querySelectorAll('.theme-option').forEach(el => el.classList.remove('active'));
-      option.classList.add('active');
-      toggleTheme(option.dataset.theme);
-    };
-  });
-}
+    document.getElementById("dateInput").value = new Date().toISOString().split('T')[0];
 
-// === КАЛЬКУЛЯТОР М² ===
-
-function openCalculator() {
-  const modal = document.createElement('div');
-  modal.className = 'calculator-modal';
-  modal.innerHTML = `
-    <div class="calculator-content">
-      <h3>Калькулятор м²</h3>
-      <input type="number" id="calcLength" placeholder="Длина (мм)" min="1">
-      <input type="number" id="calcWidth" placeholder="Ширина (мм)" min="1">
-      <input type="number" id="calcQuantity" placeholder="Количество" value="1" min="1">
-      <div class="result" id="calcResult">0 м²</div>
-      <button id="copyResult" class="copy-btn">Скопировать результат</button>
-      <button id="closeCalc">Закрыть</button>
-    </div>
-  `;
-  document.body.appendChild(modal);
-
-  const updateResult = () => {
-    const length = parseFloat(document.getElementById('calcLength').value) || 0;
-    const width = parseFloat(document.getElementById('calcWidth').value) || 0;
-    const quantity = parseFloat(document.getElementById('calcQuantity').value) || 1;
-    const m2 = (length * width / 1_000_000) * quantity;
-    document.getElementById('calcResult').textContent = m2.toFixed(4) + ' м²';
-  };
-
-  ['calcLength', 'calcWidth', 'calcQuantity'].forEach(id => {
-    document.getElementById(id).addEventListener('input', updateResult);
-  });
-
-  document.getElementById('copyResult').addEventListener('click', () => {
-    const result = document.getElementById('calcResult').textContent;
-    navigator.clipboard.writeText(result).then(() => {
-      alert('Результат скопирован!');
+    document.getElementById("showOrdersForDay").addEventListener("click", () => {
+      const date = document.getElementById("dateInput").value;
+      if (!date) {
+        alert("Выберите дату");
+        return;
+      }
+      showOrdersForDay(date);
     });
-  });
 
-  document.getElementById('closeCalc').addEventListener('click', () => {
-    document.body.removeChild(modal);
-  });
+    document.getElementById("btnSaveReport").addEventListener("click", () => {
+      const date = document.getElementById("dateInput").value;
+      if (!date) {
+        alert("Выберите дату");
+        return;
+      }
+
+      const orders = data.orders.filter(o => o.date === date);
+      if (orders.length === 0) {
+        alert("Нет заказов за эту дату.");
+        return;
+      }
+
+      let total = 0;
+      let report = `ОТЧЁТ за ${date}\n====================\n\n`;
+
+      orders.forEach(order => {
+        const price = order.status === 'closed'
+          ? (order.price || calculateOrderPrice(order.operations))
+          : calculateOrderPrice(order.operations);
+        
+        if (order.status === 'closed') total += price;
+
+        report += `Заказ №${order.id}\n`;
+        report += `Деталь: ${order.detail || '-'}\n`;
+        
+        order.operations.forEach((op, idx) => {
+          report += `  ${idx + 1}. ${op.type} `;
+          if (op.m2 > 0) report += `${op.m2} м² `;
+          if (op.pm > 0) report += `${op.pm} п.м `;
+          if (op.time > 0) report += `${op.time} ч `;
+          if (op.quantity > 1) report += `(×${op.quantity})`;
+          report += `\n`;
+        });
+        
+        report += `Итого: ${Math.round(price * 100) / 100}₽\n\n`;
+      });
+
+      report += `====================\nОбщая сумма: ${Math.round(total * 100) / 100}₽`;
+
+      const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `отчёт_${date}.txt`;
+      document.body.appendChild(a);
+      setTimeout(() => a.click(), 100);
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+  }
+  switchScreen('shiftScreen');
 }
 
-// === ПЛАН (аватарка) ===
+function showOrdersForDay(date) {
+  const orders = data.orders.filter(o => o.date === date);
+  const container = document.getElementById("ordersOfDay");
+  container.innerHTML = "";
+  let total = 0;
+
+  orders.forEach(order => {
+    const price = order.status === 'closed'
+      ? (order.price || calculateOrderPrice(order.operations || []))
+      : 0;
+    if (order.status === 'closed') total += price;
+    const priceDisplay = order.status === 'closed' ? `${Math.round(price * 100) / 100}₽` : '—';
+    const item = document.createElement("div");
+    item.className = "list-item";
+    item.innerHTML = `<span>${order.id}</span><span class="price-tag">${priceDisplay}</span>`;
+    container.appendChild(item);
+  });
+
+  total = Math.round(total * 100) / 100;
+  document.getElementById("totalOfDay").innerHTML = `<h3>итого: ${total}₽</h3>`;
+}
+
+// === ПЛАН ===
+
 function openPlanModal() {
   const today = new Date().toISOString().split('T')[0];
   let daily = 0;
@@ -918,70 +680,98 @@ function openPlanModal() {
   }
 }
 
+// === КАЛЬКУЛЯТОР ===
+
+function openCalculator() {
+  const modal = document.createElement('div');
+  modal.className = 'calculator-modal';
+  modal.innerHTML = `
+    <div class="calculator-content">
+      <h3>Калькулятор м²</h3>
+      <input type="number" id="calcLength" placeholder="Длина (мм)" min="1">
+      <input type="number" id="calcWidth" placeholder="Ширина (мм)" min="1">
+      <input type="number" id="calcQuantity" placeholder="Количество" value="1" min="1">
+      <div class="result" id="calcResult">0 м²</div>
+      <button id="copyResult" class="copy-btn">Скопировать результат</button>
+      <button id="closeCalc">Закрыть</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const updateResult = () => {
+    const length = parseFloat(document.getElementById('calcLength').value) || 0;
+    const width = parseFloat(document.getElementById('calcWidth').value) || 0;
+    const quantity = parseFloat(document.getElementById('calcQuantity').value) || 1;
+    const m2 = (length * width / 1_000_000) * quantity;
+    document.getElementById('calcResult').textContent = m2.toFixed(4) + ' м²';
+  };
+
+  ['calcLength', 'calcWidth', 'calcQuantity'].forEach(id => {
+    document.getElementById(id).addEventListener('input', updateResult);
+  });
+
+  document.getElementById('copyResult').addEventListener('click', () => {
+    const result = document.getElementById('calcResult').textContent;
+    navigator.clipboard.writeText(result).then(() => {
+      alert('Результат скопирован!');
+    });
+  });
+
+  document.getElementById('closeCalc').addEventListener('click', () => {
+    document.body.removeChild(modal);
+  });
+}
+
+// === НАСТРОЙКИ ===
+
+function showSettings() {
+  const modal = document.createElement('div');
+  modal.className = 'settings-modal';
+  modal.innerHTML = `
+    <div class="settings-content">
+      <h3>Настройки</h3>
+      <div class="theme-option" data-theme="light">
+        <span>Светлая тема</span>
+      </div>
+      <div class="theme-option" data-theme="dark">
+        <span>Тёмная тема</span>
+      </div>
+      <button style="width:100%; margin-top:15px;" onclick="this.parentElement.parentElement.remove()">Закрыть</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  modal.querySelectorAll('.theme-option').forEach(option => {
+    if (option.dataset.theme === currentTheme) {
+      option.classList.add('active');
+    }
+    option.onclick = () => {
+      modal.querySelectorAll('.theme-option').forEach(el => el.classList.remove('active'));
+      option.classList.add('active');
+      toggleTheme(option.dataset.theme);
+    };
+  });
+}
+
 // === ИНИЦИАЛИЗАЦИЯ ===
 
 document.addEventListener("DOMContentLoaded", () => {
-  let migrated = false;
-  data.orders.forEach(order => {
-    if (!order.operations) {
-      const globalDetail = order.detail || '-';
-      order.operations = [{
-        detail: globalDetail,
-        type: order.type || "Время",
-        quantity: order.quantity || 1,
-        m2: order.m2 || 0,
-        pm: order.pm || 0,
-        time: order.time || 0
-      }];
-      delete order.type;
-      delete order.quantity;
-      delete order.m2;
-      delete order.pm;
-      delete order.time;
-      migrated = true;
-    } else {
-      order.operations.forEach(op => {
-        if (op.detail === undefined) {
-          op.detail = order.detail || '-';
-          migrated = true;
-        }
-      });
-    }
-  });
-  if (migrated) saveData();
-
-  checkOverdueOrders();
-  updateNotificationBadge();
-  updateNotificationIcon();
-
   loadMainScreen();
-  setupEventListeners();
 
-  // Кнопка настроек
-  const settingsBtn = document.createElement('button');
-  settingsBtn.className = 'settings-btn';
-  settingsBtn.innerHTML = '⚙️';
-  settingsBtn.onclick = () => showSettings();
-  document.body.appendChild(settingsBtn);
-
-  // Кнопка калькулятора
-  const menuBtn = document.createElement('button');
-  menuBtn.className = 'menu-btn-bottom';
-  menuBtn.innerHTML = '☰';
-  menuBtn.onclick = () => openCalculator();
-  document.body.appendChild(menuBtn);
-
-  // Аватарка → план
-  document.getElementById('avatarBtn').addEventListener('click', openPlanModal);
-});
-
-function setupEventListeners() {
+  // Кнопки главного экрана
   document.getElementById("btnOrders").addEventListener("click", () => {
     showOrdersList();
-    addToHistory('ordersListScreen');
+    screenHistory.push('ordersListScreen');
   });
   document.getElementById("btnShifts").addEventListener("click", () => {
     showShiftsScreen();
-    addToHistory('shiftScreen');
+    screenHistory.push('shiftScreen');
   });
-}
+
+  // Аватарка → план
+  document.getElementById('avatarBtn').addEventListener('click', openPlanModal);
+
+  // Кнопки внизу
+  document.getElementById('settingsBtn').addEventListener('click', showSettings);
+  document.getElementById('calcBtn').addEventListener('click', openCalculator);
+});
