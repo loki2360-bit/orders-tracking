@@ -743,7 +743,6 @@ function showTimerModal() {
 
   const modal = document.createElement('div');
   modal.className = 'timer-modal';
-  // Стиль фона затемнения
   modal.style.cssText = `
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -798,26 +797,49 @@ function showTimerModal() {
 
   updateTimerDisplay();
 
-  const logsList = document.getElementById('timerLogsList');
-  const logs = JSON.parse(localStorage.getItem('timerLogs') || '[]');
-  if (logs.length === 0) {
-    logsList.innerHTML = '<p style="color:#999; text-align:center;">Нет записей</p>';
-  } else {
-    logsList.innerHTML = logs.map(log => `
-      <div style="padding:6px 0; border-bottom:1px solid ${currentTheme === 'dark' ? '#333' : '#eee'};">
-        <strong>${formatTime(log.duration)}</strong> — ${log.comment}
-        <br><small style="color:${currentTheme === 'dark' ? '#aaa' : '#777'};">${new Date(log.timestamp).toLocaleString('ru-RU')}</small>
-      </div>
-    `).join('');
+  // Функция для рендеринга списка записей
+  function renderTimerLogs() {
+    const logsList = document.getElementById('timerLogsList');
+    const logs = JSON.parse(localStorage.getItem('timerLogs') || '[]');
+    if (logs.length === 0) {
+      logsList.innerHTML = '<p style="color:#999; text-align:center;">Нет записей</p>';
+    } else {
+      logsList.innerHTML = logs.map(log => `
+        <div style="padding:8px 0; border-bottom:1px solid ${currentTheme === 'dark' ? '#333' : '#eee'}; display:flex; justify-content:space-between; align-items:flex-start;">
+          <div>
+            <strong>${formatTime(log.duration)}</strong> — ${log.comment}
+            <br><small style="color:${currentTheme === 'dark' ? '#aaa' : '#777'};">${new Date(log.timestamp).toLocaleString('ru-RU')}</small>
+          </div>
+          <button class="delete-timer-log" data-id="${log.id}" style="
+            background:#f44336; color:white; border:none; border-radius:4px; width:24px; height:24px; font-size:14px; cursor:pointer; flex-shrink:0; margin-left:8px;
+          ">×</button>
+        </div>
+      `).join('');
+
+      // Назначаем обработчики удаления
+      document.querySelectorAll('.delete-timer-log').forEach(btn => {
+        btn.onclick = function() {
+          const logId = parseInt(this.getAttribute('data-id'));
+          if (confirm('Удалить эту запись?')) {
+            let logs = JSON.parse(localStorage.getItem('timerLogs') || '[]');
+            logs = logs.filter(log => log.id !== logId);
+            localStorage.setItem('timerLogs', JSON.stringify(logs));
+            renderTimerLogs(); // Обновляем список
+          }
+        };
+      });
+    }
   }
 
-  // Обработчики
+  renderTimerLogs();
+
+  // Обработчики кнопок таймера
   document.getElementById('btnTimerStart').onclick = startTimer;
   document.getElementById('btnTimerPause').onclick = pauseTimer;
   document.getElementById('btnTimerReset').onclick = resetTimer;
   document.getElementById('btnTimerSave').onclick = saveTimerEntry;
 
-  // Включаем кнопку "Сохранить", если таймер остановлен и время > 0
+  // Активация кнопки "Сохранить"
   const saveBtn = document.getElementById('btnTimerSave');
   if (!isTimerRunning && timerSeconds > 0) {
     saveBtn.disabled = false;
