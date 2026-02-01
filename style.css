@@ -5,18 +5,16 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
 }
 
-/* === СВЕТЛАЯ ТЕМА — ОСНОВНОЙ ФОН === */
 body {
-  background: #fafafa; /* белый с лёгким серым оттенком */
+  background: #fafafa;
   padding: 16px;
   color: #000;
 }
 
-/* === КАРТОЧКИ ЭКРАНОВ === */
 .screen {
   max-width: 400px;
   margin: 0 auto;
-  background: #ffffff; /* чисто белый */
+  background: #ffffff;
   padding: 20px;
   border-radius: 16px;
   box-shadow: 6px 6px 12px rgba(0,0,0,0.08), -6px -6px 12px rgba(255,255,255,0.9);
@@ -27,11 +25,10 @@ body {
   display: block;
 }
 
-/* === КНОПКИ — ЖЁЛТЫЙ АКЦЕНТ === */
 button {
   width: 100%;
   padding: 12px;
-  background: #ffd700; /* золотой акцент */
+  background: #ffd700;
   color: #000;
   border: none;
   border-radius: 12px;
@@ -51,13 +48,11 @@ button:active {
   box-shadow: inset 2px 2px 4px rgba(0,0,0,0.1), inset -2px -2px 4px rgba(255,255,255,0.9);
 }
 
-/* === КНОПКА СОХРАНЕНИЯ — ЗЕЛЁНАЯ === */
 #btnSaveReportTxt {
   background: #4CAF50;
   color: white;
 }
 
-/* === ПОЛЯ ВВОДА И ВЫБОРА === */
 input,
 select {
   width: 100%;
@@ -71,7 +66,6 @@ select {
   color: #000;
 }
 
-/* === ПРОФИЛЬ === */
 .profile {
   display: flex;
   align-items: center;
@@ -102,7 +96,6 @@ select {
   color: #666;
 }
 
-/* === ЗАРАБОТОК === */
 .earnings,
 .today-earnings {
   text-align: center;
@@ -127,7 +120,6 @@ select {
   color: #333;
 }
 
-/* === СПИСОК ЗАКАЗОВ === */
 .list-item {
   padding: 12px;
   border-radius: 12px;
@@ -148,7 +140,6 @@ select {
   box-shadow: 2px 2px 4px rgba(0,0,0,0.1), -2px -2px 4px rgba(255,255,255,0.9);
 }
 
-/* === ГРУППИРОВКА ПО ДАТАМ === */
 .date-header {
   margin: 16px 0;
 }
@@ -161,7 +152,6 @@ select {
   font-weight: bold;
 }
 
-/* === ОПЕРАЦИИ В ДЕТАЛЯХ === */
 .operation-item {
   background: #f8f8f8;
   padding: 10px;
@@ -210,14 +200,6 @@ body.dark-theme button {
   box-shadow: 4px 4px 8px rgba(0,0,0,0.4), -4px -4px 8px rgba(0,0,0,0.2);
 }
 
-body.dark-theme button:hover {
-  box-shadow: 2px 2px 4px rgba(0,0,0,0.3), -2px -2px 4px rgba(0,0,0,0.1);
-}
-
-body.dark-theme button:active {
-  box-shadow: inset 2px 2px 4px rgba(0,0,0,0.3), inset -2px -2px 4px rgba(0,0,0,0.1);
-}
-
 body.dark-theme .operation-item {
   background: #333;
   color: #f0f0f0;
@@ -230,7 +212,6 @@ body.dark-theme .today-earnings h2 {
   color: #ffffff;
 }
 
-/* === КНОПКИ НАСТРОЕК И МЕНЮ === */
 .settings-btn,
 .menu-btn-bottom {
   position: fixed;
@@ -246,13 +227,8 @@ body.dark-theme .today-earnings h2 {
   z-index: 1000;
 }
 
-.settings-btn {
-  right: 20px;
-}
-
-.menu-btn-bottom {
-  right: 80px;
-}
+.settings-btn { right: 20px; }
+.menu-btn-bottom { right: 80px; }
 
 body.dark-theme .settings-btn,
 body.dark-theme .menu-btn-bottom {
@@ -261,7 +237,6 @@ body.dark-theme .menu-btn-bottom {
   color: #f0f0f0;
 }
 
-/* === МОДАЛЬНЫЕ ОКНА === */
 .settings-modal,
 .calculator-modal,
 .plan-modal,
@@ -298,7 +273,6 @@ body.dark-theme .modal-content {
   box-shadow: 6px 6px 12px rgba(0,0,0,0.5), -6px -6px 12px rgba(255,255,255,0.05);
 }
 
-/* === ПЛАН === */
 .plan-amount.under { color: #ff4444; }
 .plan-amount.achieved { color: #4CAF50; }
 
@@ -326,13 +300,11 @@ body.dark-theme .progress-bar { background: #333; }
   margin-top: 15px;
 }
 
-/* === ГРАФИК === */
 .chart-container {
   height: 150px;
   margin: 20px 0;
 }
 
-/* === УВЕДОМЛЕНИЯ === */
 .notification-item.unread {
   background: #fff3cd;
   border-left: 4px solid #ffc107;
