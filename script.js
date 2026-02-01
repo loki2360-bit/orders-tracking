@@ -182,47 +182,45 @@ function renderEarningsChart() {
     earnings.push(Math.round(sum * 100) / 100);
   }
 
-  earningsChart = new Chart(ctx, {
-    type: 'bar',
-     {
-      labels: dates,
-     datasets: [{
-  label: 'Заработок, ₽',
-  data: earnings,  // ← ВАЖНО: добавлено "data:"
-  backgroundColor: '#ffd700',
-  borderColor: '#000',
-  borderWidth: 1
-}]
+ earningsChart = new Chart(ctx, {
+  type: 'bar',
+  data: { // ← ДОБАВЛЕНО "data:"
+    labels: dates,
+    datasets: [{
+      label: 'Заработок, ₽',
+      data: earnings, // ← ДОБАВЛЕНО "data:"
+      backgroundColor: '#ffd700',
+      borderColor: '#000',
+      borderWidth: 1
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false }
     },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          ticks: {
-            color: currentTheme === 'dark' ? '#f0f0f0' : '#333'
-          },
-          grid: {
-            color: currentTheme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
-          }
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          color: currentTheme === 'dark' ? '#f0f0f0' : '#333'
         },
-        x: {
-          ticks: {
-            color: currentTheme === 'dark' ? '#f0f0f0' : '#333'
-          },
-          grid: {
-            display: false
-          }
+        grid: {
+          color: currentTheme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
+        }
+      },
+      x: {
+        ticks: {
+          color: currentTheme === 'dark' ? '#f0f0f0' : '#333'
+        },
+        grid: {
+          display: false
         }
       }
     }
-  });
-}
-
+  }
+});
 // === ГЛАВНЫЙ ЭКРАН ===
 function loadMainScreen() {
   let total = 0, daily = 0;
