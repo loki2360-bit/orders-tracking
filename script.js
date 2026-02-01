@@ -703,13 +703,24 @@ function pauseTimer() {
   document.getElementById('btnTimerStart').disabled = false;
   document.getElementById('btnTimerPause').disabled = true;
   document.getElementById('btnTimerSave').disabled = false;
+  // Обновляем стиль кнопки сохранения
+  const saveBtn = document.getElementById('btnTimerSave');
+  if (saveBtn) {
+    saveBtn.style.opacity = '1';
+    saveBtn.style.pointerEvents = 'auto';
+  }
 }
 
 function resetTimer() {
   pauseTimer();
   timerSeconds = 0;
   updateTimerDisplay();
-  document.getElementById('btnTimerSave').disabled = true;
+  const saveBtn = document.getElementById('btnTimerSave');
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.style.opacity = '0.7';
+    saveBtn.style.pointerEvents = 'none';
+  }
 }
 
 function saveTimerEntry() {
@@ -805,13 +816,31 @@ function showTimerModal() {
       logsList.innerHTML = '<p style="color:#999; text-align:center;">Нет записей</p>';
     } else {
       logsList.innerHTML = logs.map(log => `
-        <div style="padding:8px 0; border-bottom:1px solid ${currentTheme === 'dark' ? '#333' : '#eee'}; display:flex; justify-content:space-between; align-items:flex-start;">
-          <div>
+        <div style="
+          padding: 8px 0;
+          border-bottom: 1px solid ${currentTheme === 'dark' ? '#333' : '#eee'};
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        ">
+          <div style="flex: 1;">
             <strong>${formatTime(log.duration)}</strong> — ${log.comment}
             <br><small style="color:${currentTheme === 'dark' ? '#aaa' : '#777'};">${new Date(log.timestamp).toLocaleString('ru-RU')}</small>
           </div>
           <button class="delete-timer-log" data-id="${log.id}" style="
-            background:#f44336; color:white; border:none; border-radius:4px; width:24px; height:24px; font-size:14px; cursor:pointer; flex-shrink:0; margin-left:8px;
+            background: #f44336;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            width: 28px;
+            height: 28px;
+            font-size: 16px;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
           ">×</button>
         </div>
       `).join('');
@@ -838,14 +867,6 @@ function showTimerModal() {
   document.getElementById('btnTimerPause').onclick = pauseTimer;
   document.getElementById('btnTimerReset').onclick = resetTimer;
   document.getElementById('btnTimerSave').onclick = saveTimerEntry;
-
-  // Активация кнопки "Сохранить"
-  const saveBtn = document.getElementById('btnTimerSave');
-  if (!isTimerRunning && timerSeconds > 0) {
-    saveBtn.disabled = false;
-    saveBtn.style.opacity = '1';
-    saveBtn.style.pointerEvents = 'auto';
-  }
 }
 
 // === ПЛАН ===
