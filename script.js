@@ -175,7 +175,7 @@ function renderEarningsChart() {
     dates.push(ds);
     let sum = 0;
     data.orders.forEach(o => {
-      if (o.status === 'closed o.date === ds) {
+      if (o.status === 'closed' && o.date === ds) {
         sum += o.price || calculateOrderPrice(o.operations || []);
       }
     });
@@ -221,7 +221,7 @@ function renderEarningsChart() {
       }
     }
   });
-}  // ← ЗАКРЫВАЮЩАЯ СКОБКА ФУНКЦИИ — ОБЯЗАТЕЛЬНА!
+}
 
 // === ГЛАВНЫЙ ЭКРАН ===
 function loadMainScreen() {
@@ -623,7 +623,7 @@ function finishOrder(orderId) {
   if (!order) return;
   const price = calculateOrderPrice(order.operations);
   order.price = price;
-  order.status 'closed';
+  order.status = 'closed'; // ✅ ИСПРАВЛЕНО: добавлено '='
   saveData();
   alert(`Заказ завершён. Цена: ${price}₽`);
   showOrderDetails(orderId);
