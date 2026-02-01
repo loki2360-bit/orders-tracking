@@ -743,23 +743,55 @@ function showTimerModal() {
 
   const modal = document.createElement('div');
   modal.className = 'timer-modal';
+  // Стиль фона затемнения
+  modal.style.cssText = `
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+  `;
+
   modal.innerHTML = `
-    <div class="timer-content">
-      <h3>Таймер</h3>
-      <div id="timerDisplay" style="font-size:2em; margin:15px 0;">00:00:00</div>
-      <div>
-        <button id="btnTimerStart">▶ Старт</button>
-        <button id="btnTimerPause" disabled>⏸ Пауза</button>
-        <button id="btnTimerReset">⏹ Сброс</button>
+    <div class="timer-content" style="
+      background: ${currentTheme === 'dark' ? '#222' : '#fff'};
+      color: ${currentTheme === 'dark' ? '#eee' : '#333'};
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      width: 90%;
+      max-width: 400px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    ">
+      <h3 style="margin-top:0; text-align:center;">Таймер</h3>
+      <div id="timerDisplay" style="font-size:1.8em; margin:12px 0; text-align:center; font-weight:bold;">00:00:00</div>
+      
+      <div style="display:flex; gap:8px; justify-content:center; margin:15px 0;">
+        <button id="btnTimerStart" style="flex:1; padding:8px; background:#4CAF50; color:white; border:none; border-radius:8px; cursor:pointer;">▶ Старт</button>
+        <button id="btnTimerPause" disabled style="flex:1; padding:8px; background:#ff9800; color:white; border:none; border-radius:8px; cursor:pointer;">⏸ Пауза</button>
+        <button id="btnTimerReset" style="flex:1; padding:8px; background:#f44336; color:white; border:none; border-radius:8px; cursor:pointer;">⏹ Сброс</button>
       </div>
-      <button id="btnTimerSave" disabled style="margin-top:10px; background:#4CAF50; color:white;">💾 Сохранить</button>
-      
-      <h4 style="margin-top:20px;">Сохранённые записи:</h4>
-      <div id="timerLogsList" style="max-height:200px; overflow-y:auto; border-top:1px solid #ccc; padding-top:10px;"></div>
-      
-      <button onclick="this.parentElement.parentElement.remove()" style="margin-top:15px; width:100%; padding:8px; background:#f44336; color:white; border:none; border-radius:4px;">
-        Закрыть
-      </button>
+
+      <button id="btnTimerSave" disabled style="
+        width:100%; padding:10px; margin-top:8px;
+        background:#2196F3; color:white; border:none; border-radius:8px; cursor:pointer;
+        opacity:0.7; pointer-events:none;
+      ">💾 Сохранить запись</button>
+
+      <h4 style="margin:20px 0 10px 0; font-size:1.1em;">Сохранённые записи:</h4>
+      <div id="timerLogsList" style="
+        max-height:180px; overflow-y:auto; 
+        border-top:1px solid ${currentTheme === 'dark' ? '#444' : '#ddd'}; 
+        padding-top:10px;
+        font-size:0.95em;
+      "></div>
+
+      <button onclick="this.parentElement.parentElement.remove()" style="
+        width:100%; padding:10px; margin-top:15px;
+        background:#999; color:white; border:none; border-radius:8px; cursor:pointer;
+      ">Закрыть</button>
     </div>
   `;
   document.body.appendChild(modal);
@@ -769,20 +801,29 @@ function showTimerModal() {
   const logsList = document.getElementById('timerLogsList');
   const logs = JSON.parse(localStorage.getItem('timerLogs') || '[]');
   if (logs.length === 0) {
-    logsList.innerHTML = '<p>Нет записей</p>';
+    logsList.innerHTML = '<p style="color:#999; text-align:center;">Нет записей</p>';
   } else {
     logsList.innerHTML = logs.map(log => `
-      <div style="padding:6px 0; border-bottom:1px solid #eee;">
+      <div style="padding:6px 0; border-bottom:1px solid ${currentTheme === 'dark' ? '#333' : '#eee'};">
         <strong>${formatTime(log.duration)}</strong> — ${log.comment}
-        <br><small>${new Date(log.timestamp).toLocaleString('ru-RU')}</small>
+        <br><small style="color:${currentTheme === 'dark' ? '#aaa' : '#777'};">${new Date(log.timestamp).toLocaleString('ru-RU')}</small>
       </div>
     `).join('');
   }
 
+  // Обработчики
   document.getElementById('btnTimerStart').onclick = startTimer;
   document.getElementById('btnTimerPause').onclick = pauseTimer;
   document.getElementById('btnTimerReset').onclick = resetTimer;
   document.getElementById('btnTimerSave').onclick = saveTimerEntry;
+
+  // Включаем кнопку "Сохранить", если таймер остановлен и время > 0
+  const saveBtn = document.getElementById('btnTimerSave');
+  if (!isTimerRunning && timerSeconds > 0) {
+    saveBtn.disabled = false;
+    saveBtn.style.opacity = '1';
+    saveBtn.style.pointerEvents = 'auto';
+  }
 }
 
 // === ПЛАН ===
