@@ -1,9 +1,10 @@
 {
   "name": "Учёт заказов",
   "short_name": "Заказы",
-  "start_url": "/",
+  "start_url": "/orders-tracking/",
+  "scope": "/orders-tracking/",
   "display": "standalone",
-  "background_color": "#fdf6b3",
+  "background_color": "#fafafa",
   "theme_color": "#FFD700",
   "icons": [
     {
