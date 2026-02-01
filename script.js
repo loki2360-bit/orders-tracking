@@ -241,7 +241,7 @@ function loadMainScreen() {
   renderEarningsChart();
   if (daily >= 3000 && localStorage.getItem('planNotifiedToday') !== today) {
     setTimeout(() => {
-      alert('😎 План на смену выполнен!');
+      alert('🎉 План на смену выполнен!');
       localStorage.setItem('planNotifiedToday', today);
     }, 1000);
   }
@@ -472,7 +472,6 @@ function createOrderForm() {
       const detail = document.getElementById("orderDetail").value.trim() || '-';
       const type = document.getElementById("orderType").value;
       
-      // Теперь значения могут быть пустыми → используем разумные дефолты
       const quantity = parseFloat(document.getElementById("quantity").value) || 1;
       const m2 = parseFloat(document.getElementById("m2").value) || 0;
       const pm = parseFloat(document.getElementById("pm").value) || 0;
@@ -670,6 +669,122 @@ function openCalculator() {
   };
 }
 
+// === ТАЙМЕР ===
+let timerInterval = null;
+let timerSeconds = 0;
+let isTimerRunning = false;
+
+function formatTime(seconds) {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  return [h, m, s].map(v => v.toString().padStart(2, '0')).join(':');
+}
+
+function updateTimerDisplay() {
+  document.getElementById('timerDisplay').textContent = formatTime(timerSeconds);
+}
+
+function startTimer() {
+  if (isTimerRunning) return;
+  isTimerRunning = true;
+  timerInterval = setInterval(() => {
+    timerSeconds++;
+    updateTimerDisplay();
+  }, 1000);
+  document.getElementById('btnTimerStart').disabled = true;
+  document.getElementById('btnTimerPause').disabled = false;
+}
+
+function pauseTimer() {
+  if (!isTimerRunning) return;
+  clearInterval(timerInterval);
+  isTimerRunning = false;
+  document.getElementById('btnTimerStart').disabled = false;
+  document.getElementById('btnTimerPause').disabled = true;
+  document.getElementById('btnTimerSave').disabled = false;
+}
+
+function resetTimer() {
+  pauseTimer();
+  timerSeconds = 0;
+  updateTimerDisplay();
+  document.getElementById('btnTimerSave').disabled = true;
+}
+
+function saveTimerEntry() {
+  if (timerSeconds === 0) {
+    alert('Нет времени для сохранения');
+    return;
+  }
+
+  const comment = prompt('Введите комментарий к записи (например: "Приборка цеха"):', '');
+  if (comment === null) return;
+
+  const entry = {
+    id: Date.now(),
+    duration: timerSeconds,
+    comment: comment.trim() || '(без комментария)',
+    timestamp: new Date().toISOString()
+  };
+
+  const timerLogs = JSON.parse(localStorage.getItem('timerLogs') || '[]');
+  timerLogs.push(entry);
+  localStorage.setItem('timerLogs', JSON.stringify(timerLogs));
+
+  alert(`Запись сохранена: ${formatTime(timerSeconds)} — ${entry.comment}`);
+  resetTimer();
+  showTimerModal();
+}
+
+function showTimerModal() {
+  const existing = document.querySelector('.timer-modal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.className = 'timer-modal';
+  modal.innerHTML = `
+    <div class="timer-content">
+      <h3>Таймер</h3>
+      <div id="timerDisplay" style="font-size:2em; margin:15px 0;">00:00:00</div>
+      <div>
+        <button id="btnTimerStart">▶ Старт</button>
+        <button id="btnTimerPause" disabled>⏸ Пауза</button>
+        <button id="btnTimerReset">⏹ Сброс</button>
+      </div>
+      <button id="btnTimerSave" disabled style="margin-top:10px; background:#4CAF50; color:white;">💾 Сохранить</button>
+      
+      <h4 style="margin-top:20px;">Сохранённые записи:</h4>
+      <div id="timerLogsList" style="max-height:200px; overflow-y:auto; border-top:1px solid #ccc; padding-top:10px;"></div>
+      
+      <button onclick="this.parentElement.parentElement.remove()" style="margin-top:15px; width:100%; padding:8px; background:#f44336; color:white; border:none; border-radius:4px;">
+        Закрыть
+      </button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  updateTimerDisplay();
+
+  const logsList = document.getElementById('timerLogsList');
+  const logs = JSON.parse(localStorage.getItem('timerLogs') || '[]');
+  if (logs.length === 0) {
+    logsList.innerHTML = '<p>Нет записей</p>';
+  } else {
+    logsList.innerHTML = logs.map(log => `
+      <div style="padding:6px 0; border-bottom:1px solid #eee;">
+        <strong>${formatTime(log.duration)}</strong> — ${log.comment}
+        <br><small>${new Date(log.timestamp).toLocaleString('ru-RU')}</small>
+      </div>
+    `).join('');
+  }
+
+  document.getElementById('btnTimerStart').onclick = startTimer;
+  document.getElementById('btnTimerPause').onclick = pauseTimer;
+  document.getElementById('btnTimerReset').onclick = resetTimer;
+  document.getElementById('btnTimerSave').onclick = saveTimerEntry;
+}
+
 // === ПЛАН ===
 function openPlanModal() {
   const today = new Date().toISOString().split('T')[0];
@@ -695,7 +810,7 @@ function openPlanModal() {
   document.body.appendChild(modal);
   if (achieved) {
     document.getElementById('giftIcon').onclick = () => {
-      alert('😎 План выполнен!');
+      alert('🎉 План выполнен!');
       modal.remove();
     };
   }
@@ -730,7 +845,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <div class="settings-content">
         <h3>Тема</h3>
         <div onclick="toggleTheme('light')" style="margin:10px; cursor:pointer;">Светлая</div>
-        <div onclick="toggleTheme('dark')" style="margin:10; cursor:pointer;">Тёмная</div>
+        <div onclick="toggleTheme('dark')" style="margin:10px; cursor:pointer;">Тёмная</div>
         <button onclick="this.parentElement.parentElement.remove()" style="width:100%; margin-top:15px;">Закрыть</button>
       </div>
     `;
@@ -745,8 +860,32 @@ document.addEventListener("DOMContentLoaded", () => {
   menuBtn.onclick = openCalculator;
   document.body.appendChild(menuBtn);
 
+  // Кнопка таймера
+  const timerBtn = document.createElement('button');
+  timerBtn.className = 'menu-btn-bottom';
+  timerBtn.innerHTML = '⏱️';
+  timerBtn.onclick = showTimerModal;
+  document.body.appendChild(timerBtn);
+
   // Аватар → план
   document.getElementById('avatarBtn').onclick = openPlanModal;
+
+  // Позиционирование кнопок
+  settingsBtn.style.position = 'fixed';
+  settingsBtn.style.bottom = '16px';
+  settingsBtn.style.left = '16px';
+  settingsBtn.style.zIndex = '1000';
+
+  menuBtn.style.position = 'fixed';
+  menuBtn.style.bottom = '16px';
+  menuBtn.style.left = '50%';
+  menuBtn.style.transform = 'translateX(-50%)';
+  menuBtn.style.zIndex = '1000';
+
+  timerBtn.style.position = 'fixed';
+  timerBtn.style.bottom = '16px';
+  timerBtn.style.right = '16px';
+  timerBtn.style.zIndex = '1000';
 });
 
 function toggleTheme(theme) {
