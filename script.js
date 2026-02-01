@@ -241,7 +241,7 @@ function loadMainScreen() {
   renderEarningsChart();
   if (daily >= 3000 && localStorage.getItem('planNotifiedToday') !== today) {
     setTimeout(() => {
-      alert('🎉 План на смену выполнен!');
+      alert('😎 План на смену выполнен!');
       localStorage.setItem('planNotifiedToday', today);
     }, 1000);
   }
@@ -455,10 +455,10 @@ function createOrderForm() {
         <option value="Пазовка">Пазовка — 30₽/п.м</option>
         <option value="Время">Время — 330₽</option>
       </select>
-      <input type="number" id="quantity" placeholder="Количество" value="1" min="1" step="1">
-      <input type="number" id="m2" placeholder="м²" value="0" min="0" step="0.1">
-      <input type="number" id="pm" placeholder="п.м" value="0" min="0" step="0.1">
-      <input type="number" id="time" placeholder="Часы" value="0" min="0" step="0.5">
+      <input type="number" id="quantity" placeholder="Количество (мин. 1)" min="1" step="1">
+      <input type="number" id="m2" placeholder="м² (например: 2.5)" min="0" step="0.01">
+      <input type="number" id="pm" placeholder="п.м (например: 3.2)" min="0" step="0.01">
+      <input type="number" id="time" placeholder="Часы (например: 1.5)" min="0" step="0.5">
       <button id="saveOrder">создать</button>
       <button onclick="goToPrevious()">назад</button>
     `;
@@ -471,6 +471,8 @@ function createOrderForm() {
       if (!id) { alert("Введите номер заказа"); return; }
       const detail = document.getElementById("orderDetail").value.trim() || '-';
       const type = document.getElementById("orderType").value;
+      
+      // Теперь значения могут быть пустыми → используем разумные дефолты
       const quantity = parseFloat(document.getElementById("quantity").value) || 1;
       const m2 = parseFloat(document.getElementById("m2").value) || 0;
       const pm = parseFloat(document.getElementById("pm").value) || 0;
@@ -511,10 +513,10 @@ function showAddOperationForm(orderId) {
         <option value="Пазовка">Пазовка — 30₽/п.м</option>
         <option value="Время">Время — 330₽</option>
       </select>
-      <input type="number" id="newOpQuantity" placeholder="Количество" value="1" min="1" step="1">
-      <input type="number" id="newOpM2" placeholder="м²" value="0" min="0" step="0.1">
-      <input type="number" id="newOpPM" placeholder="п.м" value="0" min="0" step="0.1">
-      <input type="number" id="newOpTime" placeholder="Часы" value="0" min="0" step="0.5">
+      <input type="number" id="newOpQuantity" placeholder="Количество (мин. 1)" min="1" step="1">
+      <input type="number" id="newOpM2" placeholder="м² (например: 2.5)" min="0" step="0.01">
+      <input type="number" id="newOpPM" placeholder="п.м (например: 3.2)" min="0" step="0.01">
+      <input type="number" id="newOpTime" placeholder="Часы (например: 1.5)" min="0" step="0.5">
       <button id="saveNewOp">добавить</button>
       <button id="cancelNewOp">отмена</button>
     </div>
@@ -623,7 +625,7 @@ function finishOrder(orderId) {
   if (!order) return;
   const price = calculateOrderPrice(order.operations);
   order.price = price;
-  order.status = 'closed'; // ✅ ИСПРАВЛЕНО: добавлено '='
+  order.status = 'closed';
   saveData();
   alert(`Заказ завершён. Цена: ${price}₽`);
   showOrderDetails(orderId);
@@ -638,7 +640,7 @@ function openCalculator() {
       <h3>Калькулятор м²</h3>
       <input type="number" id="calcLength" placeholder="Длина (мм)" min="1">
       <input type="number" id="calcWidth" placeholder="Ширина (мм)" min="1">
-      <input type="number" id="calcQuantity" placeholder="Количество" value="1" min="1">
+      <input type="number" id="calcQuantity" placeholder="Количество" min="1">
       <div class="result" id="calcResult">0 м²</div>
       <button id="copyResult">Скопировать</button>
       <button id="closeCalc">Закрыть</button>
@@ -693,7 +695,7 @@ function openPlanModal() {
   document.body.appendChild(modal);
   if (achieved) {
     document.getElementById('giftIcon').onclick = () => {
-      alert('🎉 План выполнен!');
+      alert('😎 План выполнен!');
       modal.remove();
     };
   }
@@ -728,7 +730,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <div class="settings-content">
         <h3>Тема</h3>
         <div onclick="toggleTheme('light')" style="margin:10px; cursor:pointer;">Светлая</div>
-        <div onclick="toggleTheme('dark')" style="margin:10px; cursor:pointer;">Тёмная</div>
+        <div onclick="toggleTheme('dark')" style="margin:10; cursor:pointer;">Тёмная</div>
         <button onclick="this.parentElement.parentElement.remove()" style="width:100%; margin-top:15px;">Закрыть</button>
       </div>
     `;
