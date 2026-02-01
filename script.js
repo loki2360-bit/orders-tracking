@@ -175,21 +175,20 @@ function renderEarningsChart() {
     dates.push(ds);
     let sum = 0;
     data.orders.forEach(o => {
-      if (o.status === 'closed' && o.date === ds) {
+      if (o.status === 'closed o.date === ds) {
         sum += o.price || calculateOrderPrice(o.operations || []);
       }
     });
     earnings.push(Math.round(sum * 100) / 100);
   }
 
-  // 🔥 КЛЮЧЕВОЙ ИСПРАВЛЕННЫЙ БЛОК:
   earningsChart = new Chart(ctx, {
     type: 'bar',
-    data: {  // ← ОБЯЗАТЕЛЬНО "data:"
+    data: {
       labels: dates,
       datasets: [{
         label: 'Заработок, ₽',
-        data: earnings,  // ← ОБЯЗАТЕЛЬНО "data:"
+        data: earnings,
         backgroundColor: '#ffd700',
         borderColor: '#000',
         borderWidth: 1
@@ -222,7 +221,8 @@ function renderEarningsChart() {
       }
     }
   });
-}
+}  // ← ЗАКРЫВАЮЩАЯ СКОБКА ФУНКЦИИ — ОБЯЗАТЕЛЬНА!
+
 // === ГЛАВНЫЙ ЭКРАН ===
 function loadMainScreen() {
   let total = 0, daily = 0;
@@ -623,7 +623,7 @@ function finishOrder(orderId) {
   if (!order) return;
   const price = calculateOrderPrice(order.operations);
   order.price = price;
-  order.status = 'closed';
+  order.status 'closed';
   saveData();
   alert(`Заказ завершён. Цена: ${price}₽`);
   showOrderDetails(orderId);
@@ -752,7 +752,7 @@ function toggleTheme(theme) {
   localStorage.setItem('theme', theme);
   document.body.classList.toggle('dark-theme', theme === 'dark');
   if (document.getElementById('mainScreen').classList.contains('active')) {
-    loadMainScreen(); // обновить график
+    loadMainScreen();
   }
 }
 
