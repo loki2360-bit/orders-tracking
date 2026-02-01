@@ -186,13 +186,13 @@ function renderEarningsChart() {
     type: 'bar',
      {
       labels: dates,
-      datasets: [{
-        label: 'Заработок, ₽',
-         earnings,
-        backgroundColor: '#ffd700',
-        borderColor: '#000',
-        borderWidth: 1
-      }]
+     datasets: [{
+  label: 'Заработок, ₽',
+  data: earnings,  // ← ВАЖНО: добавлено "data:"
+  backgroundColor: '#ffd700',
+  borderColor: '#000',
+  borderWidth: 1
+}]
     },
     options: {
       responsive: true,
