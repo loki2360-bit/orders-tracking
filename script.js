@@ -10,7 +10,7 @@ let screenHistory = ['mainScreen'];
 // === ТАРИФЫ ===
 const RATES = {
   "Распил": 65,
-  "Линейный": 26,
+  "Линей6,
   "Склейка простая": 165,
   "Склейка с обгоном": 210,
   "Фрезер фаски": 16,
@@ -125,9 +125,7 @@ function renderEarningsChart() {
   if (!ctx) return;
 
   const chartCtx = ctx.getContext('2d');
-  if (earningsChart) {
-    earningsChart.destroy();
-  }
+  if (earningsChart) earningsChart.destroy();
 
   const today = new Date();
   const dates = [];
@@ -147,14 +145,14 @@ function renderEarningsChart() {
     earnings.push(Math.round(sum * 100) / 100);
   }
 
-  // ✅ Правильная структура для Chart.js v3/v4
+  // ✅ КРИТИЧЕСКИ ВАЖНО: правильная структура для Chart.js
   earningsChart = new Chart(chartCtx, {
     type: 'bar',
     data: {
       labels: dates,
       datasets: [{
         label: 'Заработок, ₽',
-        data: earnings,  // ← КЛЮЧЕВОЙ ИСПРАВЛЕНИЕ: data: earnings (не просто earnings,)
+        data: earnings,  // ← НЕ "earnings," — а "data: earnings"
         backgroundColor: currentTheme === 'dark' ? '#4a90e2' : '#ffd700',
         borderColor: currentTheme === 'dark' ? '#6ec1e4' : '#000',
         borderWidth: 1
@@ -350,7 +348,6 @@ function showCreateOrderScreen() {
 
 // === ИНИЦИАЛИЗАЦИЯ ===
 function initApp() {
-  // Кнопка смены темы
   const toggle = document.getElementById('themeToggle');
   if (toggle) {
     toggle.onclick = () => {
@@ -361,7 +358,6 @@ function initApp() {
     };
   }
 
-  // Создаём mainScreen, если ещё не существует
   if (!document.getElementById('mainScreen')) {
     const mainScreen = document.createElement('div');
     mainScreen.id = 'mainScreen';
@@ -387,11 +383,11 @@ function initApp() {
 document.addEventListener('DOMContentLoaded', () => {
   try {
     initApp();
-  } catch (e)    console.error("Ошибка инициализации:", e);
-    alert("Произошла ошибка при запуске. Проверьте консоль.");
+  } catch (e) {
+    console.error("Ошибка инициализации:", e);
+    alert("Ошибка загрузки приложения. Проверьте консоль.");
   }
 
-  // Регистрация Service Worker
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       const swPath = '/orders-tracking/service-worker.js';
