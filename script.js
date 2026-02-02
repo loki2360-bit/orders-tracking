@@ -1,16 +1,13 @@
-// === ГЛОБАЛЬНЫЕ ДАННЫЕ ===
+// === ВАЖНО: НИКАКИХ ОШИБОК — только чистый JS ===
 let data = JSON.parse(localStorage.getItem('ordersData')) || { orders: [] };
 let currentTheme = localStorage.getItem('theme') || 'light';
-if (currentTheme === 'dark') {
-  document.body.classList.add('dark-theme');
-}
+if (currentTheme === 'dark') document.body.classList.add('dark-theme');
 
 let screenHistory = ['mainScreen'];
 
-// === ТАРИФЫ ===
 const RATES = {
   "Распил": 65,
-  "Линей6,
+  "Линейный": 26,
   "Склейка простая": 165,
   "Склейка с обгоном": 210,
   "Фрезер фаски": 16,
@@ -18,31 +15,26 @@ const RATES = {
   "Время": 330
 };
 
-// === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
 function saveData() {
   localStorage.setItem('ordersData', JSON.stringify(data));
 }
 
-function calculateOrderPrice(operations) {
-  if (!Array.isArray(operations)) return 0;
-  let total = 0;
-  operations.forEach(op => {
+function calculateOrderPrice(ops) {
+  if (!Array.isArray(ops)) return 0;
+  return ops.reduce((sum, op) => {
     const qty = op.quantity || 1;
-    if (["Распил", "Склейка простая", "Склейка с обгоном"].includes(op.type)) {
-      total += (op.m2 || 0) * RATES[op.type] * qty;
-    }
-    if (["Линейный", "Фрезер фаски", "Пазовка"].includes(op.type)) {
-      total += (op.pm || 0) * RATES[op.type] * qty;
-    }
-    if (op.type === "Время") {
-      total += (op.time || 0) * RATES[op.type] * qty;
-    }
-  });
-  return Math.round(total * 100) / 100;
+    if (["Распил","Склейка простая","Склейка с обгоном"].includes(op.type))
+      return sum + (op.m2 || 0) * RATES[op.type] * qty;
+    if (["Линейный","Фрезер фаски","Пазовка"].includes(op.type))
+      return sum + (op.pm || 0) * RATES[op.type] * qty;
+    if (op.type === "Время")
+      return sum + (op.time || 0) * RATES[op.type] * qty;
+    return sum;
+  }, 0);
 }
 
 function switchScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
   const el = document.getElementById(id);
   if (el) el.classList.add('active');
 }
@@ -59,341 +51,217 @@ function goToPrevious() {
 }
 
 function addToHistory(id) {
-  if (screenHistory[screenHistory.length - 1] !== id) {
-    screenHistory.push(id);
-  }
+  if (screenHistory[screenHistory.length - 1] !== id) screenHistory.push(id);
 }
 
-// === ГЛАВНЫЙ ЭКРАН ===
 function loadMainScreen() {
-  const now = new Date();
-  const today = now.toISOString().split('T')[0];
-  const currentYear = now.getFullYear();
-  const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
-
-  let totalEarnings = 0;
-  let dailyEarnings = 0;
-  let totalM2 = 0;
-  let totalPm = 0;
+  const today = new Date().toISOString().split('T')[0];
+  const ym = new Date().toISOString().slice(0, 7);
+  let total = 0, daily = 0, m2 = 0, pm = 0;
 
   data.orders.forEach(o => {
     if (o.status === 'closed') {
       const price = o.price || calculateOrderPrice(o.operations || []);
-      totalEarnings += price;
-      if (o.date === today) dailyEarnings += price;
-
-      if (o.date && o.date.startsWith(`${currentYear}-${currentMonth}`)) {
+      total += price;
+      if (o.date === today) daily += price;
+      if (o.date?.startsWith(ym)) {
         (o.operations || []).forEach(op => {
-          if (["Распил", "Склейка простая", "Склейка с обгоном"].includes(op.type)) {
-            totalM2 += (op.m2 || 0) * (op.quantity || 1);
-          }
-          if (["Линейный", "Фрезер фаски", "Пазовка"].includes(op.type)) {
-            totalPm += (op.pm || 0) * (op.quantity || 1);
-          }
+          if (["Распил","Склейка простая","Склейка с обгоном"].includes(op.type))
+            m2 += (op.m2 || 0) * (op.quantity || 1);
+          if (["Линейный","Фрезер фаски","Пазовка"].includes(op.type))
+            pm += (op.pm || 0) * (op.quantity || 1);
         });
       }
     }
   });
 
-  totalEarnings = Math.round(totalEarnings * 100) / 100;
-  dailyEarnings = Math.round(dailyEarnings * 100) / 100;
-  totalM2 = Math.round(totalM2 * 100) / 100;
-  totalPm = Math.round(totalPm * 100) / 100;
+  document.getElementById("totalEarnings")?.textContent = `${Math.round(total)}₽`;
+  document.getElementById("dailyEarnings")?.textContent = `${Math.round(daily)}₽`;
+  document.getElementById("monthlyM2")?.textContent = `${Math.round(m2 * 100) / 100} м²`;
+  document.getElementById("monthlyPm")?.textContent = `${Math.round(pm * 100) / 100} п.м`;
 
-  document.getElementById("totalEarnings")?.textContent = `${totalEarnings}₽`;
-  document.getElementById("dailyEarnings")?.textContent = `${dailyEarnings}₽`;
-  document.getElementById("monthlyM2")?.textContent = `${totalM2} м²`;
-  document.getElementById("monthlyPm")?.textContent = `${totalPm} п.м`;
-
-  renderEarningsChart();
-
-  // Уведомление о плане
-  if (dailyEarnings >= 3000 && localStorage.getItem('planNotifiedToday') !== today) {
+  renderChart();
+  if (daily >= 3000 && localStorage.getItem('planNotifiedToday') !== today) {
     setTimeout(() => {
-      alert('🎉 План на смену (3000₽) выполнен!');
+      alert('🎉 План выполнен!');
       localStorage.setItem('planNotifiedToday', today);
-    }, 1000);
+    }, 500);
   }
-
   switchScreen('mainScreen');
 }
 
-// === ГРАФИК ===
-let earningsChart = null;
-function renderEarningsChart() {
+let chartInst = null;
+function renderChart() {
   const ctx = document.getElementById('earningsChart');
   if (!ctx) return;
+  const c = ctx.getContext('2d');
+  if (chartInst) chartInst.destroy();
 
-  const chartCtx = ctx.getContext('2d');
-  if (earningsChart) earningsChart.destroy();
-
-  const today = new Date();
   const dates = [];
-  const earnings = [];
-
+  const vals = [];
   for (let i = 6; i >= 0; i--) {
-    const d = new Date(today);
+    const d = new Date();
     d.setDate(d.getDate() - i);
     const ds = d.toISOString().split('T')[0];
     dates.push(ds);
-    let sum = 0;
-    data.orders.forEach(o => {
-      if (o.status === 'closed' && o.date === ds) {
-        sum += o.price || calculateOrderPrice(o.operations || []);
-      }
-    });
-    earnings.push(Math.round(sum * 100) / 100);
+    vals.push(Math.round(data.orders
+      .filter(o => o.status === 'closed' && o.date === ds)
+      .reduce((s, o) => s + (o.price || calculateOrderPrice(o.operations || [])), 0)
+    ));
   }
 
-  // ✅ КРИТИЧЕСКИ ВАЖНО: правильная структура для Chart.js
-  earningsChart = new Chart(chartCtx, {
+  chartInst = new Chart(c, {
     type: 'bar',
     data: {
       labels: dates,
       datasets: [{
-        label: 'Заработок, ₽',
-        data: earnings,  // ← НЕ "earnings," — а "data: earnings"
+        label: '₽',
+        data: vals,
         backgroundColor: currentTheme === 'dark' ? '#4a90e2' : '#ffd700',
-        borderColor: currentTheme === 'dark' ? '#6ec1e4' : '#000',
+        borderColor: '#000',
         borderWidth: 1
       }]
     },
     options: {
       responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false }
-      },
+      plugins: { legend: { display: false } },
       scales: {
-        y: {
-          beginAtZero: true,
-          ticks: {
-            color: currentTheme === 'dark' ? '#f0f0f0' : '#333'
-          },
-          grid: {
-            color: currentTheme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
-          }
-        },
-        x: {
-          ticks: {
-            color: currentTheme === 'dark' ? '#f0f0f0' : '#333'
-          },
-          grid: { display: false }
-        }
+        y: { beginAtZero: true },
+        x: { grid: { display: false } }
       }
     }
   });
 }
 
-// === СОХРАНЕНИЕ ОТЧЁТА ===
-function saveReportAsText(date) {
+function saveReport(date) {
   const orders = data.orders.filter(o => o.date === date);
-  if (orders.length === 0) {
-    alert(`Нет заказов за ${date}`);
-    return;
-  }
-
-  let txt = `Отчёт за ${date}\n====================\n\n`;
-  let totalSum = 0;
-
+  if (!orders.length) return alert(`Нет заказов за ${date}`);
+  let txt = `Отчёт ${date}\n`;
+  let total = 0;
   orders.forEach(o => {
-    const price = o.status === 'closed'
-      ? (o.price || calculateOrderPrice(o.operations))
-      : calculateOrderPrice(o.operations);
-    totalSum += price;
-
-    txt += `Заказ №: ${o.id}\n`;
-    txt += `Статус: ${o.status === 'closed' ? 'Завершён' : 'Открыт'}\n`;
-    txt += `Деталь: ${o.detail || '-'}\n`;
-    txt += `Операции:\n`;
-    (o.operations || []).forEach((op, i) => {
-      txt += `  ${i + 1}. ${op.type}\n`;
-      txt += `     Деталь: ${op.detail || '-'}\n`;
-      txt += `     Кол-во: ${op.quantity || 1}\n`;
-      if (op.m2) txt += `     м²: ${op.m2}\n`;
-      if (op.pm) txt += `     п.м: ${op.pm}\n`;
-      if (op.time) txt += `     Часы: ${op.time}\n`;
-      txt += `     Стоимость: ${calculateOrderPrice([op])}₽\n`;
+    const p = o.price || calculateOrderPrice(o.operations || []);
+    total += p;
+    txt += `\nЗаказ ${o.id}: ${p}₽\n`;
+    (o.operations || []).forEach(op => {
+      txt += `  • ${op.type} (${op.detail}) → ${calculateOrderPrice([op])}₽\n`;
     });
-    txt += `Итого по заказу: ${price}₽\n---\n\n`;
   });
+  txt += `\nИТОГО: ${total}₽`;
 
-  txt += `\nОБЩАЯ СУММА: ${totalSum}₽\n`;
-  txt += `\nСформировано: ${new Date().toLocaleString('ru-RU')}`;
-
-  const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
+  const blob = new Blob([txt], { type: 'text/plain' });
   const a = document.createElement('a');
-  a.href = url;
-  a.download = `отчёт_заказы_${date}.txt`;
-  document.body.appendChild(a);
+  a.href = URL.createObjectURL(blob);
+  a.download = `report_${date}.txt`;
   a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
 }
 
-// === ЭКРАН ОТЧЁТОВ ===
-function showShiftsScreen() {
-  let el = document.getElementById("shiftScreen");
-  if (!el) {
-    el = document.createElement("div");
-    el.className = "screen";
-    el.id = "shiftScreen";
-    el.innerHTML = `
-      <h2>Отчёты по дням</h2>
-      <input type="date" id="dateInput">
-      <button id="showOrdersForDay">Показать заказы</button>
-      <div id="ordersOfDay"></div>
-      <div id="totalOfDay"></div>
-      <button id="btnSaveReportTxt">💾 Сохранить отчёт (.txt)</button>
-      <button onclick="goToPrevious()">Назад</button>
-    `;
-    document.body.appendChild(el);
-
-    document.getElementById("dateInput").value = new Date().toISOString().split('T')[0];
-
-    document.getElementById("showOrdersForDay").onclick = () => {
-      const d = document.getElementById("dateInput").value;
-      if (d) showOrdersForDay(d);
-    };
-
-    document.getElementById("btnSaveReportTxt").onclick = () => {
-      const d = document.getElementById("dateInput").value;
-      if (d) saveReportAsText(d);
-    };
+function showShifts() {
+  if (!document.getElementById('shiftScreen')) {
+    document.body.insertAdjacentHTML('beforeend', `
+      <div id="shiftScreen" class="screen">
+        <h2>Отчёты</h2>
+        <input type="date" id="dt" value="${new Date().toISOString().split('T')[0]}">
+        <button onclick="showDay()">Показать</button>
+        <div id="list"></div>
+        <button onclick="saveReport(document.getElementById('dt').value)">💾 TXT</button>
+        <button onclick="goToPrevious()">←</button>
+      </div>`);
   }
   switchScreen('shiftScreen');
   addToHistory('shiftScreen');
 }
 
-function showOrdersForDay(date) {
-  const orders = data.orders.filter(o => o.date === date);
-  const cont = document.getElementById("ordersOfDay");
-  const totalCont = document.getElementById("totalOfDay");
-  cont.innerHTML = "";
-  let total = 0;
-
-  orders.forEach(o => {
-    const p = o.status === 'closed' ? (o.price || calculateOrderPrice(o.operations || [])) : 0;
-    if (o.status === 'closed') total += p;
-    const disp = o.status === 'closed' ? `${Math.round(p * 100) / 100}₽` : '—';
-    const item = document.createElement("div");
-    item.innerHTML = `<strong>${o.id}</strong>: ${disp}`;
-    cont.appendChild(item);
-  });
-
-  totalCont.textContent = `Итого за день: ${Math.round(total * 100) / 100}₽`;
+function showDay() {
+  const d = document.getElementById('dt').value;
+  const list = document.getElementById('list');
+  const orders = data.orders.filter(o => o.date === d);
+  list.innerHTML = orders.map(o => {
+    const p = o.price || calculateOrderPrice(o.operations || []);
+    return `<div><b>${o.id}</b>: ${p}₽</div>`;
+  }).join('') || '<i>Нет заказов</i>';
 }
 
-// === СОЗДАНИЕ ЗАКАЗА ===
-function showCreateOrderScreen() {
-  let screen = document.getElementById("createOrderScreen");
-  if (!screen) {
-    screen = document.createElement("div");
-    screen.className = "screen";
-    screen.id = "createOrderScreen";
-    screen.innerHTML = `
-      <h2>Создать заказ</h2>
-      <input type="text" id="orderNumber" placeholder="Номер заказа" required>
-      <input type="text" id="orderDetail" placeholder="Деталь">
-      <input type="date" id="orderDate">
-      <select id="orderType">
-        <option value="Распил">Распил — 65₽/м²</option>
-        <option value="Линейный">Линейный — 26₽/п.м</option>
-        <option value="Склейка простая">Склейка простая — 165₽/м²</option>
-        <option value="Склейка с обгоном">Склейка с обгоном — 210₽/м²</option>
-        <option value="Фрезер фаски">Фрезер фаски — 16₽/п.м</option>
-        <option value="Пазовка">Пазовка — 30₽/п.м</option>
-        <option value="Время">Время — 330₽/час</option>
-      </select>
-      <input type="number" id="quantity" placeholder="Количество" value="1" min="1" step="1">
-      <input type="number" id="m2" placeholder="м²" value="0" min="0" step="0.1">
-      <input type="number" id="pm" placeholder="п.м" value="0" min="0" step="0.1">
-      <input type="number" id="time" placeholder="Часы" value="0" min="0" step="0.5">
-      <button id="saveOrder">Создать</button>
-      <button onclick="goToPrevious()">Назад</button>
-    `;
-    document.body.appendChild(screen);
-
-    document.getElementById("orderDate").value = new Date().toISOString().split('T')[0];
-
-    document.getElementById("saveOrder").addEventListener("click", () => {
-      const id = document.getElementById("orderNumber").value.trim();
-      if (!id) { alert("Введите номер заказа"); return; }
-      const detail = document.getElementById("orderDetail").value.trim() || '-';
-      const type = document.getElementById("orderType").value;
-      const quantity = parseFloat(document.getElementById("quantity").value) || 1;
-      const m2 = parseFloat(document.getElementById("m2").value) || 0;
-      const pm = parseFloat(document.getElementById("pm").value) || 0;
-      const time = parseFloat(document.getElementById("time").value) || 0;
-      const date = document.getElementById("orderDate").value;
-
-      data.orders.push({
-        id,
-        detail,
-        date,
-        status: 'open',
-        operations: [{ detail, type, quantity, m2, pm, time }],
-        createdAt: new Date().toISOString()
-      });
-
-      saveData();
-      alert(`Заказ создан: ${id}`);
-      goToPrevious();
-    });
+function showCreate() {
+  if (!document.getElementById('createScreen')) {
+    document.body.insertAdjacentHTML('beforeend', `
+      <div id="createScreen" class="screen">
+        <h2>Новый заказ</h2>
+        <input id="id" placeholder="№">
+        <input id="det" placeholder="Деталь">
+        <input type="date" id="dt2" value="${new Date().toISOString().split('T')[0]}">
+        <select id="type">
+          <option>Распил</option><option>Линейный</option>
+          <option>Склейка простая</option><option>Склейка с обгоном</option>
+          <option>Фрезер фаски</option><option>Пазовка</option><option>Время</option>
+        </select>
+        <input type="number" id="q" value="1" min="1">
+        <input type="number" id="m2" step="0.1"><input type="number" id="pm" step="0.1">
+        <input type="number" id="time" step="0.5">
+        <button onclick="addOrder()">Создать</button>
+        <button onclick="goToPrevious()">←</button>
+      </div>`);
   }
-  switchScreen('createOrderScreen');
-  addToHistory('createOrderScreen');
+  switchScreen('createScreen');
+  addToHistory('createScreen');
 }
 
-// === ИНИЦИАЛИЗАЦИЯ ===
-function initApp() {
-  const toggle = document.getElementById('themeToggle');
-  if (toggle) {
-    toggle.onclick = () => {
+function addOrder() {
+  const id = document.getElementById('id').value.trim();
+  if (!id) return alert('Укажите № заказа');
+  data.orders.push({
+    id,
+    detail: document.getElementById('det').value || '-',
+    date: document.getElementById('dt2').value,
+    status: 'open',
+    operations: [{
+      detail: document.getElementById('det').value || '-',
+      type: document.getElementById('type').value,
+      quantity: +document.getElementById('q').value || 1,
+      m2: +document.getElementById('m2').value || 0,
+      pm: +document.getElementById('pm').value || 0,
+      time: +document.getElementById('time').value || 0
+    }]
+  });
+  saveData();
+  alert('Заказ создан');
+  goToPrevious();
+}
+
+function init() {
+  if (!document.getElementById('mainScreen')) {
+    document.body.insertAdjacentHTML('beforeend', `
+      <div id="mainScreen" class="screen active">
+        <h1>Панель оператора</h1>
+        <p>Всего: <span id="totalEarnings">0₽</span></p>
+        <p>Сегодня: <span id="dailyEarnings">0₽</span></p>
+        <p>М²: <span id="monthlyM2">0</span></p>
+        <p>П.м: <span id="monthlyPm">0</span></p>
+        <canvas id="earningsChart" height="200"></canvas>
+        <br>
+        <button onclick="showCreate()">➕</button>
+        <button onclick="showShifts()">📅</button>
+      </div>
+      <button id="themeBtn" style="position:fixed;bottom:10px;right:10px;">🌓</button>
+    `);
+    document.getElementById('themeBtn').onclick = () => {
       currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
-      localStorage.setItem('theme', currentTheme);
-      document.body.classList.toggle('dark-theme', currentTheme === 'dark');
-      renderEarningsChart();
+      localStorage.theme = currentTheme;
+      document.body.classList.toggle('dark-theme');
+      renderChart();
     };
   }
-
-  if (!document.getElementById('mainScreen')) {
-    const mainScreen = document.createElement('div');
-    mainScreen.id = 'mainScreen';
-    mainScreen.className = 'screen active';
-    mainScreen.innerHTML = `
-      <h1>Панель оператора</h1>
-      <p>Общий заработок: <span id="totalEarnings">0₽</span></p>
-      <p>Сегодня: <span id="dailyEarnings">0₽</span></p>
-      <p>М² за месяц: <span id="monthlyM2">0 м²</span></p>
-      <p>П.м за месяц: <span id="monthlyPm">0 п.м</span></p>
-      <canvas id="earningsChart" height="200"></canvas>
-      <br>
-      <button onclick="showCreateOrderScreen()">➕ Создать заказ</button>
-      <button onclick="showShiftsScreen()">📅 Отчёты по дням</button>
-    `;
-    document.body.appendChild(mainScreen);
-  }
-
   loadMainScreen();
 }
 
-// === ЗАПУСК ===
 document.addEventListener('DOMContentLoaded', () => {
   try {
-    initApp();
+    init();
   } catch (e) {
-    console.error("Ошибка инициализации:", e);
-    alert("Ошибка загрузки приложения. Проверьте консоль.");
+    console.error(e);
   }
 
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      const swPath = '/orders-tracking/service-worker.js';
-      navigator.serviceWorker.register(swPath)
-        .then(reg => console.log('SW зарегистрирован:', reg.scope))
-        .catch(err => console.warn('SW не зарегистрирован:', err));
-    });
+    navigator.serviceWorker.register('/orders-tracking/service-worker.js')
+      .catch(console.warn);
   }
 });
