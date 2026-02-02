@@ -2,57 +2,47 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Учёт заказов</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Заказы</title>
+  <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="style.css" />
-  
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  
-  <!-- PWA -->
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#FFD700">
-  <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
-
   <!-- Главный экран -->
-  <div class="screen active" id="mainScreen">
-    <div class="profile">
-      <div class="avatar" id="avatarBtn">👤</div>
-      <div class="info">
-        <h2>Александр</h2>
-        <p>оператор №030</p>
-      </div>
-    </div>
-    <div class="earnings">
-      <p>за всё время</p>
-      <h1 id="totalEarnings">0₽</h1>
-    </div>
-    <div class="today-earnings">
-      <p>за смену:</p>
-      <h2 id="dailyEarnings">0₽</h2>
+  <div id="mainScreen" class="screen active">
+    <h1>Оператор</h1>
+    
+    <!-- Статистика -->
+    <div id="stats">
+      <div>Всего: <span id="totalEarnings">0₽</span></div>
+      <div>Сегодня: <span id="dailyEarnings">0₽</span></div>
+      <div>М² за месяц: <span id="monthlyM2">0 м²</span></div>
+      <div>П.м за месяц: <span id="monthlyPm">0 п.м</span></div>
     </div>
 
-    <div class="chart-container">
+    <!-- График -->
+    <div style="height:200px; margin-top:20px;">
       <canvas id="earningsChart"></canvas>
     </div>
 
-    <button id="btnOrders">список заказов</button>
-    <button id="btnShifts">смены</button>
+    <!-- Кнопки навигации -->
+    <div style="margin-top:20px;">
+      <button id="btnOrders">📋 Заказы</button>
+      <button id="btnShifts">📅 Смены</button>
+    </div>
+
+    <!-- Аватар (план) -->
+    <div id="avatarBtn" style="
+      width:60px; height:60px; border-radius:50%; background:#ffd700;
+      display:flex; align-items:center; justify-content:center;
+      margin:20px auto; cursor:pointer; font-weight:bold;
+    ">А</div>
   </div>
 
-  <script src="script.js"></script>
+  <!-- Остальные экраны будут созданы динамически -->
   
-  <!-- PWA Service Worker -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('service-worker.js')
-          .then(reg => console.log('SW registered:', reg))
-          .catch(err => console.error('SW failed:', err));
-      });
-    }
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>
