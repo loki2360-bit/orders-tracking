@@ -184,11 +184,11 @@ function renderEarningsChart() {
 
   earningsChart = new Chart(ctx, {
     type: 'bar',
-     {
+    data: {
       labels: dates,
       datasets: [{
         label: 'Заработок, ₽',
-         earnings,
+        data: earnings,
         backgroundColor: '#ffd700',
         borderColor: '#000',
         borderWidth: 1
