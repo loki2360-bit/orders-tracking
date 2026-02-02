@@ -3,46 +3,34 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Заказы</title>
+  <title>Панель оператора</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="style.css" />
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta name="theme-color" content="#4a90e2" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
 </head>
 <body>
-  <!-- Главный экран -->
+  <!-- Основной экран -->
   <div id="mainScreen" class="screen active">
-    <h1>Оператор</h1>
-    
-    <!-- Статистика -->
-    <div id="stats">
-      <div>Всего: <span id="totalEarnings">0₽</span></div>
-      <div>Сегодня: <span id="dailyEarnings">0₽</span></div>
-      <div>М² за месяц: <span id="monthlyM2">0 м²</span></div>
-      <div>П.м за месяц: <span id="monthlyPm">0 п.м</span></div>
-    </div>
-
-    <!-- График -->
-    <div style="height:200px; margin-top:20px;">
-      <canvas id="earningsChart"></canvas>
-    </div>
-
-    <!-- Кнопки навигации -->
-    <div style="margin-top:20px;">
-      <button id="btnOrders">📋 Заказы</button>
-      <button id="btnShifts">📅 Смены</button>
-    </div>
-
-    <!-- Аватар (план) -->
-    <div id="avatarBtn" style="
-      width:60px; height:60px; border-radius:50%; background:#ffd700;
-      display:flex; align-items:center; justify-content:center;
-      margin:20px auto; cursor:pointer; font-weight:bold;
-    ">А</div>
+    <h1>Панель оператора</h1>
+    <p>Общий заработок: <span id="totalEarnings">0₽</span></p>
+    <p>Сегодня: <span id="dailyEarnings">0₽</span></p>
+    <p>М² за месяц: <span id="monthlyM2">0 м²</span></p>
+    <p>П.м за месяц: <span id="monthlyPm">0 п.м</span></p>
+    <canvas id="earningsChart" height="200"></canvas>
+    <br>
+    <button onclick="showCreateOrderScreen()">➕ Создать заказ</button>
+    <button onclick="showShiftsScreen()">📅 Отчёты по дням</button>
   </div>
 
-  <!-- Остальные экраны будут созданы динамически -->
-  
-  <script src="script.js"></script>
+  <!-- Динамические экраны будут добавляться сюда -->
+
+  <!-- Кнопка смены темы -->
+  <button id="themeToggle">🌓 Тема</button>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Основной скрипт -->
+  <script src="script.js" defer></script>
 </body>
 </html>
