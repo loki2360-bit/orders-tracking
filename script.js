@@ -24,6 +24,7 @@ function saveData() {
 }
 
 function calculateOrderPrice(operations) {
+  if (!Array.isArray(operations)) return 0;
   let total = 0;
   operations.forEach(op => {
     const qty = op.quantity || 1;
@@ -38,10 +39,6 @@ function calculateOrderPrice(operations) {
     }
   });
   return Math.round(total * 100) / 100;
-}
-
-function calculateSingleOperationPrice(op) {
-  return calculateOrderPrice([op]);
 }
 
 function switchScreen(id) {
@@ -86,7 +83,7 @@ function loadMainScreen() {
       if (o.date === today) dailyEarnings += price;
 
       if (o.date && o.date.startsWith(`${currentYear}-${currentMonth}`)) {
-        o.operations.forEach(op => {
+        (o.operations || []).forEach(op => {
           if (["Распил", "Склейка простая", "Склейка с обгоном"].includes(op.type)) {
             totalM2 += (op.m2 || 0) * (op.quantity || 1);
           }
@@ -103,10 +100,10 @@ function loadMainScreen() {
   totalM2 = Math.round(totalM2 * 100) / 100;
   totalPm = Math.round(totalPm * 100) / 100;
 
-  document.getElementById("totalEarnings").textContent = `${totalEarnings}₽`;
-  document.getElementById("dailyEarnings").textContent = `${dailyEarnings}₽`;
-  document.getElementById("monthlyM2").textContent = `${totalM2} м²`;
-  document.getElementById("monthlyPm").textContent = `${totalPm} п.м`;
+  document.getElementById("totalEarnings")?.textContent = `${totalEarnings}₽`;
+  document.getElementById("dailyEarnings")?.textContent = `${dailyEarnings}₽`;
+  document.getElementById("monthlyM2")?.textContent = `${totalM2} м²`;
+  document.getElementById("monthlyPm")?.textContent = `${totalPm} п.м`;
 
   renderEarningsChart();
 
@@ -128,7 +125,9 @@ function renderEarningsChart() {
   if (!ctx) return;
 
   const chartCtx = ctx.getContext('2d');
-  if (earningsChart) earningsChart.destroy();
+  if (earningsChart) {
+    earningsChart.destroy();
+  }
 
   const today = new Date();
   const dates = [];
@@ -148,13 +147,14 @@ function renderEarningsChart() {
     earnings.push(Math.round(sum * 100) / 100);
   }
 
+  // ✅ Правильная структура для Chart.js v3/v4
   earningsChart = new Chart(chartCtx, {
     type: 'bar',
-     {
+    data: {
       labels: dates,
       datasets: [{
         label: 'Заработок, ₽',
-         earnings,
+        data: earnings,  // ← КЛЮЧЕВОЙ ИСПРАВЛЕНИЕ: data: earnings (не просто earnings,)
         backgroundColor: currentTheme === 'dark' ? '#4a90e2' : '#ffd700',
         borderColor: currentTheme === 'dark' ? '#6ec1e4' : '#000',
         borderWidth: 1
@@ -208,14 +208,14 @@ function saveReportAsText(date) {
     txt += `Статус: ${o.status === 'closed' ? 'Завершён' : 'Открыт'}\n`;
     txt += `Деталь: ${o.detail || '-'}\n`;
     txt += `Операции:\n`;
-    o.operations.forEach((op, i) => {
+    (o.operations || []).forEach((op, i) => {
       txt += `  ${i + 1}. ${op.type}\n`;
       txt += `     Деталь: ${op.detail || '-'}\n`;
       txt += `     Кол-во: ${op.quantity || 1}\n`;
       if (op.m2) txt += `     м²: ${op.m2}\n`;
       if (op.pm) txt += `     п.м: ${op.pm}\n`;
       if (op.time) txt += `     Часы: ${op.time}\n`;
-      txt += `     Стоимость: ${calculateSingleOperationPrice(op)}₽\n`;
+      txt += `     Стоимость: ${calculateOrderPrice([op])}₽\n`;
     });
     txt += `Итого по заказу: ${price}₽\n---\n\n`;
   });
@@ -253,12 +253,12 @@ function showShiftsScreen() {
     document.body.appendChild(el);
 
     document.getElementById("dateInput").value = new Date().toISOString().split('T')[0];
-    
+
     document.getElementById("showOrdersForDay").onclick = () => {
       const d = document.getElementById("dateInput").value;
       if (d) showOrdersForDay(d);
     };
-    
+
     document.getElementById("btnSaveReportTxt").onclick = () => {
       const d = document.getElementById("dateInput").value;
       if (d) saveReportAsText(d);
@@ -361,12 +361,35 @@ function initApp() {
     };
   }
 
+  // Создаём mainScreen, если ещё не существует
+  if (!document.getElementById('mainScreen')) {
+    const mainScreen = document.createElement('div');
+    mainScreen.id = 'mainScreen';
+    mainScreen.className = 'screen active';
+    mainScreen.innerHTML = `
+      <h1>Панель оператора</h1>
+      <p>Общий заработок: <span id="totalEarnings">0₽</span></p>
+      <p>Сегодня: <span id="dailyEarnings">0₽</span></p>
+      <p>М² за месяц: <span id="monthlyM2">0 м²</span></p>
+      <p>П.м за месяц: <span id="monthlyPm">0 п.м</span></p>
+      <canvas id="earningsChart" height="200"></canvas>
+      <br>
+      <button onclick="showCreateOrderScreen()">➕ Создать заказ</button>
+      <button onclick="showShiftsScreen()">📅 Отчёты по дням</button>
+    `;
+    document.body.appendChild(mainScreen);
+  }
+
   loadMainScreen();
 }
 
 // === ЗАПУСК ===
 document.addEventListener('DOMContentLoaded', () => {
-  initApp();
+  try {
+    initApp();
+  } catch (e)    console.error("Ошибка инициализации:", e);
+    alert("Произошла ошибка при запуске. Проверьте консоль.");
+  }
 
   // Регистрация Service Worker
   if ('serviceWorker' in navigator) {
