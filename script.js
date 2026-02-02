@@ -184,11 +184,11 @@ function renderEarningsChart() {
 
   earningsChart = new Chart(ctx, {
     type: 'bar',
-    data: {
+     {
       labels: dates,
       datasets: [{
         label: 'Заработок, ₽',
-        data: earnings,
+         earnings,
         backgroundColor: '#ffd700',
         borderColor: '#000',
         borderWidth: 1
@@ -225,26 +225,64 @@ function renderEarningsChart() {
 
 // === ГЛАВНЫЙ ЭКРАН ===
 function loadMainScreen() {
-  let total = 0, daily = 0;
-  const today = new Date().toISOString().split('T')[0];
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+  const currentYear = now.getFullYear();
+  const currentMonth = String(now.getMonth() + 1).padStart(2, '0'); // Месяц с ведущим нулём
+
+  let totalEarnings = 0;
+  let dailyEarnings = 0;
+  let totalM2 = 0;
+  let totalPm = 0;
+
   data.orders.forEach(o => {
     if (o.status === 'closed') {
-      const p = o.price || calculateOrderPrice(o.operations || []);
-      total += p;
-      if (o.date === today) daily += p;
+      const price = o.price || calculateOrderPrice(o.operations || []);
+      
+      // Заработок
+      totalEarnings += price;
+      if (o.date === today) dailyEarnings += price;
+
+      // М² и п.м только для операций текущего месяца
+      if (o.date && o.date.startsWith(`${currentYear}-${currentMonth}`)) {
+        o.operations.forEach(op => {
+          if (["Распил", "Склейка простая", "Склейка с обгоном"].includes(op.type)) {
+            totalM2 += (op.m2 || 0) * (op.quantity || 1);
+          }
+          if (["Линейный", "Фрезер фаски", "Пазовка"].includes(op.type)) {
+            totalPm += (op.pm || 0) * (op.quantity || 1);
+          }
+        });
+      }
     }
   });
-  total = Math.round(total * 100) / 100;
-  daily = Math.round(daily * 100) / 100;
-  document.getElementById("totalEarnings").textContent = `${total}₽`;
-  document.getElementById("dailyEarnings").textContent = `${daily}₽`;
+
+  totalEarnings = Math.round(totalEarnings * 100) / 100;
+  dailyEarnings = Math.round(dailyEarnings * 100) / 100;
+  totalM2 = Math.round(totalM2 * 100) / 100;
+  totalPm = Math.round(totalPm * 100) / 100;
+
+  document.getElementById("totalEarnings").textContent = `${totalEarnings}₽`;
+  document.getElementById("dailyEarnings").textContent = `${dailyEarnings}₽`;
+  
+  // Новые элементы — убедитесь, что они есть в index.html!
+  if (document.getElementById("monthlyM2")) {
+    document.getElementById("monthlyM2").textContent = `${totalM2} м²`;
+  }
+  if (document.getElementById("monthlyPm")) {
+    document.getElementById("monthlyPm").textContent = `${totalPm} п.м`;
+  }
+
   renderEarningsChart();
-  if (daily >= 3000 && localStorage.getItem('planNotifiedToday') !== today) {
+
+  // Уведомление о плане
+  if (dailyEarnings >= 3000 && localStorage.getItem('planNotifiedToday') !== today) {
     setTimeout(() => {
       alert('🎉 План на смену выполнен!');
       localStorage.setItem('planNotifiedToday', today);
     }, 1000);
   }
+
   switchScreen('mainScreen');
 }
 
@@ -446,6 +484,7 @@ function createOrderForm() {
       <input type="text" id="orderNumber" placeholder="номер заказа" required>
       <input type="text" id="orderDetail" placeholder="деталь">
       <input type="date" id="orderDate">
+
       <select id="orderType">
         <option value="Распил">Распил — 65₽/м²</option>
         <option value="Линейный">Линейный — 26₽/п.м</option>
@@ -455,40 +494,154 @@ function createOrderForm() {
         <option value="Пазовка">Пазовка — 30₽/п.м</option>
         <option value="Время">Время — 330₽</option>
       </select>
-      <input type="number" id="quantity" placeholder="Количество (мин. 1)" min="1" step="1">
-      <input type="number" id="m2" placeholder="м² (например: 2.5)" min="0" step="0.01">
-      <input type="number" id="pm" placeholder="п.м (например: 3.2)" min="0" step="0.01">
-      <input type="number" id="time" placeholder="Часы (например: 1.5)" min="0" step="0.5">
+
+      <input type="number" id="quantity" placeholder="Количество (мин. 1)" min="1" step="1" value="1">
+
+      <!-- Поля для времени (показываются только при выборе "Время") -->
+      <div id="timeField" style="display:none; margin:10px 0;">
+        <input type="number" id="timeInput" placeholder="Часы (например: 1.5)" min="0" step="0.5" value="1">
+      </div>
+
+      <!-- Контейнер для размеров (скрыт при "Время") -->
+      <div id="dimensionsContainer" style="margin:15px 0;">
+        <div class="dimension-row" style="display:flex; gap:8px; margin-bottom:8px; align-items:center;">
+          <input type="number" placeholder="Длина (мм)" min="1" class="dim-length" style="flex:1;">
+          <input type="number" placeholder="Ширина (мм)" min="1" class="dim-width" style="flex:1;">
+          <button type="button" class="btn-remove-dim" style="width:30px; height:30px; background:#f44336; color:white; border:none; border-radius:4px;">-</button>
+        </div>
+      </div>
+
+      <button id="btnAddDimension" style="background:#4CAF50; color:white; border:none; padding:6px 12px; border-radius:4px; margin-bottom:15px;">
+        ➕ Добавить размер
+      </button>
+
       <button id="saveOrder">создать</button>
       <button onclick="goToPrevious()">назад</button>
     `;
     document.body.appendChild(screen);
 
-    document.getElementById("orderDate").value = new Date().toISOString().split('T')[0];
+    const orderDate = document.getElementById("orderDate");
+    const orderType = document.getElementById("orderType");
+    const timeField = document.getElementById("timeField");
+    const dimensionsContainer = document.getElementById("dimensionsContainer");
+    const btnAddDimension = document.getElementById("btnAddDimension");
 
+    orderDate.value = new Date().toISOString().split('T')[0];
+
+    // Переключение между режимами
+    orderType.onchange = function() {
+      if (this.value === "Время") {
+        timeField.style.display = "block";
+        dimensionsContainer.style.display = "none";
+        btnAddDimension.style.display = "none";
+      } else {
+        timeField.style.display = "none";
+        dimensionsContainer.style.display = "block";
+        btnAddDimension.style.display = "inline-block";
+      }
+    };
+
+    // Инициализация
+    orderType.dispatchEvent(new Event('change'));
+
+    // Добавление новой строки размеров
+    btnAddDimension.onclick = function() {
+      const container = document.getElementById("dimensionsContainer");
+      const row = document.createElement("div");
+      row.className = "dimension-row";
+      row.style.cssText = "display:flex; gap:8px; margin-bottom:8px; align-items:center;";
+      row.innerHTML = `
+        <input type="number" placeholder="Длина (мм)" min="1" class="dim-length" style="flex:1;">
+        <input type="number" placeholder="Ширина (мм)" min="1" class="dim-width" style="flex:1;">
+        <button type="button" class="btn-remove-dim" style="width:30px; height:30px; background:#f44336; color:white; border:none; border-radius:4px;">-</button>
+      `;
+      container.appendChild(row);
+
+      row.querySelector(".btn-remove-dim").onclick = function() {
+        if (container.children.length > 1) {
+          container.removeChild(row);
+        } else {
+          alert("Нужна хотя бы одна деталь");
+        }
+      };
+    };
+
+    // Удаление первой строки
+    document.querySelector(".btn-remove-dim").onclick = function() {
+      const container = document.getElementById("dimensionsContainer");
+      if (container.children.length > 1) {
+        container.removeChild(container.firstElementChild);
+      } else {
+        alert("Нужна хотя бы одна деталь");
+      }
+    };
+
+    // Сохранение заказа
     document.getElementById("saveOrder").addEventListener("click", () => {
       const id = document.getElementById("orderNumber").value.trim();
       if (!id) { alert("Введите номер заказа"); return; }
       const detail = document.getElementById("orderDetail").value.trim() || '-';
-      const type = document.getElementById("orderType").value;
-      
+      const type = orderType.value;
       const quantity = parseFloat(document.getElementById("quantity").value) || 1;
-      const m2 = parseFloat(document.getElementById("m2").value) || 0;
-      const pm = parseFloat(document.getElementById("pm").value) || 0;
-      const time = parseFloat(document.getElementById("time").value) || 0;
-      const date = document.getElementById("orderDate").value;
+      const date = orderDate.value;
+
+      let totalM2 = 0;
+      let totalPm = 0;
+      let time = 0;
+
+      if (type === "Время") {
+        time = parseFloat(document.getElementById("timeInput").value) || 1;
+      } else {
+        const dimensions = [];
+        document.querySelectorAll(".dimension-row").forEach(row => {
+          const lenStr = row.querySelector(".dim-length").value.trim();
+          const widStr = row.querySelector(".dim-width").value.trim();
+
+          const len = lenStr ? parseFloat(lenStr) : null;
+          const wid = widStr ? parseFloat(widStr) : null;
+
+          // Пропускаем пустые строки
+          if (len === null && wid === null) return;
+
+          // Если есть хотя бы длина — добавляем
+          dimensions.push({ length: len, width: wid });
+        });
+
+        if (dimensions.length === 0) {
+          alert("Добавьте хотя бы длину одной детали");
+          return;
+        }
+
+        dimensions.forEach(d => {
+          if (d.length !== null && d.width !== null) {
+            // Длина и ширина → площадь
+            const area = (d.length * d.width) / 1_000_000;
+            totalM2 += area;
+          } else if (d.length !== null) {
+            // Только длина → погонные метры
+            const linear = d.length / 1000;
+            totalPm += linear;
+          }
+          // Если только ширина — игнорируем (некорректно)
+        });
+
+        totalM2 *= quantity;
+        totalPm *= quantity;
+        totalM2 = Math.round(totalM2 * 100) / 100;
+        totalPm = Math.round(totalPm * 100) / 100;
+      }
 
       data.orders.push({
         id,
         detail,
         date,
         status: 'open',
-        operations: [{ detail, type, quantity, m2, pm, time }],
+        operations: [{ detail, type, quantity, m2: totalM2, pm: totalPm, time }],
         createdAt: new Date().toISOString()
       });
 
       saveData();
-      alert(`Заказ создан: ${id}`);
+      alert(`Заказ создан: ${id}\nМ²: ${totalM2}, П.м: ${totalPm}`);
       goToPrevious();
     });
   }
@@ -503,6 +656,7 @@ function showAddOperationForm(orderId) {
     <div class="modal-content">
       <h3>Новая операция</h3>
       <input type="text" id="newOpDetail" placeholder="Деталь">
+      
       <select id="newOpType">
         <option value="Распил">Распил — 65₽/м²</option>
         <option value="Линейный">Линейный — 26₽/п.м</option>
@@ -512,27 +666,133 @@ function showAddOperationForm(orderId) {
         <option value="Пазовка">Пазовка — 30₽/п.м</option>
         <option value="Время">Время — 330₽</option>
       </select>
-      <input type="number" id="newOpQuantity" placeholder="Количество (мин. 1)" min="1" step="1">
-      <input type="number" id="newOpM2" placeholder="м² (например: 2.5)" min="0" step="0.01">
-      <input type="number" id="newOpPM" placeholder="п.м (например: 3.2)" min="0" step="0.01">
-      <input type="number" id="newOpTime" placeholder="Часы (например: 1.5)" min="0" step="0.5">
+
+      <input type="number" id="newOpQuantity" placeholder="Количество (мин. 1)" min="1" step="1" value="1">
+
+      <!-- Поле времени -->
+      <div id="newOpTimeField" style="display:none; margin:10px 0;">
+        <input type="number" id="newOpTimeInput" placeholder="Часы (например: 1.5)" min="0" step="0.5" value="1">
+      </div>
+
+      <!-- Размеры -->
+      <div id="newOpDimensionsContainer" style="margin:15px 0;">
+        <div class="new-dimension-row" style="display:flex; gap:8px; margin-bottom:8px; align-items:center;">
+          <input type="number" placeholder="Длина (мм)" min="1" class="new-dim-length" style="flex:1;">
+          <input type="number" placeholder="Ширина (мм)" min="1" class="new-dim-width" style="flex:1;">
+          <button type="button" class="btn-remove-new-dim" style="width:30px; height:30px; background:#f44336; color:white; border:none; border-radius:4px;">-</button>
+        </div>
+      </div>
+
+      <button id="btnAddNewDimension" style="background:#4CAF50; color:white; border:none; padding:6px 12px; border-radius:4px; margin-bottom:15px;">
+        ➕ Добавить размер
+      </button>
+
       <button id="saveNewOp">добавить</button>
       <button id="cancelNewOp">отмена</button>
     </div>
   `;
   document.body.appendChild(modal);
 
+  const newOpType = document.getElementById("newOpType");
+  const newOpTimeField = document.getElementById("newOpTimeField");
+  const newOpDimensionsContainer = document.getElementById("newOpDimensionsContainer");
+  const btnAddNewDimension = document.getElementById("btnAddNewDimension");
+
+  // Переключение режимов
+  newOpType.onchange = function() {
+    if (this.value === "Время") {
+      newOpTimeField.style.display = "block";
+      newOpDimensionsContainer.style.display = "none";
+      btnAddNewDimension.style.display = "none";
+    } else {
+      newOpTimeField.style.display = "none";
+      newOpDimensionsContainer.style.display = "block";
+      btnAddNewDimension.style.display = "inline-block";
+    }
+  };
+  newOpType.dispatchEvent(new Event('change'));
+
+  // Добавление размера
+  btnAddNewDimension.onclick = function() {
+    const container = document.getElementById("newOpDimensionsContainer");
+    const row = document.createElement("div");
+    row.className = "new-dimension-row";
+    row.style.cssText = "display:flex; gap:8px; margin-bottom:8px; align-items:center;";
+    row.innerHTML = `
+      <input type="number" placeholder="Длина (мм)" min="1" class="new-dim-length" style="flex:1;">
+      <input type="number" placeholder="Ширина (мм)" min="1" class="new-dim-width" style="flex:1;">
+      <button type="button" class="btn-remove-new-dim" style="width:30px; height:30px; background:#f44336; color:white; border:none; border-radius:4px;">-</button>
+    `;
+    container.appendChild(row);
+
+    row.querySelector(".btn-remove-new-dim").onclick = function() {
+      if (container.children.length > 1) {
+        container.removeChild(row);
+      } else {
+        alert("Нужна хотя бы одна деталь");
+      }
+    };
+  };
+
+  // Удаление первой строки
+  document.querySelector(".btn-remove-new-dim").onclick = function() {
+    const container = document.getElementById("newOpDimensionsContainer");
+    if (container.children.length > 1) {
+      container.removeChild(container.firstElementChild);
+    } else {
+      alert("Нужна хотя бы одна деталь");
+    }
+  };
+
+  // Сохранение
   document.getElementById("saveNewOp").onclick = () => {
     const detail = document.getElementById("newOpDetail").value.trim() || '-';
-    const type = document.getElementById("newOpType").value;
+    const type = newOpType.value;
     const quantity = parseFloat(document.getElementById("newOpQuantity").value) || 1;
-    const m2 = parseFloat(document.getElementById("newOpM2").value) || 0;
-    const pm = parseFloat(document.getElementById("newOpPM").value) || 0;
-    const time = parseFloat(document.getElementById("newOpTime").value) || 0;
+
+    let totalM2 = 0;
+    let totalPm = 0;
+    let time = 0;
+
+    if (type === "Время") {
+      time = parseFloat(document.getElementById("newOpTimeInput").value) || 1;
+    } else {
+      const dimensions = [];
+      document.querySelectorAll(".new-dimension-row").forEach(row => {
+        const lenStr = row.querySelector(".new-dim-length").value.trim();
+        const widStr = row.querySelector(".new-dim-width").value.trim();
+
+        const len = lenStr ? parseFloat(lenStr) : null;
+        const wid = widStr ? parseFloat(widStr) : null;
+
+        if (len === null && wid === null) return;
+        dimensions.push({ length: len, width: wid });
+      });
+
+      if (dimensions.length === 0) {
+        alert("Добавьте хотя бы длину одной детали");
+        return;
+      }
+
+      dimensions.forEach(d => {
+        if (d.length !== null && d.width !== null) {
+          const area = (d.length * d.width) / 1_000_000;
+          totalM2 += area;
+        } else if (d.length !== null) {
+          const linear = d.length / 1000;
+          totalPm += linear;
+        }
+      });
+
+      totalM2 *= quantity;
+      totalPm *= quantity;
+      totalM2 = Math.round(totalM2 * 100) / 100;
+      totalPm = Math.round(totalPm * 100) / 100;
+    }
 
     const order = data.orders.find(o => o.id === orderId);
     if (order) {
-      order.operations.push({ detail, type, quantity, m2, pm, time });
+      order.operations.push({ detail, type, quantity, m2: totalM2, pm: totalPm, time });
       saveData();
       showOrderDetails(orderId);
     }
