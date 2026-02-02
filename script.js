@@ -929,127 +929,6 @@ function openCalculator() {
   };
 }
 
-// === ФОТООТЧЁТ ===
-function openPhotoReport() {
-  // Создаём модальное окно
-  const modal = document.createElement('div');
-  modal.className = 'photo-modal';
-  modal.style.cssText = `
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.9);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 3000;
-    padding: 20px;
-  `;
-  modal.innerHTML = `
-    <h3 style="color:white; margin-bottom:15px;">Фотоотчёт</h3>
-    <video id="video" autoplay playsinline style="width:100%; max-width:500px; border-radius:12px; display:none;"></video>
-    <canvas id="canvas" style="display:none;"></canvas>
-    <img id="photoPreview" style="max-width:100%; max-height:70vh; border-radius:12px; display:none;">
-    
-    <div style="margin-top:20px; display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
-      <button id="btnStartCamera" style="padding:10px 20px; background:#4CAF50; color:white; border:none; border-radius:8px;">📷 Камера</button>
-      <button id="btnCapture" disabled style="padding:10px 20px; background:#2196F3; color:white; border:none; border-radius:8px;">Сделать фото</button>
-      <button id="btnSavePhoto" disabled style="padding:10px 20px; background:#FF9800; color:white; border:none; border-radius:8px;">💾 Сохранить</button>
-      <button id="btnSharePhoto" disabled style="padding:10px 20px; background:#9C27B0; color:white; border:none; border-radius:8px;">📤 Отправить</button>
-      <button id="btnClosePhoto" style="padding:10px 20px; background:#f44336; color:white; border:none; border-radius:8px;">Закрыть</button>
-    </div>
-  `;
-  document.body.appendChild(modal);
-
-  const video = document.getElementById('video');
-  const canvas = document.getElementById('canvas');
-  const photoPreview = document.getElementById('photoPreview');
-  const btnStartCamera = document.getElementById('btnStartCamera');
-  const btnCapture = document.getElementById('btnCapture');
-  const btnSavePhoto = document.getElementById('btnSavePhoto');
-  const btnSharePhoto = document.getElementById('btnSharePhoto');
-  const btnClosePhoto = document.getElementById('btnClosePhoto');
-
-  let stream = null;
-
-  // Запуск камеры
-  btnStartCamera.onclick = async () => {
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-      video.srcObject = stream;
-      video.style.display = 'block';
-      photoPreview.style.display = 'none';
-      btnCapture.disabled = false;
-    } catch (err) {
-      alert('Не удалось получить доступ к камере: ' + err.message);
-      console.error(err);
-    }
-  };
-
-  // Снимок
-  btnCapture.onclick = () => {
-    const context = canvas.getContext('2d');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
-    // Остановить камеру
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-    }
-    
-    // Показать превью
-    const photoDataUrl = canvas.toDataURL('image/jpeg', 0.9);
-    photoPreview.src = photoDataUrl;
-    photoPreview.style.display = 'block';
-    video.style.display = 'none';
-    
-    btnCapture.disabled = true;
-    btnSavePhoto.disabled = false;
-    btnSharePhoto.disabled = false;
-  };
-
-  // Сохранить фото
-  btnSavePhoto.onclick = () => {
-    const link = document.createElement('a');
-    link.download = `foto_otchet_${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.jpg`;
-    link.href = photoPreview.src;
-    link.click();
-  };
-
-  // Поделиться фото
-  btnSharePhoto.onclick = async () => {
-    try {
-      const response = await fetch(photoPreview.src);
-      const blob = await response.blob();
-      const file = new File([blob], `foto_otchet_${new Date().toISOString().slice(0,10)}.jpg`, { type: 'image/jpeg' });
-
-      if (navigator.share && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: 'Фотоотчёт',
-          text: 'Фотоотчёт по заказу'
-        });
-      } else {
-        // Резерв: просто сохранить
-        alert('Поделиться нельзя. Сохраните файл и отправьте вручную.');
-        btnSavePhoto.click();
-      }
-    } catch (err) {
-      console.error('Ошибка при отправке:', err);
-      alert('Не удалось отправить фото. Попробуйте сохранить и отправить вручную.');
-    }
-  };
-
-  // Закрыть
-  btnClosePhoto.onclick = () => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-    }
-    document.body.removeChild(modal);
-  };
-}
-
 // === ТАЙМЕР ===
 let timerInterval = null;
 let timerSeconds = 0;
@@ -1332,13 +1211,6 @@ document.addEventListener("DOMContentLoaded", () => {
   timerBtn.onclick = showTimerModal;
   document.body.appendChild(timerBtn);
 
-  // Кнопка фотоотчёта
-  const photoBtn = document.createElement('button');
-  photoBtn.className = 'menu-btn-bottom';
-  photoBtn.innerHTML = '📸';
-  photoBtn.onclick = openPhotoReport;
-  document.body.appendChild(photoBtn);
-
   // Аватар → план
   document.getElementById('avatarBtn').onclick = openPlanModal;
 
@@ -1358,11 +1230,6 @@ document.addEventListener("DOMContentLoaded", () => {
   timerBtn.style.bottom = '16px';
   timerBtn.style.right = '16px';
   timerBtn.style.zIndex = '1000';
-
-  photoBtn.style.position = 'fixed';
-  photoBtn.style.bottom = '80px'; // выше других кнопок
-  photoBtn.style.right = '16px';
-  photoBtn.style.zIndex = '1000';
 });
 
 function toggleTheme(theme) {
