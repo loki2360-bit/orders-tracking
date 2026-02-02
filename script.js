@@ -585,36 +585,50 @@ function createOrderForm() {
       const quantity = parseFloat(document.getElementById("quantity").value) || 1;
       const date = orderDate.value;
 
-      let m2 = 0, pm = 0, time = 0;
+      let totalM2 = 0;
+      let totalPm = 0;
+      let time = 0;
 
       if (type === "Время") {
         time = parseFloat(document.getElementById("timeInput").value) || 1;
       } else {
         const dimensions = [];
         document.querySelectorAll(".dimension-row").forEach(row => {
-          const len = parseFloat(row.querySelector(".dim-length").value) || 0;
-          const wid = parseFloat(row.querySelector(".dim-width").value) || 0;
-          if (len > 0 && wid > 0) {
-            dimensions.push({ length: len, width: wid });
-          }
+          const lenStr = row.querySelector(".dim-length").value.trim();
+          const widStr = row.querySelector(".dim-width").value.trim();
+
+          const len = lenStr ? parseFloat(lenStr) : null;
+          const wid = widStr ? parseFloat(widStr) : null;
+
+          // Пропускаем пустые строки
+          if (len === null && wid === null) return;
+
+          // Если есть хотя бы длина — добавляем
+          dimensions.push({ length: len, width: wid });
         });
 
         if (dimensions.length === 0) {
-          alert("Добавьте хотя бы один размер");
+          alert("Добавьте хотя бы длину одной детали");
           return;
         }
 
         dimensions.forEach(d => {
-          const area = (d.length * d.width) / 1_000_000;
-          const perimeter = (d.length + d.width) * 2 / 1000;
-          m2 += area;
-          pm += perimeter;
+          if (d.length !== null && d.width !== null) {
+            // Длина и ширина → площадь
+            const area = (d.length * d.width) / 1_000_000;
+            totalM2 += area;
+          } else if (d.length !== null) {
+            // Только длина → погонные метры
+            const linear = d.length / 1000;
+            totalPm += linear;
+          }
+          // Если только ширина — игнорируем (некорректно)
         });
 
-        m2 *= quantity;
-        pm *= quantity;
-        m2 = Math.round(m2 * 100) / 100;
-        pm = Math.round(pm * 100) / 100;
+        totalM2 *= quantity;
+        totalPm *= quantity;
+        totalM2 = Math.round(totalM2 * 100) / 100;
+        totalPm = Math.round(totalPm * 100) / 100;
       }
 
       data.orders.push({
@@ -622,12 +636,12 @@ function createOrderForm() {
         detail,
         date,
         status: 'open',
-        operations: [{ detail, type, quantity, m2, pm, time }],
+        operations: [{ detail, type, quantity, m2: totalM2, pm: totalPm, time }],
         createdAt: new Date().toISOString()
       });
 
       saveData();
-      alert(`Заказ создан: ${id}`);
+      alert(`Заказ создан: ${id}\nМ²: ${totalM2}, П.м: ${totalPm}`);
       goToPrevious();
     });
   }
@@ -736,41 +750,49 @@ function showAddOperationForm(orderId) {
     const type = newOpType.value;
     const quantity = parseFloat(document.getElementById("newOpQuantity").value) || 1;
 
-    let m2 = 0, pm = 0, time = 0;
+    let totalM2 = 0;
+    let totalPm = 0;
+    let time = 0;
 
     if (type === "Время") {
       time = parseFloat(document.getElementById("newOpTimeInput").value) || 1;
     } else {
       const dimensions = [];
       document.querySelectorAll(".new-dimension-row").forEach(row => {
-        const len = parseFloat(row.querySelector(".new-dim-length").value) || 0;
-        const wid = parseFloat(row.querySelector(".new-dim-width").value) || 0;
-        if (len > 0 && wid > 0) {
-          dimensions.push({ length: len, width: wid });
-        }
+        const lenStr = row.querySelector(".new-dim-length").value.trim();
+        const widStr = row.querySelector(".new-dim-width").value.trim();
+
+        const len = lenStr ? parseFloat(lenStr) : null;
+        const wid = widStr ? parseFloat(widStr) : null;
+
+        if (len === null && wid === null) return;
+        dimensions.push({ length: len, width: wid });
       });
 
       if (dimensions.length === 0) {
-        alert("Добавьте хотя бы один размер");
+        alert("Добавьте хотя бы длину одной детали");
         return;
       }
 
       dimensions.forEach(d => {
-        const area = (d.length * d.width) / 1_000_000;
-        const perimeter = (d.length + d.width) * 2 / 1000;
-        m2 += area;
-        pm += perimeter;
+        if (d.length !== null && d.width !== null) {
+          const area = (d.length * d.width) / 1_000_000;
+          totalM2 += area;
+        } else if (d.length !== null) {
+          const linear = d.length / 1000;
+          totalPm += linear;
+        }
       });
 
-      m2 *= quantity;
-      pm *= quantity;
-      m2 = Math.round(m2 * 100) / 100;
-      pm = Math.round(pm * 100) / 100;
+      totalM2 *= quantity;
+      totalPm *= quantity;
+      totalM2 = Math.round(totalM2 * 100) / 100;
+      totalPm = Math.round(totalPm * 100) / 100;
     }
 
     const order = data.orders.find(o => o.id === orderId);
     if (order) {
-      order.operations.push({ detail, type, quantity, m2, pm, time });
+      order.operations.push({ detail, type, quantity, m2: totalM2, pm: totalPm, time });
       saveData();
       showOrderDetails(orderId);
     }
