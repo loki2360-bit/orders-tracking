@@ -1,11 +1,10 @@
-// === ДАННЫЕ ===
+// === ГЛОБАЛЬНЫЕ ДАННЫЕ ===
 let data = JSON.parse(localStorage.getItem('ordersData')) || { orders: [] };
 let currentTheme = localStorage.getItem('theme') || 'light';
 if (currentTheme === 'dark') {
   document.body.classList.add('dark-theme');
 }
 
-// === ИСТОРИЯ ЭКРАНОВ ===
 let screenHistory = ['mainScreen'];
 
 // === ТАРИФЫ ===
@@ -47,7 +46,8 @@ function calculateSingleOperationPrice(op) {
 
 function switchScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id)?.classList.add('active');
+  const el = document.getElementById(id);
+  if (el) el.classList.add('active');
 }
 
 function goToPrevious() {
@@ -103,23 +103,17 @@ function loadMainScreen() {
   totalM2 = Math.round(totalM2 * 100) / 100;
   totalPm = Math.round(totalPm * 100) / 100;
 
-  // Обновляем интерфейс
-  const totalEl = document.getElementById("totalEarnings");
-  const dailyEl = document.getElementById("dailyEarnings");
-  const m2El = document.getElementById("monthlyM2");
-  const pmEl = document.getElementById("monthlyPm");
-
-  if (totalEl) totalEl.textContent = `${totalEarnings}₽`;
-  if (dailyEl) dailyEl.textContent = `${dailyEarnings}₽`;
-  if (m2El) m2El.textContent = `${totalM2} м²`;
-  if (pmEl) pmEl.textContent = `${totalPm} п.м`;
+  document.getElementById("totalEarnings").textContent = `${totalEarnings}₽`;
+  document.getElementById("dailyEarnings").textContent = `${dailyEarnings}₽`;
+  document.getElementById("monthlyM2").textContent = `${totalM2} м²`;
+  document.getElementById("monthlyPm").textContent = `${totalPm} п.м`;
 
   renderEarningsChart();
 
-  // Уведомление о плане (3000 ₽)
+  // Уведомление о плане
   if (dailyEarnings >= 3000 && localStorage.getItem('planNotifiedToday') !== today) {
     setTimeout(() => {
-      alert('🎉 План на смену выполнен!');
+      alert('🎉 План на смену (3000₽) выполнен!');
       localStorage.setItem('planNotifiedToday', today);
     }, 1000);
   }
@@ -127,7 +121,7 @@ function loadMainScreen() {
   switchScreen('mainScreen');
 }
 
-// === ГРАФИК ЗАРАБОТКА ===
+// === ГРАФИК ===
 let earningsChart = null;
 function renderEarningsChart() {
   const ctx = document.getElementById('earningsChart');
@@ -156,11 +150,11 @@ function renderEarningsChart() {
 
   earningsChart = new Chart(chartCtx, {
     type: 'bar',
-    data: {
+     {
       labels: dates,
       datasets: [{
         label: 'Заработок, ₽',
-        data: earnings,
+         earnings,
         backgroundColor: currentTheme === 'dark' ? '#4a90e2' : '#ffd700',
         borderColor: currentTheme === 'dark' ? '#6ec1e4' : '#000',
         borderWidth: 1
@@ -193,7 +187,7 @@ function renderEarningsChart() {
   });
 }
 
-// === СОХРАНЕНИЕ ОТЧЁТА В TXT ===
+// === СОХРАНЕНИЕ ОТЧЁТА ===
 function saveReportAsText(date) {
   const orders = data.orders.filter(o => o.date === date);
   if (orders.length === 0) {
@@ -212,7 +206,7 @@ function saveReportAsText(date) {
 
     txt += `Заказ №: ${o.id}\n`;
     txt += `Статус: ${o.status === 'closed' ? 'Завершён' : 'Открыт'}\n`;
-    txt += `Общая деталь: ${o.detail || '-'}\n`;
+    txt += `Деталь: ${o.detail || '-'}\n`;
     txt += `Операции:\n`;
     o.operations.forEach((op, i) => {
       txt += `  ${i + 1}. ${op.type}\n`;
@@ -240,7 +234,7 @@ function saveReportAsText(date) {
   URL.revokeObjectURL(url);
 }
 
-// === ЭКРАН СМЕНЫ ===
+// === ЭКРАН ОТЧЁТОВ ===
 function showShiftsScreen() {
   let el = document.getElementById("shiftScreen");
   if (!el) {
@@ -248,7 +242,7 @@ function showShiftsScreen() {
     el.className = "screen";
     el.id = "shiftScreen";
     el.innerHTML = `
-      <h2>Введите дату</h2>
+      <h2>Отчёты по дням</h2>
       <input type="date" id="dateInput">
       <button id="showOrdersForDay">Показать заказы</button>
       <div id="ordersOfDay"></div>
@@ -302,7 +296,7 @@ function showCreateOrderScreen() {
     screen.id = "createOrderScreen";
     screen.innerHTML = `
       <h2>Создать заказ</h2>
-      <input type="text" id="orderNumber" placeholder="Номер заказа">
+      <input type="text" id="orderNumber" placeholder="Номер заказа" required>
       <input type="text" id="orderDetail" placeholder="Деталь">
       <input type="date" id="orderDate">
       <select id="orderType">
@@ -312,7 +306,7 @@ function showCreateOrderScreen() {
         <option value="Склейка с обгоном">Склейка с обгоном — 210₽/м²</option>
         <option value="Фрезер фаски">Фрезер фаски — 16₽/п.м</option>
         <option value="Пазовка">Пазовка — 30₽/п.м</option>
-        <option value="Время">Время — 330₽</option>
+        <option value="Время">Время — 330₽/час</option>
       </select>
       <input type="number" id="quantity" placeholder="Количество" value="1" min="1" step="1">
       <input type="number" id="m2" placeholder="м²" value="0" min="0" step="0.1">
@@ -354,52 +348,27 @@ function showCreateOrderScreen() {
   addToHistory('createOrderScreen');
 }
 
-// === ИНИЦИАЛИЗАЦИЯ ИНТЕРФЕЙСА ===
+// === ИНИЦИАЛИЗАЦИЯ ===
 function initApp() {
-  // Создаём основной экран
-  if (!document.getElementById('mainScreen')) {
-    const mainScreen = document.createElement('div');
-    mainScreen.id = 'mainScreen';
-    mainScreen.className = 'screen active';
-    mainScreen.innerHTML = `
-      <h1>Панель оператора</h1>
-      <p>Общий заработок: <span id="totalEarnings">0₽</span></p>
-      <p>Сегодня: <span id="dailyEarnings">0₽</span></p>
-      <p>М² за месяц: <span id="monthlyM2">0 м²</span></p>
-      <p>П.м за месяц: <span id="monthlyPm">0 п.м</span></p>
-      <canvas id="earningsChart" height="200"></canvas>
-      <br>
-      <button onclick="showCreateOrderScreen()">➕ Создать заказ</button>
-      <button onclick="showShiftsScreen()">📅 Отчёты по дням</button>
-    `;
-    document.body.appendChild(mainScreen);
-  }
-
-  // Кнопка смены темы (например, в header или footer)
-  if (!document.getElementById('themeToggle')) {
-    const toggle = document.createElement('button');
-    toggle.id = 'themeToggle';
-    toggle.textContent = '🌓 Тема';
-    toggle.style.position = 'fixed';
-    toggle.style.bottom = '10px';
-    toggle.style.right = '10px';
+  // Кнопка смены темы
+  const toggle = document.getElementById('themeToggle');
+  if (toggle) {
     toggle.onclick = () => {
       currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
       localStorage.setItem('theme', currentTheme);
       document.body.classList.toggle('dark-theme', currentTheme === 'dark');
-      renderEarningsChart(); // обновить цвет графика
+      renderEarningsChart();
     };
-    document.body.appendChild(toggle);
   }
 
   loadMainScreen();
 }
 
-// === ЗАГРУЗКА ПРИЛОЖЕНИЯ ===
+// === ЗАПУСК ===
 document.addEventListener('DOMContentLoaded', () => {
   initApp();
 
-  // Регистрация Service Worker (только после загрузки основного функционала)
+  // Регистрация Service Worker
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       const swPath = '/orders-tracking/service-worker.js';
