@@ -1,4 +1,3 @@
-// script.js
 const SERVICES = [
   { id: 'RASPIL_M2', name: 'Распил', unit: 'м²', price: 65 },
   { id: 'LINEAR_RASPIL', name: 'Линейный распил', unit: 'п.м.', price: 26 },
@@ -72,6 +71,7 @@ function renderOrdersForDate(date, containerId) {
         </div>
       `).join('')}
     </div>
+    <button class="btn" style="margin-top: 12px;" onclick="exportDateToTxt('${date}')">Скачать TXT</button>
   `;
 }
 
@@ -104,6 +104,7 @@ function renderAllDates() {
             </div>
           </div>
         `).join('')}
+        <button class="btn" style="margin-top: 12px; width: auto;" onclick="exportDateToTxt('${date}')">Скачать TXT</button>
       </div>
     </div>
   `).join('');
@@ -116,7 +117,6 @@ function toggleDateGroup(header) {
   header.querySelector('span:last-child').textContent = isOpen ? '▶' : '▼';
 }
 
-// --- Форма ---
 function addItem() {
   const container = document.getElementById('items-container');
   const idx = container.children.length;
@@ -209,4 +209,60 @@ function resetShift() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', updateUI);
+function exportDateToTxt(dateStr) {
+  const orders = state.ordersByDate[dateStr] || [];
+  if (orders.length === 0) return;
+
+  let totalDay = 0;
+  let content = `Заказы за ${formatDate(dateStr)}\n`;
+  content += '='.repeat(40) + '\n\n';
+
+  orders.forEach(order => {
+    totalDay += order.total;
+    content += `Заказ №${order.number}\n`;
+    order.items.forEach(item => {
+      content += `- ${item.detail} | ${item.service} | ×${item.quantity} | ${formatMoney(item.price)}\n`;
+    });
+    content += `Итого по заказу: ${formatMoney(order.total)}\n\n`;
+  });
+
+  content += '='.repeat(40) + '\n';
+  content += `Общая сумма за день: ${formatMoney(totalDay)}\n`;
+
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `заказы_${dateStr}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('avatar-input').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file || !file.type.startsWith('image/')) return;
+
+  const reader = new FileReader();
+  reader.onload = function(event) {
+    localStorage.setItem('operatorAvatar', event.target.result);
+    updateAvatar();
+  };
+  reader.readAsDataURL(file);
+});
+
+function updateAvatar() {
+  const avatarEl = document.getElementById('avatar');
+  const saved = localStorage.getItem('operatorAvatar');
+  if (saved) {
+    avatarEl.innerHTML = `<img src="${saved}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;
+  } else {
+    avatarEl.innerHTML = 'О';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  updateUI();
+  updateAvatar();
+});
