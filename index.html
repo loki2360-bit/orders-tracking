@@ -6,6 +6,7 @@
   <title>Кабинет оператора</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon-192.png">
 </head>
 <body>
   <div class="container">
@@ -28,7 +29,7 @@
 
       <div class="stats">
         <div class="stat-box">
-          <div class="stat-value" id="daily-target">3000 ₽</div>
+          <div class="stat-value">3000 ₽</div>
           <div class="stat-label">План</div>
         </div>
         <div class="stat-box">
@@ -43,19 +44,21 @@
     <!-- Форма заказа -->
     <div class="order-form">
       <h3>Создать заказ</h3>
-      <label>Номер заказа:</label>
-      <input type="text" id="order-number" placeholder="например: З-123" />
+      <div class="form-row">
+        <label>Номер заказа:</label>
+        <input type="text" id="order-number" placeholder="например: З-123" />
+      </div>
 
       <div class="items-container" id="items-container"></div>
 
-      <button class="btn" onclick="addItem()">+ Добавить деталь</button>
-      <button class="btn" onclick="createOrder()">Создать заказ</button>
+      <button class="btn" type="button" onclick="addItem()" style="margin: 12px 0;">+ Добавить деталь</button>
+      <button class="btn" type="button" onclick="createOrder()">Создать заказ</button>
     </div>
 
     <!-- Заказы за сегодня -->
     <div class="section">
       <h3>Заказы за сегодня</h3>
-      <div class="date-group" id="today-orders">
+      <div id="today-orders">
         <p>Заказов пока нет.</p>
       </div>
     </div>
@@ -64,7 +67,7 @@
     <div class="section">
       <h3>Все заказы по датам</h3>
       <div id="all-dates-list">
-        <!-- Заполняется JS -->
+        <p>Нет заказов ни за одну дату.</p>
       </div>
     </div>
   </div>
