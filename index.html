@@ -12,7 +12,10 @@
   <div class="container">
     <!-- Шапка -->
     <div class="header">
-      <div class="avatar">О</div>
+      <label for="avatar-input" class="avatar-container">
+        <div class="avatar" id="avatar">О</div>
+        <input type="file" id="avatar-input" accept="image/*" style="display: none;" />
+      </label>
       <div class="info">
         <h2>Оператор №1</h2>
         <p>Всего заработано: <span id="total-earnings">0 ₽</span></p>
