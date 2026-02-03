@@ -1,36 +1,50 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Панель оператора</title>
-  <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="style.css" />
-  <meta name="theme-color" content="#4a90e2" />
-  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Отслеживание заказов</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
 </head>
 <body>
-  <!-- Основной экран -->
-  <div id="mainScreen" class="screen active">
+  <div id="main" class="screen active">
     <h1>Панель оператора</h1>
-    <p>Общий заработок: <span id="totalEarnings">0₽</span></p>
-    <p>Сегодня: <span id="dailyEarnings">0₽</span></p>
-    <p>М² за месяц: <span id="monthlyM2">0 м²</span></p>
-    <p>П.м за месяц: <span id="monthlyPm">0 п.м</span></p>
-    <canvas id="earningsChart" height="200"></canvas>
-    <br>
-    <button onclick="showCreateOrderScreen()">➕ Создать заказ</button>
-    <button onclick="showShiftsScreen()">📅 Отчёты по дням</button>
+    <p>Всего: <span id="total">0 ₽</span></p>
+    <p>Сегодня: <span id="today">0 ₽</span></p>
+    <button onclick="showCreate()">➕ Создать заказ</button>
+    <button onclick="showReports()">📅 Отчёты</button>
   </div>
 
-  <!-- Динамические экраны будут добавляться сюда -->
+  <div id="create" class="screen">
+    <h2>Новый заказ</h2>
+    <input id="oid" placeholder="№ заказа" required>
+    <input id="odate" type="date" value="">
+    <select id="otype">
+      <option>Распил</option>
+      <option>Линейный</option>
+      <option>Склейка простая</option>
+      <option>Склейка с обгоном</option>
+      <option>Фрезер фаски</option>
+      <option>Пазовка</option>
+      <option>Время</option>
+    </select>
+    <input id="oqty" type="number" value="1" min="1">
+    <input id="om2" type="number" step="0.1" placeholder="м²">
+    < id="opm" type="number" step="0.1" placeholder="п.м">
+    <input id="otime" type="number" step="0.5" placeholder="часы">
+    <button onclick="saveOrder()">Сохранить</button>
+    <button onclick="goBack()">← Назад</button>
+  </div>
 
-  <!-- Кнопка смены темы -->
-  <button id="themeToggle">🌓 Тема</button>
+  <div id="reports" class="screen">
+    <h2>Отчёты</h2>
+    <input id="rdate" type="date" value="">
+    <button onclick="loadDay()">Показать</button>
+    <div id="report-list"></div>
+    <button onclick="goBack()">← Назад</button>
+  </div>
 
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Основной скрипт -->
   <script src="script.js" defer></script>
 </body>
 </html>
