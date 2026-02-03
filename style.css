@@ -1,95 +1,23 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
-
 body {
-  background: #f9f9f9;
-  color: #333;
-  padding: 16px;
-  line-height: 1.6;
+  font-family: sans-serif;
+  padding: 20px;
+  background: #f8f9fa;
 }
-
-body.dark-theme {
-  background: #121212;
-  color: #f0f0f0;
-}
-
 .screen {
   display: none;
-  animation: fadeIn 0.3s ease;
 }
-
 .screen.active {
   display: block;
 }
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-h1, h2 {
-  margin-bottom: 16px;
-  text-align: center;
-}
-
-p {
-  margin: 10px 0;
-  font-size: 1.1rem;
-}
-
-input, select, button {
+input, button {
+  display: block;
   width: 100%;
-  padding: 10px;
   margin: 8px 0;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 1rem;
+  padding: 8px;
 }
-
-body.dark-theme input,
-body.dark-theme select {
-  background: #1e1e1e;
-  color: #f0f0f0;
-  border-color: #444;
-}
-
 button {
-  background: #4a90e2;
+  background: #007bff;
   color: white;
   border: none;
   cursor: pointer;
-  transition: background 0.2s;
-}
-
-button:hover {
-  background: #357abd;
-}
-
-#themeToggle {
-  position: fixed;
-  bottom: 16px;
-  right: 16px;
-  width: auto;
-  padding: 8px 12px;
-  border-radius: 20px;
-  z-index: 100;
-}
-
-canvas {
-  margin: 16px 0;
-  max-width: 100%;
-}
-
-/* Адаптивность */
-@media (max-width: 600px) {
-  body {
-    padding: 12px;
-  }
-  button {
-    padding: 12px;
-  }
 }
