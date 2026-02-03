@@ -1,23 +1,55 @@
-body {
-  font-family: sans-serif;
-  padding: 20px;
-  background: #f8f9fa;
+/* ... предыдущие стили ... */
+
+.section {
+  margin-top: 30px;
 }
-.screen {
-  display: none;
-}
-.screen.active {
-  display: block;
-}
-input, button {
-  display: block;
-  width: 100%;
-  margin: 8px 0;
-  padding: 8px;
-}
-button {
-  background: #007bff;
-  color: white;
-  border: none;
+
+.date-header {
+  background: #f5f5f5;
+  padding: 10px;
+  border-radius: 6px;
   cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.date-header:hover {
+  background: #eee;
+}
+
+.orders-list {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+  padding: 0 10px;
+  background: #fafafa;
+  border-radius: 0 0 6px 6px;
+}
+
+.orders-list.open {
+  max-height: 500px;
+  padding: 10px;
+}
+
+.order-item {
+  background: white;
+  padding: 10px;
+  margin: 8px 0;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+}
+
+.order-details {
+  margin-top: 6px;
+  color: #555;
+  font-size: 13px;
 }
