@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Кабинет оператора</title>
-  <link rel="stylesheet" href="style.css?v=3" />
+  <link rel="stylesheet" href="style.css?v=4" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><circle cx='96' cy='96' r='96' fill='%23ffeb3b'/><text x='96' y='120' text-anchor='middle' font-size='96' fill='%23000'>О</text></svg>">
 </head>
 <body>
@@ -57,31 +57,28 @@
       <button class="btn" type="button" onclick="createOrder()">Создать заказ</button>
     </div>
 
-    <!-- Заказы за сегодня -->
+    <!-- Заказы за сегодня — БЕЗ прокрутки -->
     <div class="section">
       <h3>Заказы за сегодня</h3>
-      <div class="scrollable" id="today-orders-container">
-        <div id="today-orders">
-          <p>Заказов пока нет.</p>
-        </div>
+      <div id="today-orders">
+        <p>Заказов пока нет.</p>
       </div>
     </div>
 
-    <!-- Все заказы по датам -->
+    <!-- Все заказы по датам — С прокруткой -->
     <div class="section">
       <h3>Все заказы по датам</h3>
-      <div class="scrollable" id="all-dates-container">
+      <div id="all-dates-container">
         <div id="all-dates-list">
           <p>Нет заказов ни за одну дату.</p>
         </div>
       </div>
     </div>
 
-    <!-- Кнопка отладки (можно удалить позже) -->
+    <!-- Отладка -->
     <button class="btn" style="background:#e0e0e0;color:#333;" onclick="debugState()">Отладка: проверить данные</button>
   </div>
 
-  <!-- Используем app.js с версией для обхода кэша -->
-  <script src="app.js?v=3"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>
