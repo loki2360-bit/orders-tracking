@@ -614,11 +614,21 @@
         document.getElementById('main-tab').classList.remove('hidden');
         document.getElementById('preorders-tab').classList.add('hidden');
         updateUI();
+        // Обновляем поля основной формы при переключении
+        setTimeout(() => {
+          const tariff = document.getElementById('tariff').value;
+          toggleFields(tariff, false);
+        }, 10);
       } else {
         document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
         document.getElementById('main-tab').classList.add('hidden');
         document.getElementById('preorders-tab').classList.remove('hidden');
         renderPreorders();
+        // Обновляем поля предзаказов
+        setTimeout(() => {
+          const tariff = document.getElementById('preTariff').value;
+          toggleFields(tariff, true);
+        }, 10);
       }
     }
 
@@ -745,31 +755,45 @@
       document.getElementById('preHours').value = '';
     }
 
-    // === Переключение полей ===
-    function setupFieldToggles() {
-      document.getElementById('tariff').addEventListener('change', function () {
-        toggleFields(this.value, false);
-      });
-      document.getElementById('preTariff').addEventListener('change', function () {
-        toggleFields(this.value, true);
-      });
-    }
-
+    // === Переключение полей — ЕДИНСТВЕННАЯ ФУНКЦИЯ ===
     function toggleFields(tariffKey, isPre = false) {
       const prefix = isPre ? 'pre' : '';
       const w = document.getElementById(`${prefix}WidthGroup`);
       const h = document.getElementById(`${prefix}HoursGroup`);
       const l = document.getElementById(`${prefix}LengthGroup`);
 
-      w.classList.add('hidden');
-      h.classList.add('hidden');
-      l.classList.remove('hidden');
+      // Скрываем всё
+      if (w) w.classList.add('hidden');
+      if (h) h.classList.add('hidden');
+      if (l) l.classList.remove('hidden');
 
+      // Показываем нужное
       if (['RASPIL_M2', 'SKLEIKA_OB', 'SKLEIKA_NO_OB'].includes(tariffKey)) {
-        w.classList.remove('hidden');
+        if (w) w.classList.remove('hidden');
       } else if (tariffKey === 'TIME') {
-        l.classList.add('hidden');
-        h.classList.remove('hidden');
+        if (l) l.classList.add('hidden');
+        if (h) h.classList.remove('hidden');
+      }
+    }
+
+    // === Настройка обработчиков ===
+    function setupFieldToggles() {
+      const mainSelect = document.getElementById('tariff');
+      const preSelect = document.getElementById('preTariff');
+
+      if (mainSelect) {
+        mainSelect.addEventListener('change', function () {
+          toggleFields(this.value, false);
+        });
+        // Инициализация при загрузке
+        toggleFields(mainSelect.value, false);
+      }
+
+      if (preSelect) {
+        preSelect.addEventListener('change', function () {
+          toggleFields(this.value, true);
+        });
+        toggleFields(preSelect.value, true);
       }
     }
 
@@ -936,7 +960,7 @@
     // === Инициализация ===
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('viewDate').value = todayYMD();
-      setupFieldToggles(); // <-- КЛЮЧЕВОЙ ВЫЗОВ
+      setupFieldToggles(); // <-- Теперь точно работает!
       updateUI();
       renderPreorders();
     });
