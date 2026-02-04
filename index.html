@@ -1,645 +1,235 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Кабинет оператора</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Кабинет оператора — БЕСКОНЕЧНЫЙ СПИСОК</title>
   <style>
-    :root {
-      --bg-page: #fffde7;
-      --bg-card: #ffffff;
-      --accent: #ffeb3b;
-      --accent-dark: #ffd600;
-      --text-primary: #212121;
-      --text-secondary: #757575;
-      --border: #e0e0e0;
-      --progress-bg: #f5f5f5;
-      --progress-fill: linear-gradient(to right, #ffd600, #ff9800);
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
     body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background-color: var(--bg-page);
-      color: var(--text-primary);
-      line-height: 1.5;
-      padding: 16px;
+      background: #fffde7;
+      font-family: sans-serif;
+      padding: 20px;
+      margin: 0;
     }
-
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-    }
-
-    .header {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-
-    .avatar-container {
-      cursor: pointer;
-      display: inline-block;
-    }
-
-    .avatar-container:hover .avatar {
-      filter: brightness(1.1);
-      box-shadow: 0 0 0 3px var(--accent);
-    }
-
-    .avatar {
-      width: 64px;
-      height: 64px;
-      border-radius: 50%;
-      background: var(--accent);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      font-weight: bold;
-      color: var(--text-primary);
-      flex-shrink: 0;
-    }
-
-    .info h2 {
-      font-size: 20px;
-      margin-bottom: 4px;
-    }
-
-    .info p {
-      font-size: 15px;
-      color: var(--text-secondary);
-    }
-
-    .plan-section,
-    .order-form,
-    .section {
-      background: var(--bg-card);
+    .card {
+      background: white;
       border-radius: 8px;
       padding: 20px;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.05);
     }
-
-    .plan-title {
-      font-weight: 600;
-      margin-bottom: 10px;
-      font-size: 16px;
-    }
-
-    .progress-bar {
-      height: 12px;
-      background: var(--progress-bg);
-      border-radius: 6px;
-      overflow: hidden;
-      margin-bottom: 10px;
-    }
-
+    h2 { margin: 0 0 10px 0; color: #1b5e20; }
     .progress {
-      height: 100%;
-      background: var(--progress-fill);
-      width: 0%;
-      transition: width 0.4s ease;
-    }
-
-    .stats {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin: 16px 0;
-    }
-
-    .stat-box {
-      background: #fafafa;
-      padding: 12px;
-      border-radius: 6px;
-      text-align: center;
-    }
-
-    .stat-value {
-      font-weight: bold;
-      font-size: 18px;
-      color: var(--text-primary);
-    }
-
-    .stat-label {
-      font-size: 13px;
-      color: var(--text-secondary);
-      margin-top: 4px;
-    }
-
-    .btn {
-      width: 100%;
-      padding: 10px;
-      background: var(--accent);
-      border: none;
+      height: 16px;
+      background: #f5f5f5;
       border-radius: 8px;
-      font-weight: 600;
-      font-size: 16px;
-      cursor: pointer;
-      color: var(--text-primary);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      transition: background 0.2s;
-    }
-
-    .btn:hover {
-      background: var(--accent-dark);
-    }
-
-    .form-row {
-      margin-bottom: 14px;
-    }
-
-    .form-row label {
-      display: block;
-      margin-bottom: 6px;
-      font-size: 14px;
-      color: var(--text-secondary);
-    }
-
-    .form-row input,
-    .form-row select {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      font-size: 15px;
-    }
-
-    .items-container {
-      margin: 16px 0;
-    }
-
-    .item-block {
-      background: #fafafa;
-      padding: 14px;
-      border-radius: 8px;
-      margin-bottom: 14px;
-      position: relative;
-      border: 1px solid var(--border);
-    }
-
-    .item-block .remove {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: #ff7675;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      padding: 4px 8px;
-      font-size: 12px;
-      cursor: pointer;
-    }
-
-    .date-group {
-      margin-bottom: 12px;
-    }
-
-    .date-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px;
-      background: var(--bg-card);
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-
-    .orders-list {
-      max-height: 0;
       overflow: hidden;
-      transition: max-height 0.3s ease, padding 0.3s ease;
-      padding: 0 10px;
-      background: #fafafa;
-      border-radius: 0 0 8px 8px;
+      margin: 12px 0;
     }
-
-    .orders-list.open {
-      max-height: 800px;
-      padding: 10px;
+    .bar {
+      height: 100%;
+      background: #ffeb3b;
+      width: 0%;
+      transition: width 0.4s;
     }
-
-    .order-item {
-      background: white;
-      padding: 12px;
+    .order {
+      padding: 14px;
       margin: 10px 0;
+      background: #fafafa;
       border-radius: 6px;
-      font-size: 14px;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      line-height: 1.5;
     }
-
     .order-header {
       display: flex;
       justify-content: space-between;
       font-weight: bold;
+      margin-bottom: 6px;
     }
-
-    .order-details {
-      margin-top: 6px;
-      color: var(--text-secondary);
-      font-size: 13px;
-      line-height: 1.4;
-    }
-
-    .btn-delete {
-      background: #e0e0e0;
-      color: #555;
+    .btn {
+      background: #ffeb3b;
       border: none;
+      padding: 6px 12px;
       border-radius: 4px;
-      padding: 6px 10px;
-      font-size: 13px;
       cursor: pointer;
-      margin-top: 8px;
+      margin: 0 4px;
+    }
+    .btn-gray {
+      background: #e0e0e0;
+    }
+    .form-row {
+      margin: 8px 0;
+    }
+    input, select {
+      padding: 6px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
       width: 100%;
     }
-
-    .btn-delete:hover {
-      background: #d0d0d0;
-      color: #333;
-    }
-
-    h3 {
-      margin-bottom: 16px;
-      font-size: 18px;
+    #orders {
+      min-height: 40px;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <!-- Шапка -->
-    <div class="header">
-      <label for="avatar-input" class="avatar-container">
-        <div class="avatar" id="avatar">О</div>
-        <input type="file" id="avatar-input" accept="image/*" style="display: none;" />
-      </label>
-      <div class="info">
-        <h2>Оператор №1</h2>
-        <p>Всего заработано: <span id="total-earnings">0 ₽</span></p>
-      </div>
-    </div>
+  <div class="card">
+    <h2>Оператор №1</h2>
+    <p>Всего: <span id="total">0 ₽</span></p>
+    <p>Сегодня: <span id="today">0 ₽</span> / 3000 ₽</p>
+    <div class="progress"><div class="bar" id="bar"></div></div>
+    <button class="btn" onclick="reset()">Начать смену</button>
+  </div>
 
-    <!-- План -->
-    <div class="plan-section">
-      <div class="plan-title">План на смену: 3000 ₽</div>
-      <div class="progress-bar">
-        <div class="progress" id="progress"></div>
-      </div>
-      <p>Сегодня заработано: <span id="today-earnings">0 ₽</span></p>
+  <div class="card">
+    <h3>Создать заказ</h3>
+    <input id="num" placeholder="№ заказа" style="width:100%; margin:6px 0;">
+    <button class="btn" onclick="addRow()">+ Деталь</button>
+    <div id="rows"></div>
+    <button class="btn" onclick="create()">Создать</button>
+  </div>
 
-      <div class="stats">
-        <div class="stat-box">
-          <div class="stat-value">3000 ₽</div>
-          <div class="stat-label">План</div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-value" id="shift-earned">0 ₽</div>
-          <div class="stat-label">За смену</div>
-        </div>
-      </div>
-
-      <button class="btn" onclick="resetShift()">Начать новую смену</button>
-    </div>
-
-    <!-- Форма заказа -->
-    <div class="order-form">
-      <h3>Создать заказ</h3>
-      <div class="form-row">
-        <label>Номер заказа:</label>
-        <input type="text" id="order-number" placeholder="например: З-123" />
-      </div>
-
-      <div class="items-container" id="items-container"></div>
-
-      <button class="btn" type="button" onclick="addItem()" style="margin: 12px 0;">+ Добавить деталь</button>
-      <button class="btn" type="button" onclick="createOrder()">Создать заказ</button>
-    </div>
-
-    <!-- ЕДИНЫЙ СПИСОК ПО ДАТАМ -->
-    <div class="section">
-      <h3>Все заказы по датам</h3>
-      <div id="all-dates-list">
-        <p>Нет заказов ни за одну дату.</p>
-      </div>
-    </div>
-
-    <!-- Отладка -->
-    <button class="btn" style="background:#e0e0e0;color:#333;" onclick="debugState()">Отладка</button>
+  <div class="card">
+    <h3>Все заказы</h3>
+    <div id="orders">Нет заказов</div>
+    <button class="btn" onclick="exportAll()">Скачать TXT</button>
   </div>
 
   <script>
-    // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
-    function escapeHtml(text) {
-      if (typeof text !== 'string') return '';
-      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-      return text.replace(/[&<>"']/g, m => map[m]);
-    }
-
-    function formatMoney(num) {
-      return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB' }).format(Math.round(num * 100) / 100);
-    }
-
-    function formatDate(dateStr) {
-      const [y, m, d] = dateStr.split('-');
-      return `${d}.${m}.${y}`;
-    }
-
-    function getCurrentDate() {
-      const d = new Date();
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      return `${y}-${m}-${day}`;
-    }
-
-    // === СОСТОЯНИЕ ===
-    let state = JSON.parse(localStorage.getItem('operatorState')) || {
-      totalEarnings: 0,
-      todayEarnings: 0,
-      ordersByDate: {}
+    // === Состояние ===
+    let state = JSON.parse(localStorage.getItem('op')) || {
+      total: 0,
+      today: 0,
+      list: []
     };
 
-    function saveState() {
-      localStorage.setItem('operatorState', JSON.stringify(state));
+    function save() {
+      localStorage.setItem('op', JSON.stringify(state));
+      document.getElementById('total').textContent = fmt(state.total);
+      document.getElementById('today').textContent = fmt(state.today);
+      const perc = Math.min(100, (state.today / 3000) * 100);
+      document.getElementById('bar').style.width = perc + '%';
+      render();
     }
 
-    // === ПЕРЕСЧЁТ ЗАРАБОТКА ===
-    function recalculateEarnings() {
-      let totalAll = 0;
-      const today = getCurrentDate();
-      let todayTotal = 0;
-
-      for (const [date, orders] of Object.entries(state.ordersByDate)) {
-        if (!Array.isArray(orders)) continue;
-        const sum = orders.reduce((s, o) => s + (o.total || 0), 0);
-        totalAll += sum;
-        if (date === today) todayTotal = sum;
-      }
-
-      state.totalEarnings = totalAll;
-      state.todayEarnings = todayTotal;
-      saveState();
+    function fmt(n) {
+      return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB' }).format(n);
     }
 
-    // === РЕНДЕРИНГ ВСЕХ ДАТ ===
-    function renderAllDates() {
-      const container = document.getElementById('all-dates-list');
-      if (!container) return;
-
-      const dates = Object.keys(state.ordersByDate).sort((a, b) => b.localeCompare(a));
-      if (dates.length === 0) {
-        container.innerHTML = '<p>Нет заказов ни за одну дату.</p>';
+    // === Рендеринг — БЕСКОНЕЧНЫЙ СПИСОК ===
+    function render() {
+      const el = document.getElementById('orders');
+      if (state.list.length === 0) {
+        el.innerHTML = 'Нет заказов';
         return;
       }
 
-      let html = '';
-      dates.forEach(date => {
-        const orders = state.ordersByDate[date] || [];
-        html += `
-          <div class="date-group">
-            <div class="date-header" onclick="toggleDateGroup(this)">
-              <span>${formatDate(date)}</span>
-              <span>▶</span>
-            </div>
-            <div class="orders-list">
-              ${orders.map((order, idx) => `
-                <div class="order-item">
-                  <div class="order-header">
-                    <span>№${escapeHtml(order.number)}</span>
-                    <span>${formatMoney(order.total)}</span>
-                  </div>
-                  <div class="order-details">
-                    ${order.items?.map(i => 
-                      `${escapeHtml(i.detail)} • ${i.service} • ×${i.quantity} • ${formatMoney(i.price)}`
-                    ).join('<br>') || '—'}
-                  </div>
-                  <button class="btn-delete" type="button" onclick="deleteOrder('${date}', ${idx})">Удалить</button>
-                </div>
-              `).join('')}
-              <button class="btn" style="margin-top:12px;width:auto;" type="button" onclick="exportDateToTxt('${date}')">Скачать TXT</button>
-            </div>
+      el.innerHTML = state.list.map((o, i) => `
+        <div class="order">
+          <div class="order-header">
+            <span>№${o.num}</span>
+            <span>${fmt(o.total)}</span>
           </div>
-        `;
-      });
-
-      container.innerHTML = html;
+          ${o.items.map(it => 
+            `<div>${it.d} • ${it.s} ×${it.q} = ${fmt(it.p)}</div>`
+          ).join('')}
+          <button class="btn-gray" onclick="del(${i})">Удалить</button>
+        </div>
+      `).join('');
     }
 
-    // === ПЕРЕКЛЮЧЕНИЕ ДАТЫ ===
-    function toggleDateGroup(el) {
-      const list = el.nextElementSibling;
-      const isOpen = list.classList.contains('open');
-      list.classList.toggle('open');
-      el.querySelector('span:last-child').textContent = isOpen ? '▼' : '▶';
+    // === Добавление детали ===
+    function addRow() {
+      document.getElementById('rows').innerHTML += `
+        <div class="form-row">
+          <input placeholder="деталь" data-d style="width:120px; margin-right:6px;">
+          <select data-s style="margin-right:6px; width:150px;">
+            <option value="Распил">Распил (65₽/м²)</option>
+            <option value="Линейный">Линейный (26₽/п.м.)</option>
+            <option value="Склейка+">Склейка+ (210₽/м²)</option>
+            <option value="Склейка-">Склейка- (165₽/м²)</option>
+            <option value="Пазы">Пазы (30₽/п.м.)</option>
+            <option value="Фаска">Фаска (16₽/п.м.)</option>
+            <option value="Время">Время (330₽/ч)</option>
+          </select>
+          <input type="number" value="1" data-q min="1" style="width:60px; margin-right:6px;">
+          <input type="number" step="0.01" data-l placeholder="длина" style="width:80px; margin-right:6px;">
+          <input type="number" step="0.01" data-w placeholder="ширина" style="width:80px;">
+          <button class="btn-gray" onclick="this.parentNode.remove()">✕</button>
+        </div>
+      `;
     }
 
-    // === УДАЛЕНИЕ ЗАКАЗА ===
-    function deleteOrder(date, index) {
-      if (!confirm('Удалить заказ? Это действие нельзя отменить.')) return;
+    // === Создание заказа ===
+    function create() {
+      const num = document.getElementById('num').value.trim();
+      if (!num) return alert('Введите номер заказа!');
 
-      const orders = state.ordersByDate[date];
-      if (!orders || !Array.isArray(orders) || index < 0 || index >= orders.length) {
-        console.error('Ошибка удаления: заказ не найден');
-        return;
-      }
+      const rows = document.querySelectorAll('#rows > .form-row');
+      if (rows.length === 0) return alert('Добавьте деталь');
 
-      orders.splice(index, 1);
-      if (orders.length === 0) {
-        delete state.ordersByDate[date];
-      }
+      let total = 0;
+      const items = [];
 
-      recalculateEarnings();
-      updateUI();
-    }
+      rows.forEach(row => {
+        const d = row.querySelector('[data-d]')?.value || '—';
+        const s = row.querySelector('[data-s]')?.value || '—';
+        const q = +row.querySelector('[data-q]')?.value || 1;
+        const l = +row.querySelector('[data-l]')?.value || 0;
+        const w = +row.querySelector('[data-w]')?.value || 0;
 
-    // === ТАРИФЫ ===
-    const SERVICES = [
-      { id: 'RASPIL_M2', name: 'Распил', unit: 'м²', price: 65 },
-      { id: 'LINEAR_RASPIL', name: 'Линейный распил', unit: 'п.м.', price: 26 },
-      { id: 'SKLEIKA_OB', name: 'Склейка с обгонкой', unit: 'м²', price: 210 },
-      { id: 'SKLEIKA_NO_OB', name: 'Склейка без обгонки', unit: 'м²', price: 165 },
-      { id: 'PAZY', name: 'Пазы', unit: 'п.м.', price: 30 },
-      { id: 'FREZER_FASKA', name: 'Фрезеровка фаски', unit: 'п.м.', price: 16 },
-      { id: 'TIME', name: 'Время', unit: 'час', price: 330 },
-    ];
-
-    // === СОЗДАНИЕ ЗАКАЗА ===
-    function createOrder() {
-      const num = document.getElementById('order-number').value.trim();
-      if (!num) return alert('Укажите номер заказа!');
-
-      const blocks = Array.from(document.querySelectorAll('.item-block'));
-      if (blocks.length === 0) return alert('Добавьте хотя бы одну деталь!');
-
-      const items = blocks.map(block => {
-        const detail = block.querySelector('[data-field="detail"]')?.value.trim() || '—';
-        const serviceId = block.querySelector('[data-field="service"]')?.value;
-        const qty = parseInt(block.querySelector('[data-field="quantity"]')?.value) || 1;
-        const service = SERVICES.find(s => s.id === serviceId);
-        if (!service) throw new Error('Неизвестный тариф');
-
-        let price = 0;
-        if (serviceId === 'TIME') {
-          const hours = parseFloat(block.querySelector('[data-field="hours"]')?.value) || 0;
-          price = service.price * hours * qty;
-        } else if (['RASPIL_M2', 'SKLEIKA_OB', 'SKLEIKA_NO_OB'].includes(serviceId)) {
-          const length = parseFloat(block.querySelector('[data-field="length"]')?.value) || 0;
-          const width = parseFloat(block.querySelector('[data-field="width"]')?.value) || 0;
-          price = service.price * length * width * qty;
+        let p = 0;
+        if (s === 'Время') p = 330 * l * q;
+        else if (s.includes('м²') || s === 'Распил' || s === 'Склейка+') {
+          p = (s === 'Распил' ? 65 : s === 'Склейка+' ? 210 : 165) * l * w * q;
         } else {
-          const length = parseFloat(block.querySelector('[data-field="length"]')?.value) || 0;
-          price = service.price * length * qty;
+          p = (s === 'Линейный' ? 26 : s === 'Пазы' ? 30 : 16) * l * q;
         }
 
-        return { detail, service: service.name, quantity: qty, price };
+        items.push({ d, s, q, p });
+        total += p;
       });
 
-      const total = items.reduce((sum, i) => sum + i.price, 0);
-      const today = getCurrentDate();
+      state.list.push({ num, items, total });
+      state.total += total;
+      state.today += total;
+      save();
 
-      if (!state.ordersByDate[today]) state.ordersByDate[today] = [];
-      state.ordersByDate[today].push({ number: num, items, total });
-
-      recalculateEarnings();
-      updateUI();
-
-      document.getElementById('order-number').value = '';
-      document.getElementById('items-container').innerHTML = '';
+      document.getElementById('num').value = '';
+      document.getElementById('rows').innerHTML = '';
     }
 
-    // === ДОБАВЛЕНИЕ ДЕТАЛИ ===
-    function addItem() {
-      const container = document.getElementById('items-container');
-      const idx = container.children.length;
-
-      container.insertAdjacentHTML('beforeend', `
-        <div class="item-block">
-          <button class="remove" type="button" onclick="this.closest('.item-block').remove()">✕</button>
-          <div class="form-row"><label>Деталь:</label><input type="text" placeholder="название" data-field="detail" /></div>
-          <div class="form-row"><label>Тариф:</label>
-            <select data-field="service" onchange="toggleFields(this, ${idx})">
-              ${SERVICES.map(s => `<option value="${s.id}">${s.name} (${s.price}₽/${s.unit})</option>`).join('')}
-            </select>
-          </div>
-          <div class="form-row"><label>Количество:</label><input type="number" value="1" min="1" data-field="quantity" /></div>
-          <div class="fields" id="fields-${idx}"></div>
-        </div>
-      `);
-      toggleFields(container.lastElementChild.querySelector('select'), idx);
+    // === Удаление ===
+    function del(i) {
+      const o = state.list.splice(i, 1)[0];
+      state.total -= o.total;
+      state.today -= o.total;
+      save();
     }
 
-    function toggleFields(select, idx) {
-      const fieldsDiv = document.getElementById(`fields-${idx}`);
-      const serviceId = select.value;
-      let html = '';
-
-      if (serviceId === 'TIME') {
-        html = `<div class="form-row"><label>Часы:</label><input type="number" step="0.1" min="0.1" data-field="hours" /></div>`;
-      } else if (['RASPIL_M2', 'SKLEIKA_OB', 'SKLEIKA_NO_OB'].includes(serviceId)) {
-        html = `
-          <div class="form-row"><label>Длина (м):</label><input type="number" step="0.01" min="0.01" data-field="length" /></div>
-          <div class="form-row"><label>Ширина (м):</label><input type="number" step="0.01" min="0.01" data-field="width" /></div>
-        `;
-      } else {
-        html = `<div class="form-row"><label>Длина (м):</label><input type="number" step="0.01" min="0.01" data-field="length" /></div>`;
-      }
-      fieldsDiv.innerHTML = html;
-    }
-
-    // === ПРОЧЕЕ ===
-    function resetShift() {
-      if (confirm('Начать новую смену? Сегодняшние заказы останутся в истории.')) {
-        state.todayEarnings = 0;
-        saveState();
-        updateUI();
+    // === Сброс ===
+    function reset() {
+      if (confirm('Сбросить смену?')) {
+        state.today = 0;
+        save();
       }
     }
 
-    function exportDateToTxt(dateStr) {
-      const orders = state.ordersByDate[dateStr] || [];
-      if (orders.length === 0) return;
-
-      let content = `Заказы за ${formatDate(dateStr)}\n`;
-      content += '='.repeat(40) + '\n\n';
-
-      let totalDay = 0;
-      orders.forEach(order => {
-        totalDay += order.total;
-        content += `Заказ №${order.number}\n`;
-        order.items.forEach(item => {
-          content += `- ${item.detail} | ${item.service} | ×${item.quantity} | ${formatMoney(item.price)}\n`;
-        });
-        content += `Итого по заказу: ${formatMoney(order.total)}\n\n`;
+    // === Экспорт ===
+    function exportAll() {
+      let txt = 'ВСЕ ЗАКАЗЫ\n============\n';
+      state.list.forEach((o, i) => {
+        txt += `\n№${o.num} — ${fmt(o.total)}\n`;
+        o.items.forEach(it => txt += `- ${it.d} | ${it.s} ×${it.q} = ${fmt(it.p)}\n`);
       });
+      txt += `\nИТОГО: ${fmt(state.total)}`;
 
-      content += '='.repeat(40) + '\n';
-      content += `Общая сумма за день: ${formatMoney(totalDay)}\n`;
-
-      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
-      a.download = `заказы_${dateStr}.txt`;
-      document.body.appendChild(a);
+      a.href = URL.createObjectURL(new Blob([txt], { type: 'text/plain' }));
+      a.download = 'все_заказы.txt';
       a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
     }
 
-    // === АВАТАРКА ===
-    document.getElementById('avatar-input')?.addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      if (file && file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-          localStorage.setItem('operatorAvatar', event.target.result);
-          updateAvatar();
-        };
-        reader.readAsDataURL(file);
-      }
-    });
-
-    function updateAvatar() {
-      const avatarEl = document.getElementById('avatar');
-      const saved = localStorage.getItem('operatorAvatar');
-      if (saved) {
-        avatarEl.innerHTML = `<img src="${saved}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;
-      } else {
-        avatarEl.innerHTML = 'О';
-      }
-    }
-
-    // === ОТЛАДКА ===
-    function debugState() {
-      const data = JSON.parse(localStorage.getItem('operatorState'));
-      console.log('Состояние:', data);
-      alert(`Всего заказов: ${
-        Object.values(data.ordersByDate || {}).reduce((sum, arr) => sum + arr.length, 0)
-      }`);
-    }
-
-    // === ИНИЦИАЛИЗАЦИЯ ===
-    function updateUI() {
-      const today = getCurrentDate();
-      document.getElementById('total-earnings').textContent = formatMoney(state.totalEarnings);
-      document.getElementById('today-earnings').textContent = formatMoney(state.todayEarnings);
-      document.getElementById('shift-earned').textContent = formatMoney(state.todayEarnings);
-      document.getElementById('progress').style.width = `${Math.min(100, (state.todayEarnings / 3000) * 100)}%`;
-      renderAllDates();
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      updateUI();
-      updateAvatar();
-    });
+    // Инициализация
+    save();
   </script>
 </body>
 </html>
