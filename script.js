@@ -32,7 +32,6 @@ function saveState() {
   localStorage.setItem('operatorState', JSON.stringify(state));
 }
 
-// Пересчёт заработка за день и всего (после удаления)
 function recalculateEarnings() {
   let totalAll = 0;
   let todayTotal = 0;
@@ -144,22 +143,15 @@ function deleteOrder(date, index) {
   const orders = state.ordersByDate[date];
   if (!orders || index < 0 || index >= orders.length) return;
 
-  // Удаляем заказ
   const removed = orders.splice(index, 1)[0];
-
-  // Если массив стал пустым — удаляем дату из объекта
   if (orders.length === 0) {
     delete state.ordersByDate[date];
   }
 
-  // Пересчитываем заработок
   recalculateEarnings();
-
-  // Обновляем интерфейс
   updateUI();
 }
 
-// --- Форма заказа (без ограничений!) ---
 function addItem() {
   const container = document.getElementById('items-container');
   const idx = container.children.length;
@@ -240,6 +232,10 @@ function createOrder() {
   saveState();
   updateUI();
 
+  // Автопрокрутка к новому заказу
+  const scrollContainer = document.getElementById('today-orders-container');
+  scrollContainer.scrollTop = scrollContainer.scrollHeight;
+
   document.getElementById('order-number').value = '';
   document.getElementById('items-container').innerHTML = '';
 }
@@ -283,7 +279,6 @@ function exportDateToTxt(dateStr) {
   URL.revokeObjectURL(url);
 }
 
-// Аватарка
 document.getElementById('avatar-input').addEventListener('change', function(e) {
   const file = e.target.files[0];
   if (!file || !file.type.startsWith('image/')) return;
