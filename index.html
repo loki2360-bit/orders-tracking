@@ -16,6 +16,7 @@
       --accent-green: #4caf50;
       --border: #eaeaea;
       --shadow: rgba(0,0,0,0.05);
+      --gray: #e0e0e0;
     }
 
     * {
@@ -71,16 +72,10 @@
       font-size: 1.3rem;
       font-weight: 600;
       margin-bottom: 4px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
     }
     .info p {
       font-size: 1rem;
       color: var(--text-muted);
-      display: flex;
-      align-items: center;
-      gap: 6px;
     }
 
     /* Plan Box */
@@ -112,12 +107,7 @@
     .progress-fill {
       height: 100%;
       border-radius: 8px;
-      background: linear-gradient(90deg,
-        var(--accent-yellow) 0%,
-        var(--accent-orange) 50%,
-        var(--accent-green) 100%
-      );
-      transition: width 0.4s ease;
+      transition: width 0.4s ease, background 0.4s ease;
     }
 
     .progress-text {
@@ -126,6 +116,13 @@
       font-size: 0.95rem;
       font-weight: 500;
       margin-top: 6px;
+    }
+
+    .shift-status {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-top: 6px;
+      font-style: italic;
     }
 
     /* Section title */
@@ -190,8 +187,6 @@
     button {
       flex: 1;
       min-width: 120px;
-      background: linear-gradient(135deg, var(--accent-yellow), var(--accent-orange));
-      color: #000;
       border: none;
       border-radius: 8px;
       padding: 11px;
@@ -203,11 +198,25 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
-      box-shadow: 0 2px 6px rgba(255, 235, 59, 0.3);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
-    button:hover {
+
+    .btn-start {
+      background: linear-gradient(135deg, #4caf50, #2e7d32);
+      color: white;
+    }
+    .btn-start:hover {
       transform: translateY(-1px);
-      box-shadow: 0 3px 8px rgba(255, 235, 59, 0.4);
+      box-shadow: 0 3px 8px rgba(76, 175, 80, 0.4);
+    }
+
+    .btn-end {
+      background: linear-gradient(135deg, #f44336, #d32f2f);
+      color: white;
+    }
+    .btn-end:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 3px 8px rgba(244, 67, 54, 0.4);
     }
 
     .btn-outline {
@@ -261,7 +270,6 @@
       font-style: italic;
     }
 
-    /* Footer hint */
     .hint {
       text-align: center;
       margin: 20px 16px;
@@ -272,13 +280,12 @@
       border-radius: 8px;
     }
 
-    /* Animations */
+    .fade-in {
+      animation: fadeIn 0.3s ease-out;
+    }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(8px); }
       to { opacity: 1; transform: translateY(0); }
-    }
-    .fade-in {
-      animation: fadeIn 0.3s ease-out;
     }
   </style>
 </head>
@@ -289,8 +296,8 @@
     <div class="header">
       <div class="avatar"><i class="fas fa-user"></i></div>
       <div class="info">
-        <h2><span id="opId">Александр-030-felder</span></h2>
-        <p><b><span id="totalAll">0.00</span> ₽</b></p>
+        <h2>Оператор №<span id="opId">1</span></h2>
+        <p>Всего: <b><span id="totalAll">0.00</span> ₽</b></p>
       </div>
     </div>
 
@@ -300,12 +307,23 @@
         <i class="fas fa-bullseye"></i> План: <b>3000 ₽</b>
       </div>
       <div class="progress-container">
-        <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+        <div class="progress-fill" id="progressFill"></div>
       </div>
       <div class="progress-text">
         <span>Сегодня:</span>
         <span><b><span id="todayEarned">0.00</span> ₽</b></span>
       </div>
+      <div class="shift-status" id="shiftStatus">Смена не начата</div>
+    </div>
+
+    <!-- Shift Controls -->
+    <div class="btn-row">
+      <button class="btn-start" onclick="startShift()">
+        <i class="fas fa-play"></i> Начать смену
+      </button>
+      <button class="btn-end" onclick="endShift()">
+        <i class="fas fa-stop"></i> Завершить смену
+      </button>
     </div>
 
     <!-- Create Order -->
@@ -355,8 +373,8 @@
     </div>
 
     <div class="btn-row">
-      <button onclick="createOrder()">
-        <i class="fas fa-check"></i> Создать
+      <button style="background:linear-gradient(135deg,#ffeb3b,#ff9800);color:#000;" onclick="createOrder()">
+        <i class="fas fa-check"></i> Создать заказ
       </button>
     </div>
 
@@ -384,7 +402,7 @@
     <div id="ordersList"></div>
 
     <div class="hint">
-      💡 Данные хранятся в браузере. Не очищайте историю!
+      💡 Смена должна быть начата, чтобы учитывать заработок за сегодня.
     </div>
   </div>
 
@@ -435,28 +453,106 @@
       } catch (e) {}
     }
 
-    // === UI Update ===
+    function getShiftState() {
+      const key = `shift_${todayYMD()}`;
+      return JSON.parse(localStorage.getItem(key) || 'null');
+    }
+
+    function setShiftState(state) {
+      const key = `shift_${todayYMD()}`;
+      localStorage.setItem(key, JSON.stringify(state));
+    }
+
+    // === Обновление UI ===
     function updateUI() {
       const orders = loadOrders();
       const today = todayYMD();
 
-      let totalAll = 0;
-      let todayTotal = 0;
+      // Общий заработок (все заказы)
+      const totalAll = orders.reduce((sum, o) => sum + (parseFloat(o.amount) || 0), 0);
 
-      orders.forEach(order => {
-        const amt = parseFloat(order.amount) || 0;
-        totalAll += amt;
-        if (order.date === today) todayTotal += amt;
-      });
+      // Текущая смена
+      const shift = getShiftState();
+      let todayEarned = 0;
+      let progressWidth = 0;
+      let fillColor = '#e0e0e0'; // серый
+      let statusText = 'Смена не начата';
+
+      if (shift && shift.startedAt && !shift.finishedAt) {
+        // Смена активна — считаем за сегодня
+        todayEarned = orders
+          .filter(o => o.date === today)
+          .reduce((sum, o) => sum + (parseFloat(o.amount) || 0), 0);
+        progressWidth = Math.min(100, (todayEarned / 3000) * 100);
+        fillColor = `linear-gradient(90deg, #ffeb3b 0%, #ff9800 50%, #4caf50 100%)`;
+        statusText = 'Смена активна';
+      } else if (shift && shift.finishedAt) {
+        // Смена завершена — показываем финальную сумму
+        todayEarned = shift.finalAmount || 0;
+        progressWidth = Math.min(100, (todayEarned / 3000) * 100);
+        fillColor = shift.finalAmount >= 3000 
+          ? '#4caf50' 
+          : '#ff9800';
+        statusText = 'Смена завершена';
+      }
 
       document.getElementById('totalAll').textContent = totalAll.toFixed(2);
-      document.getElementById('todayEarned').textContent = todayTotal.toFixed(2);
-
-      const percent = Math.min(100, (todayTotal / 3000) * 100);
-      document.getElementById('progressFill').style.width = `${percent}%`;
+      document.getElementById('todayEarned').textContent = todayEarned.toFixed(2);
+      const fillEl = document.getElementById('progressFill');
+      fillEl.style.width = `${progressWidth}%`;
+      fillEl.style.background = fillColor;
+      document.getElementById('shiftStatus').textContent = statusText;
     }
 
-    // === Форма: переключение полей ===
+    // === Управление сменой ===
+    function startShift() {
+      const today = todayYMD();
+      const shift = getShiftState();
+
+      if (shift && shift.finishedAt) {
+        alert('Смена уже завершена. Нельзя начать повторно.');
+        return;
+      }
+
+      if (!shift || !shift.startedAt) {
+        setShiftState({ startedAt: new Date().toISOString(), finishedAt: null, finalAmount: null });
+        alert('✅ Смена начата!');
+      }
+
+      updateUI();
+    }
+
+    function endShift() {
+      const today = todayYMD();
+      const shift = getShiftState();
+
+      if (!shift || !shift.startedAt) {
+        alert('Сначала начните смену!');
+        return;
+      }
+
+      if (shift.finishedAt) {
+        alert('Смена уже завершена.');
+        return;
+      }
+
+      // Считаем итог за сегодня
+      const orders = loadOrders();
+      const todayTotal = orders
+        .filter(o => o.date === today)
+        .reduce((sum, o) => sum + (parseFloat(o.amount) || 0), 0);
+
+      setShiftState({
+        startedAt: shift.startedAt,
+        finishedAt: new Date().toISOString(),
+        finalAmount: todayTotal
+      });
+
+      alert(`✅ Смена завершена!\nЗаработано: ${todayTotal.toFixed(2)} ₽`);
+      updateUI();
+    }
+
+    // === Форма заказа ===
     document.getElementById('tariff').addEventListener('change', function () {
       const t = this.value;
       const w = document.getElementById('widthGroup');
@@ -475,8 +571,13 @@
       }
     });
 
-    // === Создание заказа ===
     function createOrder() {
+      const shift = getShiftState();
+      if (!shift || !shift.startedAt || shift.finishedAt) {
+        alert('⚠️ Начните смену, чтобы создавать заказы!');
+        return;
+      }
+
       const num = document.getElementById('orderNum').value.trim();
       const tariffKey = document.getElementById('tariff').value;
       const detail = document.getElementById('detail').value.trim() || '—';
@@ -536,7 +637,7 @@
       document.getElementById('hours').value = '';
     }
 
-    // === Показать заказы за дату ===
+    // === История ===
     function showOrdersByDate() {
       const dateInput = document.getElementById('viewDate').value;
       if (!dateInput) {
@@ -579,7 +680,6 @@
       document.getElementById('ordersList').innerHTML = html;
     }
 
-    // === Сохранить в файл ===
     function saveOrdersToFile() {
       const dateInput = document.getElementById('viewDate').value;
       if (!dateInput) {
