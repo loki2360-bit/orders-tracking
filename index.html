@@ -4,9 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Кабинет оператора</title>
-  <link rel="stylesheet" href="style.css" />
-  <link rel="manifest" href="manifest.json" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 192 192%22><circle cx=%2296%22 cy=%2296%22 r=%2296%22 fill=%22%23ffeb3b%22/><text x=%2296%22 y=%22120%22 text-anchor=%22middle%22 font-size=%2296%22 fill=%22%23000%22>О</text></svg>">
+  <link rel="stylesheet" href="style.css?v=3" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><circle cx='96' cy='96' r='96' fill='%23ffeb3b'/><text x='96' y='120' text-anchor='middle' font-size='96' fill='%23000'>О</text></svg>">
 </head>
 <body>
   <div class="container">
@@ -77,8 +76,12 @@
         </div>
       </div>
     </div>
+
+    <!-- Кнопка отладки (можно удалить позже) -->
+    <button class="btn" style="background:#e0e0e0;color:#333;" onclick="debugState()">Отладка: проверить данные</button>
   </div>
 
-  <script src="script.js"></script>
+  <!-- Используем app.js с версией для обхода кэша -->
+  <script src="app.js?v=3"></script>
 </body>
 </html>
