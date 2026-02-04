@@ -14,9 +14,9 @@
       --accent-yellow: #ffeb3b;
       --accent-orange: #ff9800;
       --accent-green: #4caf50;
+      --accent-blue: #2196f3;
       --border: #eaeaea;
       --shadow: rgba(0,0,0,0.05);
-      --gray: #e0e0e0;
     }
 
     * {
@@ -42,6 +42,28 @@
       box-shadow: 0 6px 20px var(--shadow);
       overflow: hidden;
       font-size: 15px;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      background: #fafafa;
+      border-bottom: 1px solid var(--border);
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 14px;
+      background: none;
+      border: none;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      color: var(--accent-blue);
+      background: white;
+      border-bottom: 3px solid var(--accent-blue);
     }
 
     /* Header */
@@ -205,32 +227,28 @@
       background: linear-gradient(135deg, #4caf50, #2e7d32);
       color: white;
     }
-    .btn-start:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 3px 8px rgba(76, 175, 80, 0.4);
-    }
-
     .btn-end {
       background: linear-gradient(135deg, #f44336, #d32f2f);
       color: white;
     }
-    .btn-end:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 3px 8px rgba(244, 67, 54, 0.4);
+    .btn-blue {
+      background: linear-gradient(135deg, var(--accent-blue), #1976d2);
+      color: white;
     }
-
     .btn-outline {
       background: transparent;
       border: 1px solid var(--border);
       color: var(--text-dark);
     }
-    .btn-outline:hover {
-      background: #fafafa;
-      border-color: var(--accent-yellow);
+    .btn-accept {
+      background: linear-gradient(135deg, #4caf50, #2e7d32);
+      color: white;
+      font-size: 13px;
+      padding: 8px 10px;
     }
 
     /* Orders list */
-    .date-label {
+    .date-label, .preorders-label {
       font-weight: 600;
       color: var(--text-muted);
       margin: 16px 0 12px;
@@ -287,122 +305,190 @@
       from { opacity: 0; transform: translateY(8px); }
       to { opacity: 1; transform: translateY(0); }
     }
+
+    .hidden { display: none; }
   </style>
 </head>
 <body>
   <div class="container fade-in">
 
-    <!-- Header -->
-    <div class="header">
-      <div class="avatar"><i class="fas fa-user"></i></div>
-      <div class="info">
-        <h2>Оператор Александр №330<span id="opId">1</span></h2>
-        <p>Всего: <b><span id="totalAll">0.00</span> ₽</b></p>
-      </div>
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('main')">Основное</button>
+      <button class="tab-btn" onclick="switchTab('preorders')">Предзаказы</button>
     </div>
 
-    <!-- Plan Box -->
-    <div class="plan-box">
-      <div class="plan-title">
-        <i class="fas fa-bullseye"></i> План: <b>3000 ₽</b>
+    <!-- Main Tab -->
+    <div id="main-tab">
+      <!-- Header -->
+      <div class="header">
+        <div class="avatar"><i class="fas fa-user"></i></div>
+        <div class="info">
+          <h2>Оператор Александр №330<span id="opId">1</span></h2>
+          <p>Всего: <b><span id="totalAll">0.00</span> ₽</b></p>
+        </div>
       </div>
-      <div class="progress-container">
-        <div class="progress-fill" id="progressFill"></div>
+
+      <!-- Plan Box -->
+      <div class="plan-box">
+        <div class="plan-title">
+          <i class="fas fa-bullseye"></i> План: <b>3000 ₽</b>
+        </div>
+        <div class="progress-container">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-text">
+          <span>Текущая смена:</span>
+          <span><b><span id="todayEarned">0.00</span> ₽</b></span>
+        </div>
+        <div class="shift-status" id="shiftStatus">Смена не начата</div>
       </div>
-      <div class="progress-text">
-        <span>Текущая смена:</span>
-        <span><b><span id="todayEarned">0.00</span> ₽</b></span>
+
+      <!-- Shift Controls -->
+      <div class="btn-row">
+        <button class="btn-start" onclick="startShift()">
+          <i class="fas fa-play"></i> Начать смену
+        </button>
+        <button class="btn-end" onclick="endShift()">
+          <i class="fas fa-stop"></i> Завершить смену
+        </button>
       </div>
-      <div class="shift-status" id="shiftStatus">Смена не начата</div>
+
+      <!-- Create Order -->
+      <div class="section-title">
+        <i class="fas fa-plus"></i> Новый заказ
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label>№ заказа</label>
+          <input type="text" id="orderNum" placeholder="Напр.: ORD-001" required>
+        </div>
+        <div class="form-group">
+          <label>Тариф</label>
+          <select id="tariff">
+            <option value="RASPIL_M2">Распил — 65 ₽/м²</option>
+            <option value="LINEAR_RASPIL">Лин. распил — 26 ₽/м</option>
+            <option value="SKLEIKA_OB">Склейка + — 210 ₽/м²</option>
+            <option value="SKLEIKA_NO_OB">Склейка – — 165 ₽/м²</option>
+            <option value="PAZY">Пазы — 30 ₽/м</option>
+            <option value="FREZER_FASKA">Фаска — 16 ₽/м</option>
+            <option value="TIME">Время — 330 ₽/ч</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Деталь</label>
+          <input type="text" id="detail" placeholder="Название">
+        </div>
+        <div class="form-group">
+          <label>Кол-во</label>
+          <input type="number" id="qty" value="1" min="1">
+        </div>
+
+        <div class="form-group" id="lengthGroup">
+          <label>Длина (м)</label>
+          <input type="number" step="0.01" id="length" placeholder="0.00">
+        </div>
+        <div class="form-group hidden" id="widthGroup">
+          <label>Ширина (м)</label>
+          <input type="number" step="0.01" id="width" placeholder="0.00">
+        </div>
+        <div class="form-group hidden" id="hoursGroup">
+          <label>Часы</label>
+          <input type="number" step="0.1" id="hours" placeholder="0.0">
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button style="background:linear-gradient(135deg,#ffeb3b,#ff9800);color:#000;" onclick="createOrder(true)">
+          <i class="fas fa-check"></i> Создать заказ
+        </button>
+      </div>
+
+      <!-- View Orders by Date -->
+      <div class="section-title">
+        <i class="fas fa-history"></i> Заказы по дате
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Дата</label>
+          <input type="date" id="viewDate" value="">
+        </div>
+      </div>
+
+      <div class "btn-row">
+        <button onclick="showOrdersByDate()">
+          <i class="fas fa-eye"></i> Показать
+        </button>
+        <button class="btn-outline" onclick="saveOrdersToFile()">
+          <i class="fas fa-download"></i> В файл
+        </button>
+      </div>
+
+      <div id="ordersList"></div>
     </div>
 
-    <!-- Shift Controls -->
-    <div class="btn-row">
-      <button class="btn-start" onclick="startShift()">
-        <i class="fas fa-play"></i> Начать смену
-      </button>
-      <button class="btn-end" onclick="endShift()">
-        <i class="fas fa-stop"></i> Завершить смену
-      </button>
+    <!-- Preorders Tab -->
+    <div id="preorders-tab" class="hidden">
+      <div class="section-title">
+        <i class="fas fa-clock"></i> Предзаказы
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label>№ заказа</label>
+          <input type="text" id="preOrderNum" placeholder="Напр.: PRE-001" required>
+        </div>
+        <div class="form-group">
+          <label>Тариф</label>
+          <select id="preTariff">
+            <option value="RASPIL_M2">Распил — 65 ₽/м²</option>
+            <option value="LINEAR_RASPIL">Лин. распил — 26 ₽/м</option>
+            <option value="SKLEIKA_OB">Склейка + — 210 ₽/м²</option>
+            <option value="SKLEIKA_NO_OB">Склейка – — 165 ₽/м²</option>
+            <option value="PAZY">Пазы — 30 ₽/м</option>
+            <option value="FREZER_FASKA">Фаска — 16 ₽/м</option>
+            <option value="TIME">Время — 330 ₽/ч</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Деталь</label>
+          <input type="text" id="preDetail" placeholder="Название">
+        </div>
+        <div class="form-group">
+          <label>Кол-во</label>
+          <input type="number" id="preQty" value="1" min="1">
+        </div>
+
+        <div class="form-group" id="preLengthGroup">
+          <label>Длина (м)</label>
+          <input type="number" step="0.01" id="preLength" placeholder="0.00">
+        </div>
+        <div class="form-group hidden" id="preWidthGroup">
+          <label>Ширина (м)</label>
+          <input type="number" step="0.01" id="preWidth" placeholder="0.00">
+        </div>
+        <div class="form-group hidden" id="preHoursGroup">
+          <label>Часы</label>
+          <input type="number" step="0.1" id="preHours" placeholder="0.0">
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-blue" onclick="createPreorder()">
+          <i class="fas fa-save"></i> Сохранить предзаказ
+        </button>
+      </div>
+
+      <div class="preorders-label">Список предзаказов</div>
+      <div id="preordersList"></div>
     </div>
-
-    <!-- Create Order -->
-    <div class="section-title">
-      <i class="fas fa-plus"></i> Новый заказ
-    </div>
-
-    <div class="form-grid">
-      <div class="form-group">
-        <label>№ заказа</label>
-        <input type="text" id="orderNum" placeholder="Напр.: ORD-001" required>
-      </div>
-      <div class="form-group">
-        <label>Тариф</label>
-        <select id="tariff">
-          <option value="RASPIL_M2">Распил — 65 ₽/м²</option>
-          <option value="LINEAR_RASPIL">Лин. распил — 26 ₽/м</option>
-          <option value="SKLEIKA_OB">Склейка + — 210 ₽/м²</option>
-          <option value="SKLEIKA_NO_OB">Склейка – — 165 ₽/м²</option>
-          <option value="PAZY">Пазы — 30 ₽/м</option>
-          <option value="FREZER_FASKA">Фаска — 16 ₽/м</option>
-          <option value="TIME">Время — 330 ₽/ч</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label>Деталь</label>
-        <input type="text" id="detail" placeholder="Название">
-      </div>
-      <div class="form-group">
-        <label>Кол-во</label>
-        <input type="number" id="qty" value="1" min="1">
-      </div>
-
-      <div class="form-group" id="lengthGroup">
-        <label>Длина (м)</label>
-        <input type="number" step="0.01" id="length" placeholder="0.00">
-      </div>
-      <div class="form-group hidden" id="widthGroup">
-        <label>Ширина (м)</label>
-        <input type="number" step="0.01" id="width" placeholder="0.00">
-      </div>
-      <div class="form-group hidden" id="hoursGroup">
-        <label>Часы</label>
-        <input type="number" step="0.1" id="hours" placeholder="0.0">
-      </div>
-    </div>
-
-    <div class="btn-row">
-      <button style="background:linear-gradient(135deg,#ffeb3b,#ff9800);color:#000;" onclick="createOrder()">
-        <i class="fas fa-check"></i> Создать заказ
-      </button>
-    </div>
-
-    <!-- View Orders by Date -->
-    <div class="section-title">
-      <i class="fas fa-history"></i> Заказы по дате
-    </div>
-
-    <div class="form-grid">
-      <div class="form-group">
-        <label>Дата</label>
-        <input type="date" id="viewDate" value="">
-      </div>
-    </div>
-
-    <div class="btn-row">
-      <button onclick="showOrdersByDate()">
-        <i class="fas fa-eye"></i> Показать
-      </button>
-      <button class="btn-outline" onclick="saveOrdersToFile()">
-        <i class="fas fa-download"></i> В файл
-      </button>
-    </div>
-
-    <div id="ordersList"></div>
 
     <div class="hint">
-      💡 После завершения смены можно начать новую в тот же день.
+      💡 Предзаказы не влияют на план. Нажмите «Принять», чтобы добавить в основные.
     </div>
   </div>
 
@@ -440,25 +526,28 @@
 
     function loadOrders() {
       try {
-        const raw = localStorage.getItem('operator_orders');
-        return raw ? JSON.parse(raw) : [];
-      } catch (e) {
-        return [];
-      }
+        return JSON.parse(localStorage.getItem('operator_orders') || '[]');
+      } catch (e) { return []; }
     }
 
     function saveOrders(orders) {
+      localStorage.setItem('operator_orders', JSON.stringify(orders));
+    }
+
+    function loadPreorders() {
       try {
-        localStorage.setItem('operator_orders', JSON.stringify(orders));
-      } catch (e) {}
+        return JSON.parse(localStorage.getItem('operator_preorders') || '[]');
+      } catch (e) { return []; }
+    }
+
+    function savePreorders(preorders) {
+      localStorage.setItem('operator_preorders', JSON.stringify(preorders));
     }
 
     function getCurrentShift() {
       try {
         return JSON.parse(localStorage.getItem('current_shift') || 'null');
-      } catch (e) {
-        return null;
-      }
+      } catch (e) { return null; }
     }
 
     function setCurrentShift(shift) {
@@ -469,7 +558,7 @@
       }
     }
 
-    // === Обновление UI ===
+    // === UI Update ===
     function updateUI() {
       const orders = loadOrders();
       const totalAll = orders.reduce((sum, o) => sum + (parseFloat(o.amount) || 0), 0);
@@ -481,16 +570,13 @@
       let statusText = 'Смена не начата';
 
       if (shift && shift.active) {
-        // Считаем только заказы с этим shiftId
         currentShiftAmount = orders
           .filter(o => o.shiftId === shift.id)
           .reduce((sum, o) => sum + (parseFloat(o.amount) || 0), 0);
-
         progressWidth = Math.min(100, (currentShiftAmount / 3000) * 100);
         fillColor = `linear-gradient(90deg, #ffeb3b 0%, #ff9800 50%, #4caf50 100%)`;
         statusText = 'Смена активна';
       } else if (shift && !shift.active) {
-        // Смена завершена — показываем финальную сумму
         currentShiftAmount = shift.finalAmount || 0;
         progressWidth = Math.min(100, (currentShiftAmount / 3000) * 100);
         fillColor = shift.finalAmount >= 3000 ? '#4caf50' : '#ff9800';
@@ -505,22 +591,31 @@
       document.getElementById('shiftStatus').textContent = statusText;
     }
 
-    // === Управление сменой ===
+    // === Tabs ===
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      if (tabName === 'main') {
+        document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+        document.getElementById('main-tab').classList.remove('hidden');
+        document.getElementById('preorders-tab').classList.add('hidden');
+        updateUI();
+        renderPreorders();
+      } else {
+        document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+        document.getElementById('main-tab').classList.add('hidden');
+        document.getElementById('preorders-tab').classList.remove('hidden');
+        renderPreorders();
+      }
+    }
+
+    // === Смена ===
     function startShift() {
       const shift = getCurrentShift();
-
       if (shift && shift.active) {
         alert('Смена уже активна!');
         return;
       }
-
-      // Создаём новую смену
-      const newShift = {
-        id: Date.now(), // уникальный ID
-        startedAt: new Date().toISOString(),
-        active: true
-      };
-
+      const newShift = { id: Date.now(), startedAt: new Date().toISOString(), active: true };
       setCurrentShift(newShift);
       alert('✅ Смена начата!');
       updateUI();
@@ -528,69 +623,26 @@
 
     function endShift() {
       const shift = getCurrentShift();
-
       if (!shift || !shift.active) {
         alert('Нет активной смены для завершения!');
         return;
       }
-
       const orders = loadOrders();
       const finalAmount = orders
         .filter(o => o.shiftId === shift.id)
         .reduce((sum, o) => sum + (parseFloat(o.amount) || 0), 0);
-
       shift.active = false;
       shift.finishedAt = new Date().toISOString();
       shift.finalAmount = finalAmount;
-
       setCurrentShift(shift);
       alert(`✅ Смена завершена!\nЗаработано: ${finalAmount.toFixed(2)} ₽`);
       updateUI();
     }
 
-    // === Создание заказа ===
-    document.getElementById('tariff').addEventListener('change', function () {
-      const t = this.value;
-      const w = document.getElementById('widthGroup');
-      const h = document.getElementById('hoursGroup');
-      const l = document.getElementById('lengthGroup');
-
-      w.classList.add('hidden');
-      h.classList.add('hidden');
-      l.classList.remove('hidden');
-
-      if (['RASPIL_M2', 'SKLEIKA_OB', 'SKLEIKA_NO_OB'].includes(t)) {
-        w.classList.remove('hidden');
-      } else if (t === 'TIME') {
-        l.classList.add('hidden');
-        h.classList.remove('hidden');
-      }
-    });
-
-    function createOrder() {
-      const shift = getCurrentShift();
-      if (!shift || !shift.active) {
-        alert('⚠️ Начните смену, чтобы создавать заказы!');
-        return;
-      }
-
-      const num = document.getElementById('orderNum').value.trim();
-      const tariffKey = document.getElementById('tariff').value;
-      const detail = document.getElementById('detail').value.trim() || '—';
-      const qty = parseInt(document.getElementById('qty').value) || 1;
-
-      if (!num) {
-        alert('Укажите № заказа');
-        return;
-      }
-
+    // === Создание заказа (основного или предзаказа) ===
+    function calculateAmount(tariffKey, length, width, hours, qty) {
       const tariff = TARIFFS[tariffKey];
-      if (!tariff) return;
-
-      let length = parseFloat(document.getElementById('length').value) || 0;
-      let width = parseFloat(document.getElementById('width').value) || 0;
-      let hours = parseFloat(document.getElementById('hours').value) || 0;
-
+      if (!tariff) return 0;
       let amount = 0;
       if (tariff.unit === 'time') {
         amount = tariff.price * hours * qty;
@@ -599,42 +651,149 @@
       } else {
         amount = tariff.price * length * qty;
       }
+      return Math.round(amount * 100) / 100;
+    }
 
-      amount = Math.round(amount * 100) / 100;
+    function createOrder(isMain = true) {
+      const numField = isMain ? 'orderNum' : 'preOrderNum';
+      const num = document.getElementById(numField).value.trim();
+      if (!num) { alert('Укажите № заказа'); return; }
 
+      const tariffKey = document.getElementById(isMain ? 'tariff' : 'preTariff').value;
+      const detail = document.getElementById(isMain ? 'detail' : 'preDetail').value.trim() || '—';
+      const qty = parseInt(document.getElementById(isMain ? 'qty' : 'preQty').value) || 1;
+      const length = parseFloat(document.getElementById(isMain ? 'length' : 'preLength').value) || 0;
+      const width = parseFloat(document.getElementById(isMain ? 'width' : 'preWidth').value) || 0;
+      const hours = parseFloat(document.getElementById(isMain ? 'hours' : 'preHours').value) || 0;
+
+      const amount = calculateAmount(tariffKey, length, width, hours, qty);
+
+      if (isMain) {
+        const shift = getCurrentShift();
+        if (!shift || !shift.active) {
+          alert('⚠️ Начните смену, чтобы создавать заказы!');
+          return;
+        }
+        const order = {
+          id: Date.now(),
+          orderNumber: num,
+          tariff: tariffKey,
+          detail: detail,
+          qty: qty,
+          length: length || null,
+          width: width || null,
+          hours: hours || null,
+          amount: amount,
+          date: todayYMD(),
+          shiftId: shift.id,
+          timestamp: new Date().toISOString()
+        };
+        const orders = loadOrders();
+        orders.push(order);
+        saveOrders(orders);
+        updateUI();
+      } else {
+        const preorder = {
+          id: Date.now(),
+          orderNumber: num,
+          tariff: tariffKey,
+          detail: detail,
+          qty: qty,
+          length: length || null,
+          width: width || null,
+          hours: hours || null,
+          amount: amount,
+          date: todayYMD(),
+          timestamp: new Date().toISOString()
+        };
+        const preorders = loadPreorders();
+        preorders.push(preorder);
+        savePreorders(preorders);
+        alert('✅ Предзаказ сохранён!');
+        renderPreorders();
+      }
+
+      // Сброс формы
+      const fields = ['Num', 'Detail', 'Qty', 'Length', 'Width', 'Hours'];
+      fields.forEach(f => {
+        const el = document.getElementById((isMain ? '' : 'pre') + f.toLowerCase());
+        if (el) el.value = f === 'Qty' ? '1' : '';
+      });
+    }
+
+    // === Предзаказы ===
+    function renderPreorders() {
+      const preorders = loadPreorders();
+      const container = document.getElementById('preordersList');
+
+      if (preorders.length === 0) {
+        container.innerHTML = '<div class="empty-msg">Нет предзаказов</div>';
+        return;
+      }
+
+      let html = `
+        <table>
+          <thead>
+            <tr>
+              <th>№</th>
+              <th>Деталь</th>
+              <th>Сумма</th>
+              <th>Действия</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+      preorders.forEach(p => {
+        html += `
+          <tr>
+            <td>${p.orderNumber}</td>
+            <td>${p.detail}</td>
+            <td class="amount">${p.amount.toFixed(2)} ₽</td>
+            <td>
+              <button class="btn-accept" onclick="acceptPreorder(${p.id})">
+                <i class="fas fa-check"></i> Принять
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    function acceptPreorder(preorderId) {
+      const preorders = loadPreorders();
+      const preorderIndex = preorders.findIndex(p => p.id === preorderId);
+      if (preorderIndex === -1) return;
+
+      const preorder = preorders[preorderIndex];
+      const shift = getCurrentShift();
+
+      if (!shift || !shift.active) {
+        alert('Начните смену, чтобы принять предзаказ!');
+        return;
+      }
+
+      // Перемещаем в основные заказы
       const order = {
-        id: Date.now(),
-        orderNumber: num,
-        tariff: tariffKey,
-        detail: detail,
-        qty: qty,
-        length: length || null,
-        width: width || null,
-        hours: hours || null,
-        amount: amount,
-        date: todayYMD(),           // для архива по дате
-        shiftId: shift.id,          // для учёта в смене
-        timestamp: new Date().toISOString()
+        ...preorder,
+        shiftId: shift.id
       };
 
       const orders = loadOrders();
       orders.push(order);
       saveOrders(orders);
 
+      // Удаляем из предзаказов
+      preorders.splice(preorderIndex, 1);
+      savePreorders(preorders);
+
+      alert(`✅ Предзаказ "${preorder.orderNumber}" принят!`);
       updateUI();
-      resetForm();
+      renderPreorders();
     }
 
-    function resetForm() {
-      document.getElementById('orderNum').value = '';
-      document.getElementById('detail').value = '';
-      document.getElementById('qty').value = '1';
-      document.getElementById('length').value = '';
-      document.getElementById('width').value = '';
-      document.getElementById('hours').value = '';
-    }
-
-    // === История по дате (все заказы, независимо от смены) ===
+    // === Основные заказы по дате ===
     function showOrdersByDate() {
       const dateInput = document.getElementById('viewDate').value;
       if (!dateInput) {
@@ -727,8 +886,37 @@
     // === Инициализация ===
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('viewDate').value = todayYMD();
+
+      // Переключение полей для основных заказов
+      document.getElementById('tariff').addEventListener('change', function () {
+        toggleFields(this.value, false);
+      });
+      // Для предзаказов
+      document.getElementById('preTariff').addEventListener('change', function () {
+        toggleFields(this.value, true);
+      });
+
       updateUI();
+      renderPreorders();
     });
+
+    function toggleFields(tariffKey, isPre = false) {
+      const prefix = isPre ? 'pre' : '';
+      const w = document.getElementById(`${prefix}WidthGroup`);
+      const h = document.getElementById(`${prefix}HoursGroup`);
+      const l = document.getElementById(`${prefix}LengthGroup`);
+
+      w.classList.add('hidden');
+      h.classList.add('hidden');
+      l.classList.remove('hidden');
+
+      if (['RASPIL_M2', 'SKLEIKA_OB', 'SKLEIKA_NO_OB'].includes(tariffKey)) {
+        w.classList.remove('hidden');
+      } else if (tariffKey === 'TIME') {
+        l.classList.add('hidden');
+        h.classList.remove('hidden');
+      }
+    }
   </script>
 </body>
 </html>
