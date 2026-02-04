@@ -493,477 +493,492 @@
   </div>
 
   <script>
-    // === Константы ===
-    const TARIFFS = {
-      RASPIL_M2: { price: 65, unit: 'm2' },
-      LINEAR_RASPIL: { price: 26, unit: 'linear' },
-      SKLEIKA_OB: { price: 210, unit: 'm2' },
-      SKLEIKA_NO_OB: { price: 165, unit: 'm2' },
-      PAZY: { price: 30, unit: 'linear' },
-      FREZER_FASKA: { price: 16, unit: 'linear' },
-      TIME: { price: 330, unit: 'time' }
-    };
+  // === Константы ===
+  const TARIFFS = {
+    RASPIL_M2: { price: 65, unit: 'm2' },
+    LINEAR_RASPIL: { price: 26, unit: 'linear' },
+    SKLEIKA_OB: { price: 210, unit: 'm2' },
+    SKLEIKA_NO_OB: { price: 165, unit: 'm2' },
+    PAZY: { price: 30, unit: 'linear' },
+    FREZER_FASKA: { price: 16, unit: 'linear' },
+    TIME: { price: 330, unit: 'time' }
+  };
 
-    const TARIFF_NAMES = {
-      RASPIL_M2: 'Распил',
-      LINEAR_RASPIL: 'Лин. распил',
-      SKLEIKA_OB: 'Склейка +',
-      SKLEIKA_NO_OB: 'Склейка –',
-      PAZY: 'Пазы',
-      FREZER_FASKA: 'Фаска',
-      TIME: 'Время'
-    };
+  const TARIFF_NAMES = {
+    RASPIL_M2: 'Распил',
+    LINEAR_RASPIL: 'Лин. распил',
+    SKLEIKA_OB: 'Склейка +',
+    SKLEIKA_NO_OB: 'Склейка –',
+    PAZY: 'Пазы',
+    FREZER_FASKA: 'Фаска',
+    TIME: 'Время'
+  };
 
-    // === Утилиты ===
-    function formatDateYMD(dateStr) {
-      const [y, m, d] = dateStr.split('-');
-      return `${d}.${m}.${y}`;
+  // === Утилиты ===
+  function formatDateYMD(dateStr) {
+    const [y, m, d] = dateStr.split('-');
+    return `${d}.${m}.${y}`;
+  }
+
+  function todayYMD() {
+    return new Date().toISOString().split('T')[0];
+  }
+
+  function loadOrders() {
+    try {
+      return JSON.parse(localStorage.getItem('operator_orders') || '[]');
+    } catch (e) { return []; }
+  }
+
+  function saveOrders(orders) {
+    localStorage.setItem('operator_orders', JSON.stringify(orders));
+  }
+
+  function loadPreorders() {
+    try {
+      return JSON.parse(localStorage.getItem('operator_preorders') || '[]');
+    } catch (e) { return []; }
+  }
+
+  function savePreorders(preorders) {
+    localStorage.setItem('operator_preorders', JSON.stringify(preorders));
+  }
+
+  function getCurrentShift() {
+    try {
+      return JSON.parse(localStorage.getItem('current_shift') || 'null');
+    } catch (e) { return null; }
+  }
+
+  function setCurrentShift(shift) {
+    if (shift === null) {
+      localStorage.removeItem('current_shift');
+    } else {
+      localStorage.setItem('current_shift', JSON.stringify(shift));
     }
+  }
 
-    function todayYMD() {
-      return new Date().toISOString().split('T')[0];
+  // === Расчёт суммы ===
+  function calculateAmount(tariffKey, length, width, hours, qty) {
+    const tariff = TARIFFS[tariffKey];
+    if (!tariff) return 0;
+    let amount = 0;
+    if (tariff.unit === 'time') {
+      amount = tariff.price * hours * qty;
+    } else if (tariff.unit === 'm2') {
+      amount = tariff.price * length * width * qty;
+    } else {
+      amount = tariff.price * length * qty;
     }
+    return Math.round(amount * 100) / 100;
+  }
 
-    function loadOrders() {
-      try {
-        return JSON.parse(localStorage.getItem('operator_orders') || '[]');
-      } catch (e) { return []; }
-    }
+  // === Обновление UI плана ===
+  function updateUI() {
+    const orders = loadOrders();
+    const totalAll = orders.reduce((sum, o) => sum + (parseFloat(o.amount) || 0), 0);
 
-    function saveOrders(orders) {
-      localStorage.setItem('operator_orders', JSON.stringify(orders));
-    }
+    const shift = getCurrentShift();
+    let currentShiftAmount = 0;
+    let progressWidth = 0;
+    let fillColor = '#e0e0e0';
+    let statusText = 'Смена не начата';
 
-    function loadPreorders() {
-      try {
-        return JSON.parse(localStorage.getItem('operator_preorders') || '[]');
-      } catch (e) { return []; }
-    }
-
-    function savePreorders(preorders) {
-      localStorage.setItem('operator_preorders', JSON.stringify(preorders));
-    }
-
-    function getCurrentShift() {
-      try {
-        return JSON.parse(localStorage.getItem('current_shift') || 'null');
-      } catch (e) { return null; }
-    }
-
-    function setCurrentShift(shift) {
-      if (shift === null) {
-        localStorage.removeItem('current_shift');
-      } else {
-        localStorage.setItem('current_shift', JSON.stringify(shift));
-      }
-    }
-
-    // === Расчёт суммы ===
-    function calculateAmount(tariffKey, length, width, hours, qty) {
-      const tariff = TARIFFS[tariffKey];
-      if (!tariff) return 0;
-      let amount = 0;
-      if (tariff.unit === 'time') {
-        amount = tariff.price * hours * qty;
-      } else if (tariff.unit === 'm2') {
-        amount = tariff.price * length * width * qty;
-      } else {
-        amount = tariff.price * length * qty;
-      }
-      return Math.round(amount * 100) / 100;
-    }
-
-    // === UI Update ===
-    function updateUI() {
-      const orders = loadOrders();
-      const totalAll = orders.reduce((sum, o) => sum + (parseFloat(o.amount) || 0), 0);
-
-      const shift = getCurrentShift();
-      let currentShiftAmount = 0;
-      let progressWidth = 0;
-      let fillColor = '#e0e0e0';
-      let statusText = 'Смена не начата';
-
-      if (shift && shift.active) {
-        currentShiftAmount = orders
-          .filter(o => o.shiftId === shift.id)
-          .reduce((sum, o) => sum + (parseFloat(o.amount) || 0), 0);
-        progressWidth = Math.min(100, (currentShiftAmount / 3000) * 100);
-        fillColor = `linear-gradient(90deg, #ffeb3b 0%, #ff9800 50%, #4caf50 100%)`;
-        statusText = 'Смена активна';
-      } else if (shift && !shift.active) {
-        currentShiftAmount = shift.finalAmount || 0;
-        progressWidth = Math.min(100, (currentShiftAmount / 3000) * 100);
-        fillColor = shift.finalAmount >= 3000 ? '#4caf50' : '#ff9800';
-        statusText = 'Смена завершена';
-      }
-
-      document.getElementById('totalAll').textContent = totalAll.toFixed(2);
-      document.getElementById('todayEarned').textContent = currentShiftAmount.toFixed(2);
-      const fillEl = document.getElementById('progressFill');
-      fillEl.style.width = `${progressWidth}%`;
-      fillEl.style.background = fillColor;
-      document.getElementById('shiftStatus').textContent = statusText;
-    }
-
-    // === Tabs ===
-    function switchTab(tabName) {
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-      if (tabName === 'main') {
-        document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
-        document.getElementById('main-tab').classList.remove('hidden');
-        document.getElementById('preorders-tab').classList.add('hidden');
-        updateUI();
-        // Обновляем поля основной формы при переключении
-        setTimeout(() => {
-          const tariff = document.getElementById('tariff').value;
-          toggleFields(tariff, false);
-        }, 10);
-      } else {
-        document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
-        document.getElementById('main-tab').classList.add('hidden');
-        document.getElementById('preorders-tab').classList.remove('hidden');
-        renderPreorders();
-        // Обновляем поля предзаказов
-        setTimeout(() => {
-          const tariff = document.getElementById('preTariff').value;
-          toggleFields(tariff, true);
-        }, 10);
-      }
-    }
-
-    // === Смена ===
-    function startShift() {
-      const shift = getCurrentShift();
-      if (shift && shift.active) {
-        alert('Смена уже активна!');
-        return;
-      }
-      const newShift = { id: Date.now(), startedAt: new Date().toISOString(), active: true };
-      setCurrentShift(newShift);
-      alert('✅ Смена начата!');
-      updateUI();
-    }
-
-    function endShift() {
-      const shift = getCurrentShift();
-      if (!shift || !shift.active) {
-        alert('Нет активной смены для завершения!');
-        return;
-      }
-      const orders = loadOrders();
-      const finalAmount = orders
+    if (shift && shift.active) {
+      currentShiftAmount = orders
         .filter(o => o.shiftId === shift.id)
         .reduce((sum, o) => sum + (parseFloat(o.amount) || 0), 0);
-      shift.active = false;
-      shift.finishedAt = new Date().toISOString();
-      shift.finalAmount = finalAmount;
-      setCurrentShift(shift);
-      alert(`✅ Смена завершена!\nЗаработано: ${finalAmount.toFixed(2)} ₽`);
-      updateUI();
+      progressWidth = Math.min(100, (currentShiftAmount / 3000) * 100);
+      fillColor = `linear-gradient(90deg, #ffeb3b 0%, #ff9800 50%, #4caf50 100%)`;
+      statusText = 'Смена активна';
+    } else if (shift && !shift.active) {
+      currentShiftAmount = shift.finalAmount || 0;
+      progressWidth = Math.min(100, (currentShiftAmount / 3000) * 100);
+      fillColor = shift.finalAmount >= 3000 ? '#4caf50' : '#ff9800';
+      statusText = 'Смена завершена';
     }
 
-    // === Основной заказ ===
-    function createMainOrder() {
-      const num = document.getElementById('orderNum').value.trim();
-      if (!num) { alert('Укажите № заказа'); return; }
+    document.getElementById('totalAll').textContent = totalAll.toFixed(2);
+    document.getElementById('todayEarned').textContent = currentShiftAmount.toFixed(2);
+    const fillEl = document.getElementById('progressFill');
+    fillEl.style.width = `${progressWidth}%`;
+    fillEl.style.background = fillColor;
+    document.getElementById('shiftStatus').textContent = statusText;
+  }
 
-      const tariffKey = document.getElementById('tariff').value;
-      const detail = document.getElementById('detail').value.trim() || '—';
-      const qty = parseInt(document.getElementById('qty').value) || 1;
-      const length = parseFloat(document.getElementById('length').value) || 0;
-      const width = parseFloat(document.getElementById('width').value) || 0;
-      const hours = parseFloat(document.getElementById('hours').value) || 0;
+  // === Переключение полей — НАДЕЖНАЯ ВЕРСИЯ ===
+  function updateMainFormFields() {
+    const tariffSelect = document.getElementById('tariff');
+    if (!tariffSelect) return;
 
-      const amount = calculateAmount(tariffKey, length, width, hours, qty);
+    const tariff = tariffSelect.value;
+    const w = document.getElementById('widthGroup');
+    const h = document.getElementById('hoursGroup');
+    const l = document.getElementById('lengthGroup');
 
-      const shift = getCurrentShift();
-      if (!shift || !shift.active) {
-        alert('⚠️ Начните смену, чтобы создавать заказы!');
-        return;
-      }
+    // Сброс
+    if (w) w.classList.add('hidden');
+    if (h) h.classList.add('hidden');
+    if (l) l.classList.remove('hidden');
 
-      const order = {
-        id: Date.now(),
-        orderNumber: num,
-        tariff: tariffKey,
-        detail: detail,
-        qty: qty,
-        length: length || null,
-        width: width || null,
-        hours: hours || null,
-        amount: amount,
-        date: todayYMD(),
-        shiftId: shift.id,
-        timestamp: new Date().toISOString()
-      };
-
-      const orders = loadOrders();
-      orders.push(order);
-      saveOrders(orders);
-      updateUI();
-
-      // Сброс
-      document.getElementById('orderNum').value = '';
-      document.getElementById('detail').value = '';
-      document.getElementById('qty').value = '1';
-      document.getElementById('length').value = '';
-      document.getElementById('width').value = '';
-      document.getElementById('hours').value = '';
+    // Логика
+    if (['RASPIL_M2', 'SKLEIKA_OB', 'SKLEIKA_NO_OB'].includes(tariff)) {
+      if (w) w.classList.remove('hidden');
+    } else if (tariff === 'TIME') {
+      if (l) l.classList.add('hidden');
+      if (h) h.classList.remove('hidden');
     }
+  }
 
-    // === Предзаказ ===
-    function createPreorder() {
-      const num = document.getElementById('preOrderNum').value.trim();
-      if (!num) { alert('Укажите № предзаказа'); return; }
+  function updatePreorderFormFields() {
+    const tariffSelect = document.getElementById('preTariff');
+    if (!tariffSelect) return;
 
-      const tariffKey = document.getElementById('preTariff').value;
-      const detail = document.getElementById('preDetail').value.trim() || '—';
-      const qty = parseInt(document.getElementById('preQty').value) || 1;
-      const length = parseFloat(document.getElementById('preLength').value) || 0;
-      const width = parseFloat(document.getElementById('preWidth').value) || 0;
-      const hours = parseFloat(document.getElementById('preHours').value) || 0;
+    const tariff = tariffSelect.value;
+    const w = document.getElementById('preWidthGroup');
+    const h = document.getElementById('preHoursGroup');
+    const l = document.getElementById('preLengthGroup');
 
-      const amount = calculateAmount(tariffKey, length, width, hours, qty);
+    if (w) w.classList.add('hidden');
+    if (h) h.classList.add('hidden');
+    if (l) l.classList.remove('hidden');
 
-      const preorder = {
-        id: Date.now(),
-        orderNumber: num,
-        tariff: tariffKey,
-        detail: detail,
-        qty: qty,
-        length: length || null,
-        width: width || null,
-        hours: hours || null,
-        amount: amount,
-        date: todayYMD(),
-        timestamp: new Date().toISOString()
-      };
+    if (['RASPIL_M2', 'SKLEIKA_OB', 'SKLEIKA_NO_OB'].includes(tariff)) {
+      if (w) w.classList.remove('hidden');
+    } else if (tariff === 'TIME') {
+      if (l) l.classList.add('hidden');
+      if (h) h.classList.remove('hidden');
+    }
+  }
 
-      const preorders = loadPreorders();
-      preorders.push(preorder);
-      savePreorders(preorders);
-      alert('✅ Предзаказ сохранён!');
+  // === Tabs ===
+  function switchTab(tabName) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    if (tabName === 'main') {
+      document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+      document.getElementById('main-tab').classList.remove('hidden');
+      document.getElementById('preorders-tab').classList.add('hidden');
+      updateUI();
+      // Принудительно обновляем поля основной формы
+      setTimeout(updateMainFormFields, 50);
+    } else {
+      document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+      document.getElementById('main-tab').classList.add('hidden');
+      document.getElementById('preorders-tab').classList.remove('hidden');
       renderPreorders();
+      setTimeout(updatePreorderFormFields, 50);
+    }
+  }
 
-      // Сброс
-      document.getElementById('preOrderNum').value = '';
-      document.getElementById('preDetail').value = '';
-      document.getElementById('preQty').value = '1';
-      document.getElementById('preLength').value = '';
-      document.getElementById('preWidth').value = '';
-      document.getElementById('preHours').value = '';
+  // === Смена ===
+  function startShift() {
+    const shift = getCurrentShift();
+    if (shift && shift.active) {
+      alert('Смена уже активна!');
+      return;
+    }
+    const newShift = { id: Date.now(), startedAt: new Date().toISOString(), active: true };
+    setCurrentShift(newShift);
+    alert('✅ Смена начата!');
+    updateUI();
+  }
+
+  function endShift() {
+    const shift = getCurrentShift();
+    if (!shift || !shift.active) {
+      alert('Нет активной смены для завершения!');
+      return;
+    }
+    const orders = loadOrders();
+    const finalAmount = orders
+      .filter(o => o.shiftId === shift.id)
+      .reduce((sum, o) => sum + (parseFloat(o.amount) || 0), 0);
+    shift.active = false;
+    shift.finishedAt = new Date().toISOString();
+    shift.finalAmount = finalAmount;
+    setCurrentShift(shift);
+    alert(`✅ Смена завершена!\nЗаработано: ${finalAmount.toFixed(2)} ₽`);
+    updateUI();
+  }
+
+  // === Основной заказ ===
+  function createMainOrder() {
+    const num = document.getElementById('orderNum').value.trim();
+    if (!num) { alert('Укажите № заказа'); return; }
+
+    const tariffKey = document.getElementById('tariff').value;
+    const detail = document.getElementById('detail').value.trim() || '—';
+    const qty = parseInt(document.getElementById('qty').value) || 1;
+    const length = parseFloat(document.getElementById('length').value) || 0;
+    const width = parseFloat(document.getElementById('width').value) || 0;
+    const hours = parseFloat(document.getElementById('hours').value) || 0;
+
+    const amount = calculateAmount(tariffKey, length, width, hours, qty);
+
+    const shift = getCurrentShift();
+    if (!shift || !shift.active) {
+      alert('⚠️ Начните смену, чтобы создавать заказы!');
+      return;
     }
 
-    // === Переключение полей — ЕДИНСТВЕННАЯ ФУНКЦИЯ ===
-    function toggleFields(tariffKey, isPre = false) {
-      const prefix = isPre ? 'pre' : '';
-      const w = document.getElementById(`${prefix}WidthGroup`);
-      const h = document.getElementById(`${prefix}HoursGroup`);
-      const l = document.getElementById(`${prefix}LengthGroup`);
+    const order = {
+      id: Date.now(),
+      orderNumber: num,
+      tariff: tariffKey,
+      detail: detail,
+      qty: qty,
+      length: length || null,
+      width: width || null,
+      hours: hours || null,
+      amount: amount,
+      date: todayYMD(),
+      shiftId: shift.id,
+      timestamp: new Date().toISOString()
+    };
 
-      // Скрываем всё
-      if (w) w.classList.add('hidden');
-      if (h) h.classList.add('hidden');
-      if (l) l.classList.remove('hidden');
+    const orders = loadOrders();
+    orders.push(order);
+    saveOrders(orders);
+    updateUI();
 
-      // Показываем нужное
-      if (['RASPIL_M2', 'SKLEIKA_OB', 'SKLEIKA_NO_OB'].includes(tariffKey)) {
-        if (w) w.classList.remove('hidden');
-      } else if (tariffKey === 'TIME') {
-        if (l) l.classList.add('hidden');
-        if (h) h.classList.remove('hidden');
-      }
+    // Сброс
+    document.getElementById('orderNum').value = '';
+    document.getElementById('detail').value = '';
+    document.getElementById('qty').value = '1';
+    document.getElementById('length').value = '';
+    document.getElementById('width').value = '';
+    document.getElementById('hours').value = '';
+
+    // Обновляем поля после сброса
+    updateMainFormFields();
+  }
+
+  // === Предзаказ ===
+  function createPreorder() {
+    const num = document.getElementById('preOrderNum').value.trim();
+    if (!num) { alert('Укажите № предзаказа'); return; }
+
+    const tariffKey = document.getElementById('preTariff').value;
+    const detail = document.getElementById('preDetail').value.trim() || '—';
+    const qty = parseInt(document.getElementById('preQty').value) || 1;
+    const length = parseFloat(document.getElementById('preLength').value) || 0;
+    const width = parseFloat(document.getElementById('preWidth').value) || 0;
+    const hours = parseFloat(document.getElementById('preHours').value) || 0;
+
+    const amount = calculateAmount(tariffKey, length, width, hours, qty);
+
+    const preorder = {
+      id: Date.now(),
+      orderNumber: num,
+      tariff: tariffKey,
+      detail: detail,
+      qty: qty,
+      length: length || null,
+      width: width || null,
+      hours: hours || null,
+      amount: amount,
+      date: todayYMD(),
+      timestamp: new Date().toISOString()
+    };
+
+    const preorders = loadPreorders();
+    preorders.push(preorder);
+    savePreorders(preorders);
+    alert('✅ Предзаказ сохранён!');
+    renderPreorders();
+
+    // Сброс
+    document.getElementById('preOrderNum').value = '';
+    document.getElementById('preDetail').value = '';
+    document.getElementById('preQty').value = '1';
+    document.getElementById('preLength').value = '';
+    document.getElementById('preWidth').value = '';
+    document.getElementById('preHours').value = '';
+
+    updatePreorderFormFields();
+  }
+
+  // === Принятие предзаказа ===
+  function acceptPreorder(preorderId) {
+    const preorders = loadPreorders();
+    const preorderIndex = preorders.findIndex(p => p.id === preorderId);
+    if (preorderIndex === -1) return;
+
+    const preorder = preorders[preorderIndex];
+    const shift = getCurrentShift();
+
+    if (!shift || !shift.active) {
+      alert('Начните смену, чтобы принять предзаказ!');
+      return;
     }
 
-    // === Настройка обработчиков ===
-    function setupFieldToggles() {
-      const mainSelect = document.getElementById('tariff');
-      const preSelect = document.getElementById('preTariff');
+    const order = {
+      ...preorder,
+      shiftId: shift.id
+    };
 
-      if (mainSelect) {
-        mainSelect.addEventListener('change', function () {
-          toggleFields(this.value, false);
-        });
-        // Инициализация при загрузке
-        toggleFields(mainSelect.value, false);
-      }
+    const orders = loadOrders();
+    orders.push(order);
+    saveOrders(orders);
 
-      if (preSelect) {
-        preSelect.addEventListener('change', function () {
-          toggleFields(this.value, true);
-        });
-        toggleFields(preSelect.value, true);
-      }
+    preorders.splice(preorderIndex, 1);
+    savePreorders(preorders);
+
+    alert(`✅ Предзаказ "${preorder.orderNumber}" принят!`);
+    updateUI();
+    renderPreorders();
+  }
+
+  // === Рендер предзаказов ===
+  function renderPreorders() {
+    const preorders = loadPreorders();
+    const container = document.getElementById('preordersList');
+
+    if (preorders.length === 0) {
+      container.innerHTML = '<div class="empty-msg">Нет предзаказов</div>';
+      return;
     }
 
-    // === Предзаказы: рендер и принятие ===
-    function renderPreorders() {
-      const preorders = loadPreorders();
-      const container = document.getElementById('preordersList');
+    let html = `
+      <table>
+        <thead>
+          <tr>
+            <th>№</th>
+            <th>Деталь</th>
+            <th>Сумма</th>
+            <th>Действия</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+    preorders.forEach(p => {
+      html += `
+        <tr>
+          <td>${p.orderNumber}</td>
+          <td>${p.detail}</td>
+          <td class="amount">${p.amount.toFixed(2)} ₽</td>
+          <td>
+            <button class="btn-accept" onclick="acceptPreorder(${p.id})">
+              <i class="fas fa-check"></i> Принять
+            </button>
+          </td>
+        </tr>
+      `;
+    });
+    html += '</tbody></table>';
+    container.innerHTML = html;
+  }
 
-      if (preorders.length === 0) {
-        container.innerHTML = '<div class="empty-msg">Нет предзаказов</div>';
-        return;
-      }
+  // === История по дате ===
+  function showOrdersByDate() {
+    const dateInput = document.getElementById('viewDate').value;
+    if (!dateInput) {
+      alert('Выберите дату');
+      return;
+    }
 
-      let html = `
+    const orders = loadOrders();
+    const filtered = orders.filter(o => o.date === dateInput);
+    const formattedDate = formatDateYMD(dateInput);
+
+    let html = `<div class="date-label">Заказы за ${formattedDate}</div>`;
+
+    if (filtered.length === 0) {
+      html += '<div class="empty-msg">Нет заказов за эту дату</div>';
+    } else {
+      html += `
         <table>
           <thead>
             <tr>
               <th>№</th>
               <th>Деталь</th>
               <th>Сумма</th>
-              <th>Действия</th>
             </tr>
           </thead>
           <tbody>
       `;
-      preorders.forEach(p => {
+      filtered.forEach(o => {
         html += `
           <tr>
-            <td>${p.orderNumber}</td>
-            <td>${p.detail}</td>
-            <td class="amount">${p.amount.toFixed(2)} ₽</td>
-            <td>
-              <button class="btn-accept" onclick="acceptPreorder(${p.id})">
-                <i class="fas fa-check"></i> Принять
-              </button>
-            </td>
+            <td>${o.orderNumber}</td>
+            <td>${o.detail}</td>
+            <td class="amount">${o.amount.toFixed(2)} ₽</td>
           </tr>
         `;
       });
       html += '</tbody></table>';
-      container.innerHTML = html;
     }
 
-    function acceptPreorder(preorderId) {
-      const preorders = loadPreorders();
-      const preorderIndex = preorders.findIndex(p => p.id === preorderId);
-      if (preorderIndex === -1) return;
+    document.getElementById('ordersList').innerHTML = html;
+  }
 
-      const preorder = preorders[preorderIndex];
-      const shift = getCurrentShift();
-
-      if (!shift || !shift.active) {
-        alert('Начните смену, чтобы принять предзаказ!');
-        return;
-      }
-
-      const order = {
-        ...preorder,
-        shiftId: shift.id
-      };
-
-      const orders = loadOrders();
-      orders.push(order);
-      saveOrders(orders);
-
-      preorders.splice(preorderIndex, 1);
-      savePreorders(preorders);
-
-      alert(`✅ Предзаказ "${preorder.orderNumber}" принят!`);
-      updateUI();
-      renderPreorders();
+  function saveOrdersToFile() {
+    const dateInput = document.getElementById('viewDate').value;
+    if (!dateInput) {
+      alert('Сначала выберите дату');
+      return;
     }
 
-    // === История по дате ===
-    function showOrdersByDate() {
-      const dateInput = document.getElementById('viewDate').value;
-      if (!dateInput) {
-        alert('Выберите дату');
-        return;
-      }
+    const orders = loadOrders();
+    const filtered = orders.filter(o => o.date === dateInput);
 
-      const orders = loadOrders();
-      const filtered = orders.filter(o => o.date === dateInput);
-      const formattedDate = formatDateYMD(dateInput);
-
-      let html = `<div class="date-label">Заказы за ${formattedDate}</div>`;
-
-      if (filtered.length === 0) {
-        html += '<div class="empty-msg">Нет заказов за эту дату</div>';
-      } else {
-        html += `
-          <table>
-            <thead>
-              <tr>
-                <th>№</th>
-                <th>Деталь</th>
-                <th>Сумма</th>
-              </tr>
-            </thead>
-            <tbody>
-        `;
-        filtered.forEach(o => {
-          html += `
-            <tr>
-              <td>${o.orderNumber}</td>
-              <td>${o.detail}</td>
-              <td class="amount">${o.amount.toFixed(2)} ₽</td>
-            </tr>
-          `;
-        });
-        html += '</tbody></table>';
-      }
-
-      document.getElementById('ordersList').innerHTML = html;
+    if (filtered.length === 0) {
+      alert('Нет заказов за эту дату');
+      return;
     }
 
-    function saveOrdersToFile() {
-      const dateInput = document.getElementById('viewDate').value;
-      if (!dateInput) {
-        alert('Сначала выберите дату');
-        return;
-      }
+    const formattedDate = formatDateYMD(dateInput);
+    let content = `ЗАКАЗЫ ЗА ${formattedDate}\n`;
+    content += `========================\n\n`;
 
-      const orders = loadOrders();
-      const filtered = orders.filter(o => o.date === dateInput);
-
-      if (filtered.length === 0) {
-        alert('Нет заказов за эту дату');
-        return;
-      }
-
-      const formattedDate = formatDateYMD(dateInput);
-      let content = `ЗАКАЗЫ ЗА ${formattedDate}\n`;
-      content += `========================\n\n`;
-
-      let totalSum = 0;
-      filtered.forEach((o, idx) => {
-        const tariffName = TARIFF_NAMES[o.tariff] || o.tariff;
-        content += `№${idx + 1}. ${o.orderNumber}\n`;
-        content += `   ${o.detail} (${tariffName})\n`;
-        if (o.length) content += `   Длина: ${o.length} м\n`;
-        if (o.width) content += `   Ширина: ${o.width} м\n`;
-        if (o.hours) content += `   Часы: ${o.hours} ч\n`;
-        content += `   Кол-во: ${o.qty}\n`;
-        content += `   Сумма: ${o.amount.toFixed(2)} ₽\n---\n`;
-        totalSum += o.amount;
-      });
-
-      content += `\nИТОГО: ${totalSum.toFixed(2)} ₽\n`;
-      content += `\nЭкспорт: ${new Date().toLocaleString('ru-RU')}`;
-
-      const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
-      const blob = new Blob([bom, content], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `заказы_${formattedDate}.txt`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
-
-    // === Инициализация ===
-    document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('viewDate').value = todayYMD();
-      setupFieldToggles(); // <-- Теперь точно работает!
-      updateUI();
-      renderPreorders();
+    let totalSum = 0;
+    filtered.forEach((o, idx) => {
+      const tariffName = TARIFF_NAMES[o.tariff] || o.tariff;
+      content += `№${idx + 1}. ${o.orderNumber}\n`;
+      content += `   ${o.detail} (${tariffName})\n`;
+      if (o.length) content += `   Длина: ${o.length} м\n`;
+      if (o.width) content += `   Ширина: ${o.width} м\n`;
+      if (o.hours) content += `   Часы: ${o.hours} ч\n`;
+      content += `   Кол-во: ${o.qty}\n`;
+      content += `   Сумма: ${o.amount.toFixed(2)} ₽\n---\n`;
+      totalSum += o.amount;
     });
-  </script>
-</body>
-</html>
+
+    content += `\nИТОГО: ${totalSum.toFixed(2)} ₽\n`;
+    content += `\nЭкспорт: ${new Date().toLocaleString('ru-RU')}`;
+
+    const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+    const blob = new Blob([bom, content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `заказы_${formattedDate}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // === Инициализация ===
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('viewDate').value = todayYMD();
+
+    // Надёжная привязка обработчиков
+    const mainSelect = document.getElementById('tariff');
+    const preSelect = document.getElementById('preTariff');
+
+    if (mainSelect) {
+      mainSelect.addEventListener('change', updateMainFormFields);
+      // Принудительный вызов при загрузке
+      updateMainFormFields();
+    }
+
+    if (preSelect) {
+      preSelect.addEventListener('change', updatePreorderFormFields);
+      updatePreorderFormFields();
+    }
+
+    updateUI();
+    renderPreorders();
+  });
+</script>
