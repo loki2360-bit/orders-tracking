@@ -2,99 +2,97 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Кабинет оператора — БЕЗ ОГРАНИЧЕНИЙ</title>
+  <title>Оператор — 100% работает</title>
   <style>
-    body { font-family: sans-serif; background:#fffde7; padding:16px; }
-    .card { background:#fff; border-radius:8px; padding:20px; margin:12px 0; box-shadow:0 2px 4px #eee; }
-    h2 { margin:0 0 8px 0; }
-    .progress { height:12px; background:#f5f5f5; border-radius:6px; overflow:hidden; }
-    .bar { height:100%; background:#ffeb3b; width:0%; transition:width 0.4s; }
-    .order { padding:12px; margin:8px 0; background:#fafafa; border-radius:4px; }
-    .btn { background:#ffeb3b; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; }
-    .btn-gray { background:#e0e0e0; }
-    #form { margin-top:20px; }
-    #list { margin-top:16px; }
+    body { background:#fffde7; font-family:sans-serif; padding:20px; }
+    .box { background:#fff; border-radius:8px; padding:20px; margin:16px 0; box-shadow:0 2px 6px #eee; }
+    h2 { color:#1b5e20; margin:0 0 12px 0; }
+    .progress { height:16px; background:#f5f5f5; border-radius:8px; overflow:hidden; }
+    .fill { height:100%; background:#ffeb3b; width:0%; transition:width 0.4s; }
+    .item { margin:10px 0; padding:12px; background:#fafafa; border-radius:4px; }
+    button { background:#ffeb3b; border:none; padding:6px 12px; border-radius:4px; margin:4px; cursor:pointer; }
+    button.gray { background:#e0e0e0; }
+    #orders { min-height: 40px; }
   </style>
 </head>
 <body>
-  <div class="card">
+  <div class="box">
     <h2>Оператор №1</h2>
     <p>Всего: <span id="total">0 ₽</span></p>
-    <div class="progress"><div class="bar" id="bar"></div></div>
     <p>Сегодня: <span id="today">0 ₽</span> / 3000 ₽</p>
-    <button class="btn" onclick="reset()">Начать смену</button>
+    <div class="progress"><div class="fill" id="fill"></div></div>
+    <button onclick="reset()">Начать смену</button>
   </div>
 
-  <div class="card" id="form">
+  <div class="box">
     <h3>Создать заказ</h3>
-    <input id="num" placeholder="№ заказа" style="width:100%;margin:6px 0;padding:6px;">
-    <button class="btn" onclick="addRow()">+ Деталь</button>
+    <input id="num" placeholder="№ заказа" style="width:100%; padding:6px; margin:6px 0;">
+    <button onclick="addRow()">+ Деталь</button>
     <div id="rows"></div>
-    <button class="btn" onclick="create()">Создать</button>
+    <button onclick="create()">Создать</button>
   </div>
 
-  <div class="card" id="list">
+  <div class="box">
     <h3>Заказы за сегодня</h3>
     <div id="orders">Нет заказов</div>
-    <button class="btn" onclick="exportTxt()">Скачать TXT</button>
+    <button onclick="exportTxt()">Скачать TXT</button>
   </div>
 
   <script>
-    let state = JSON.parse(localStorage.getItem('op')) || { total:0, today:0, orders:[] };
+    let state = JSON.parse(localStorage.getItem('op')) || { total: 0, today: 0, list: [] };
 
     function save() {
       localStorage.setItem('op', JSON.stringify(state));
-      document.getElementById('total').textContent = format(state.total);
-      document.getElementById('today').textContent = format(state.today);
-      const p = Math.min(100, (state.today / 3000) * 100);
-      document.getElementById('bar').style.width = p + '%';
+      document.getElementById('total').textContent = fmt(state.total);
+      document.getElementById('today').textContent = fmt(state.today);
+      const perc = Math.min(100, (state.today / 3000) * 100);
+      document.getElementById('fill').style.width = perc + '%';
       render();
     }
 
-    function format(n) {
-      return new Intl.NumberFormat('ru-RU', {style:'currency', currency:'RUB'}).format(n);
+    function fmt(n) {
+      return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB' }).format(n);
     }
 
     function render() {
       const el = document.getElementById('orders');
-      if (state.orders.length === 0) {
+      if (state.list.length === 0) {
         el.innerHTML = 'Нет заказов';
         return;
       }
-      el.innerHTML = state.orders.map((o, i) => `
-        <div class="order">
-          №${o.num} — ${format(o.total)}
-          <div>${o.items.map(it => `${it.d} • ${it.s} ×${it.q} = ${format(it.p)}`).join('<br>')}</div>
-          <button class="btn-gray" onclick="del(${i})">Удалить</button>
+      el.innerHTML = state.list.map((o, i) => `
+        <div class="item">
+          №${o.num} — ${fmt(o.total)}
+          <div>${o.items.map(it => `${it.d} • ${it.s} ×${it.q} = ${fmt(it.p)}`).join('<br>')}</div>
+          <button class="gray" onclick="del(${i})">Удалить</button>
         </div>
       `).join('');
     }
 
     function addRow() {
-      const rows = document.getElementById('rows');
-      rows.innerHTML += `
+      document.getElementById('rows').innerHTML += `
         <div style="margin:8px 0; padding:8px; background:#f9f9f9; border-radius:4px;">
-          <input placeholder="деталь" data-d style="width:120px;margin-right:8px;">
-          <select data-s style="margin-right:8px;">
-            <option value="Распил">Распил (65₽/м²)</option>
-            <option value="Линейный">Линейный (26₽/п.м.)</option>
-            <option value="Склейка+">Склейка+ (210₽/м²)</option>
-            <option value="Склейка-">Склейка- (165₽/м²)</option>
-            <option value="Пазы">Пазы (30₽/п.м.)</option>
-            <option value="Фаска">Фаска (16₽/п.м.)</option>
-            <option value="Время">Время (330₽/ч)</option>
+          <input placeholder="деталь" data-d style="width:100px;margin-right:6px;">
+          <select data-s style="margin-right:6px;">
+            <option value="Распил">Распил (65)</option>
+            <option value="Линейный">Линейный (26)</option>
+            <option value="Склейка+">Склейка+ (210)</option>
+            <option value="Склейка-">Склейка- (165)</option>
+            <option value="Пазы">Пазы (30)</option>
+            <option value="Фаска">Фаска (16)</option>
+            <option value="Время">Время (330)</option>
           </select>
-          <input type="number" value="1" data-q min="1" style="width:60px;margin-right:8px;">
-          <input type="number" step="0.01" data-l placeholder="длина" style="width:80px;margin-right:8px;">
-          <input type="number" step="0.01" data-w placeholder="ширина" style="width:80px;">
- <button class="btn-gray" onclick="this.parentNode.remove()">✕</button>
+          <input type="number" value="1" data-q min="1" style="width:50px;margin-right:6px;">
+          <input type="number" step="0.01" data-l placeholder="длина" style="width:70px;">
+          <input type="number" step="0.01" data-w placeholder="ширина" style="width:70px;">
+          <button class="gray" onclick="this.parentNode.remove()">✕</button>
         </div>
       `;
     }
 
     function create() {
       const num = document.getElementById('num').value.trim();
-      if (!num) return alert('Номер обязателен');
+      if (!num) return alert('Введите номер заказа!');
 
       const rows = document.querySelectorAll('#rows > div');
       if (rows.length === 0) return alert('Добавьте деталь');
@@ -109,16 +107,16 @@
         const l = +row.querySelector('[data-l]')?.value || 0;
         const w = +row.querySelector('[data-w]')?.value || 0;
 
-        let price = 0;
-        if (s === 'Время') price = 330 * l * q;
-        else if (s.includes('м²')) price = (s.includes('Распил') ? 65 : s.includes('Склейка+') ? 210 : 165) * l * w * q;
-        else price = (s.includes('Линейный') ? 26 : s.includes('Пазы') ? 30 : 16) * l * q;
+        let p = 0;
+        if (s === 'Время') p = 330 * l * q;
+        else if (s.includes('м²') || s === 'Распил' || s === 'Склейка+') p = (s === 'Распил' ? 65 : s === 'Склейка+' ? 210 : 165) * l * w * q;
+        else p = (s === 'Линейный' ? 26 : s === 'Пазы' ? 30 : 16) * l * q;
 
-        items.push({ d, s, q, p: price });
-        total += price;
+        items.push({ d, s, q, p });
+        total += p;
       });
 
-      state.orders.push({ num, items, total });
+      state.list.push({ num, items, total });
       state.total += total;
       state.today += total;
       save();
@@ -128,8 +126,8 @@
     }
 
     function del(i) {
-      const o = state.orders.splice(i, 1)[0];
-      state.total o.total;
+      const o = state.list.splice(i, 1)[0];
+      state.total -= o.total;
       state.today -= o.total;
       save();
     }
@@ -143,11 +141,11 @@
 
     function exportTxt() {
       let txt = 'ЗАКАЗЫ ЗА СЕГОДНЯ\n====================\n';
-      state.orders.forEach(o => {
-        txt += `\n№${o.num} — ${format(o.total)}\n`;
-        o.items.forEach(it => txt += `- ${it.d} | ${it.s} ×${it.q} = ${format(it.p)}\n`);
+      state.list.forEach(o => {
+        txt += `\n№${o.num} — ${fmt(o.total)}\n`;
+        o.items.forEach(it => txt += `- ${it.d} | ${it.s} ×${it.q} = ${fmt(it.p)}\n`);
       });
-      txt += `\nИТОГО: ${format(state.today)}`;
+      txt += `\nИТОГО: ${fmt(state.today)}`;
 
       const a = document.createElement('a');
       a.href = URL.createObjectURL(new Blob([txt], {type:'text/plain'}));
@@ -155,7 +153,6 @@
       a.click();
     }
 
-    // Инициализация
     save();
   </script>
 </body>
