@@ -1,84 +1,162 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Кабинет оператора</title>
-  <link rel="stylesheet" href="style.css?v=4" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><circle cx='96' cy='96' r='96' fill='%23ffeb3b'/><text x='96' y='120' text-anchor='middle' font-size='96' fill='%23000'>О</text></svg>">
+  <meta charset="UTF-8">
+  <title>Кабинет оператора — БЕЗ ОГРАНИЧЕНИЙ</title>
+  <style>
+    body { font-family: sans-serif; background:#fffde7; padding:16px; }
+    .card { background:#fff; border-radius:8px; padding:20px; margin:12px 0; box-shadow:0 2px 4px #eee; }
+    h2 { margin:0 0 8px 0; }
+    .progress { height:12px; background:#f5f5f5; border-radius:6px; overflow:hidden; }
+    .bar { height:100%; background:#ffeb3b; width:0%; transition:width 0.4s; }
+    .order { padding:12px; margin:8px 0; background:#fafafa; border-radius:4px; }
+    .btn { background:#ffeb3b; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; }
+    .btn-gray { background:#e0e0e0; }
+    #form { margin-top:20px; }
+    #list { margin-top:16px; }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <!-- Шапка -->
-    <div class="header">
-      <label for="avatar-input" class="avatar-container">
-        <div class="avatar" id="avatar">О</div>
-        <input type="file" id="avatar-input" accept="image/*" style="display: none;" />
-      </label>
-      <div class="info">
-        <h2>Оператор №1</h2>
-        <p>Всего заработано: <span id="total-earnings">0 ₽</span></p>
-      </div>
-    </div>
-
-    <!-- План -->
-    <div class="plan-section">
-      <div class="plan-title">План на смену: 3000 ₽</div>
-      <div class="progress-bar">
-        <div class="progress" id="progress"></div>
-      </div>
-      <p>Сегодня заработано: <span id="today-earnings">0 ₽</span></p>
-
-      <div class="stats">
-        <div class="stat-box">
-          <div class="stat-value">3000 ₽</div>
-          <div class="stat-label">План</div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-value" id="shift-earned">0 ₽</div>
-          <div class="stat-label">За смену</div>
-        </div>
-      </div>
-
-      <button class="btn" onclick="resetShift()">Начать новую смену</button>
-    </div>
-
-    <!-- Форма заказа -->
-    <div class="order-form">
-      <h3>Создать заказ</h3>
-      <div class="form-row">
-        <label>Номер заказа:</label>
-        <input type="text" id="order-number" placeholder="например: З-123" />
-      </div>
-
-      <div class="items-container" id="items-container"></div>
-
-      <button class="btn" type="button" onclick="addItem()" style="margin: 12px 0;">+ Добавить деталь</button>
-      <button class="btn" type="button" onclick="createOrder()">Создать заказ</button>
-    </div>
-
-    <!-- Заказы за сегодня — БЕЗ прокрутки -->
-    <div class="section">
-      <h3>Заказы за сегодня</h3>
-      <div id="today-orders">
-        <p>Заказов пока нет.</p>
-      </div>
-    </div>
-
-    <!-- Все заказы по датам — С прокруткой -->
-    <div class="section">
-      <h3>Все заказы по датам</h3>
-      <div id="all-dates-container">
-        <div id="all-dates-list">
-          <p>Нет заказов ни за одну дату.</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Отладка -->
-    <button class="btn" style="background:#e0e0e0;color:#333;" onclick="debugState()">Отладка: проверить данные</button>
+  <div class="card">
+    <h2>Оператор №1</h2>
+    <p>Всего: <span id="total">0 ₽</span></p>
+    <div class="progress"><div class="bar" id="bar"></div></div>
+    <p>Сегодня: <span id="today">0 ₽</span> / 3000 ₽</p>
+    <button class="btn" onclick="reset()">Начать смену</button>
   </div>
 
-  <script src="app.js?v=4"></script>
+  <div class="card" id="form">
+    <h3>Создать заказ</h3>
+    <input id="num" placeholder="№ заказа" style="width:100%;margin:6px 0;padding:6px;">
+    <button class="btn" onclick="addRow()">+ Деталь</button>
+    <div id="rows"></div>
+    <button class="btn" onclick="create()">Создать</button>
+  </div>
+
+  <div class="card" id="list">
+    <h3>Заказы за сегодня</h3>
+    <div id="orders">Нет заказов</div>
+    <button class="btn" onclick="exportTxt()">Скачать TXT</button>
+  </div>
+
+  <script>
+    let state = JSON.parse(localStorage.getItem('op')) || { total:0, today:0, orders:[] };
+
+    function save() {
+      localStorage.setItem('op', JSON.stringify(state));
+      document.getElementById('total').textContent = format(state.total);
+      document.getElementById('today').textContent = format(state.today);
+      const p = Math.min(100, (state.today / 3000) * 100);
+      document.getElementById('bar').style.width = p + '%';
+      render();
+    }
+
+    function format(n) {
+      return new Intl.NumberFormat('ru-RU', {style:'currency', currency:'RUB'}).format(n);
+    }
+
+    function render() {
+      const el = document.getElementById('orders');
+      if (state.orders.length === 0) {
+        el.innerHTML = 'Нет заказов';
+        return;
+      }
+      el.innerHTML = state.orders.map((o, i) => `
+        <div class="order">
+          №${o.num} — ${format(o.total)}
+          <div>${o.items.map(it => `${it.d} • ${it.s} ×${it.q} = ${format(it.p)}`).join('<br>')}</div>
+          <button class="btn-gray" onclick="del(${i})">Удалить</button>
+        </div>
+      `).join('');
+    }
+
+    function addRow() {
+      const rows = document.getElementById('rows');
+      rows.innerHTML += `
+        <div style="margin:8px 0; padding:8px; background:#f9f9f9; border-radius:4px;">
+          <input placeholder="деталь" data-d style="width:120px;margin-right:8px;">
+          <select data-s style="margin-right:8px;">
+            <option value="Распил">Распил (65₽/м²)</option>
+            <option value="Линейный">Линейный (26₽/п.м.)</option>
+            <option value="Склейка+">Склейка+ (210₽/м²)</option>
+            <option value="Склейка-">Склейка- (165₽/м²)</option>
+            <option value="Пазы">Пазы (30₽/п.м.)</option>
+            <option value="Фаска">Фаска (16₽/п.м.)</option>
+            <option value="Время">Время (330₽/ч)</option>
+          </select>
+          <input type="number" value="1" data-q min="1" style="width:60px;margin-right:8px;">
+          <input type="number" step="0.01" data-l placeholder="длина" style="width:80px;margin-right:8px;">
+          <input type="number" step="0.01" data-w placeholder="ширина" style="width:80px;">
+ <button class="btn-gray" onclick="this.parentNode.remove()">✕</button>
+        </div>
+      `;
+    }
+
+    function create() {
+      const num = document.getElementById('num').value.trim();
+      if (!num) return alert('Номер обязателен');
+
+      const rows = document.querySelectorAll('#rows > div');
+      if (rows.length === 0) return alert('Добавьте деталь');
+
+      let total = 0;
+      const items = [];
+
+      rows.forEach(row => {
+        const d = row.querySelector('[data-d]')?.value || '—';
+        const s = row.querySelector('[data-s]')?.value || '—';
+        const q = +row.querySelector('[data-q]')?.value || 1;
+        const l = +row.querySelector('[data-l]')?.value || 0;
+        const w = +row.querySelector('[data-w]')?.value || 0;
+
+        let price = 0;
+        if (s === 'Время') price = 330 * l * q;
+        else if (s.includes('м²')) price = (s.includes('Распил') ? 65 : s.includes('Склейка+') ? 210 : 165) * l * w * q;
+        else price = (s.includes('Линейный') ? 26 : s.includes('Пазы') ? 30 : 16) * l * q;
+
+        items.push({ d, s, q, p: price });
+        total += price;
+      });
+
+      state.orders.push({ num, items, total });
+      state.total += total;
+      state.today += total;
+      save();
+
+      document.getElementById('num').value = '';
+      document.getElementById('rows').innerHTML = '';
+    }
+
+    function del(i) {
+      const o = state.orders.splice(i, 1)[0];
+      state.total o.total;
+      state.today -= o.total;
+      save();
+    }
+
+    function reset() {
+      if (confirm('Сбросить смену?')) {
+        state.today = 0;
+        save();
+      }
+    }
+
+    function exportTxt() {
+      let txt = 'ЗАКАЗЫ ЗА СЕГОДНЯ\n====================\n';
+      state.orders.forEach(o => {
+        txt += `\n№${o.num} — ${format(o.total)}\n`;
+        o.items.forEach(it => txt += `- ${it.d} | ${it.s} ×${it.q} = ${format(it.p)}\n`);
+      });
+      txt += `\nИТОГО: ${format(state.today)}`;
+
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([txt], {type:'text/plain'}));
+      a.download = 'заказы.txt';
+      a.click();
+    }
+
+    // Инициализация
+    save();
+  </script>
 </body>
 </html>
