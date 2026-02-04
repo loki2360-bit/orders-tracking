@@ -202,12 +202,6 @@ function createOrder() {
   // Очистка формы
   document.getElementById('order-number').value = '';
   document.getElementById('items-container').innerHTML = '';
-
-  // Автопрокрутка
-  const scrollContainer = document.getElementById('today-orders-container');
-  if (scrollContainer) {
-    scrollContainer.scrollTop = scrollContainer.scrollHeight;
-  }
 }
 
 // === ФОРМА: ДОБАВЛЕНИЕ ДЕТАЛИ ===
@@ -334,7 +328,7 @@ function updateUI() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  console.log("✅ Загружен свежий app.js v3 — ограничений НЕТ");
+  console.log("✅ Загружен app.js v4 — бесконечный список заказов");
   updateUI();
   updateAvatar();
 });
