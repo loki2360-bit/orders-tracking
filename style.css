@@ -270,3 +270,18 @@ body {
   font-size: 13px;
   line-height: 1.4;
 }
+.btn-delete {
+  background: #ff7675;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 13px;
+  cursor: pointer;
+  margin-top: 8px;
+  width: 100%;
+}
+
+.btn-delete:hover {
+  background: #ff4d4d;
+}
