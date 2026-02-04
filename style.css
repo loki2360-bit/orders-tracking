@@ -70,7 +70,9 @@ body {
   color: var(--text-secondary);
 }
 
-.plan-section {
+.plan-section,
+.order-form,
+.section {
   background: var(--bg-card);
   border-radius: 8px;
   padding: 20px;
@@ -143,19 +145,6 @@ body {
   background: var(--accent-dark);
 }
 
-.order-form {
-  background: var(--bg-card);
-  border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 24px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-}
-
-.order-form h3 {
-  margin-bottom: 16px;
-  font-size: 18px;
-}
-
 .form-row {
   margin-bottom: 14px;
 }
@@ -202,22 +191,9 @@ body {
   cursor: pointer;
 }
 
-.section {
-  background: var(--bg-card);
-  border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 24px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-}
-
-.section h3 {
-  margin-bottom: 16px;
-  font-size: 18px;
-}
-
-/* Прокручиваемые области */
+/* Прокрутка */
 .scrollable {
-  max-height: 300px;
+  max-height: 350px;
   overflow-y: auto;
   padding-right: 4px;
 }
@@ -253,10 +229,6 @@ body {
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
-.date-header:hover {
-  background: #f9f9f9;
-}
-
 .orders-list {
   max-height: 0;
   overflow: hidden;
@@ -267,7 +239,7 @@ body {
 }
 
 .orders-list.open {
-  max-height: 600px;
+  max-height: 800px;
   padding: 10px;
 }
 
@@ -303,10 +275,14 @@ body {
   cursor: pointer;
   margin-top: 8px;
   width: 100%;
-  transition: background 0.2s, color 0.2s;
 }
 
 .btn-delete:hover {
   background: #d0d0d0;
   color: #333;
+}
+
+h3 {
+  margin-bottom: 16px;
+  font-size: 18px;
 }
