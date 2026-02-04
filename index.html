@@ -6,13 +6,13 @@
   <title>Кабинет оператора</title>
   <style>
     :root {
-      --bg-light: #fffde7; /* светло-жёлтый */
+      --bg-light: #fffde7;
       --bg-white: white;
       --text-dark: #333;
       --accent: #fdd835;
       --progress-bg: #e0e0e0;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
     body {
       background-color: var(--bg-light);
       color: var(--text-dark);
@@ -22,19 +22,19 @@
       max-width: 800px;
       margin: 0 auto;
       background: var(--bg-white);
-      padding: 20px;
+      padding: 24px;
       border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 12px rgba(0,0,008);
     }
     .header {
       display: flex;
       align-items: center;
       gap: 20px;
-      margin-bottom: 25px;
+      margin-bottom: 24px;
     }
     .avatar {
-      width: 70px;
-      height: 70px;
+      width: 64px;
+      height: 64px;
       border-radius: 50%;
       background: var(--accent);
       display: flex;
@@ -44,41 +44,43 @@
       color: #000;
       font-size: 24px;
     }
-    .info h2 { font-size: 1.4em; margin-bottom: 8px; }
+    .info h2 { font-size: 1.5em; margin-bottom: 6px; }
     .info p { font-size: 1.1em; }
 
     .plan-box {
       background: #fff9c4;
-      padding: 16px;
+      padding: 18px;
       border-radius: 10px;
       margin: 20px 0;
     }
     .progress-bar {
-      height: 20px;
+      height: 22px;
       background: var(--progress-bg);
-      border-radius: 10px;
+      border-radius: 11px;
       overflow: hidden;
-      margin: 10px 0;
+      margin: 12px 0;
     }
     .progress-fill {
       height: 100%;
       background: var(--accent);
-      transition: width 0.3s;
+      transition: width 0.4s ease;
     }
 
     .form-group {
-      margin: 12px 0;
+      margin: 14px 0;
     }
     label {
       display: block;
-      margin-bottom: 4px;
-      font-weight: bold;
+      margin-bottom: 6px;
+      font-weight: 600;
+      font-size: 0.95em;
     }
     input, select, button {
       width: 100%;
-      padding: 10px;
+      padding: 11px 12px;
       border: 1px solid #ccc;
       border-radius: 6px;
+      font-size: 1rem;
     }
     button {
       background: var(--accent);
@@ -86,19 +88,36 @@
       font-weight: bold;
       cursor: pointer;
       margin-top: 10px;
+      padding: 12px;
+      font-size: 1.05rem;
     }
-    button:hover { opacity: 0.9; }
+    button:hover { opacity: 0.92; }
 
     .hidden { display: none; }
 
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      font-size: 0.95rem;
+    }
+    th, td {
+      padding: 12px 8px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    th { background: #f5f5f5; font-weight: 600; }
+    .date-header {
+      font-weight: bold;
+      margin: 20px 0 12px;
+      color: #555;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <div class="avatar">👤</div>
+      <div class="avatar">№1</div>
       <div class="info">
         <h2>Оператор №<span id="opId">1</span></h2>
         <p>Всего заработано: <b><span id="totalAll">0.00</span> ₽</b></p>
@@ -155,7 +174,7 @@
 
     <button onclick="createOrder()">✅ Создать заказ</button>
 
-    <hr style="margin: 30px 0;">
+    <hr style="margin: 32px 0; border: 0; border-top: 1px solid #eee;">
 
     <h3>Посмотреть заказы по дате</h3>
     <div class="form-group">
@@ -168,8 +187,8 @@
   </div>
 
   <script>
-    // Тарифы
-    const tariffs = {
+    // Тарифы: ключ → { price, unit }
+    const TARIFFS = {
       RASPIL_M2: { price: 65, unit: 'm2' },
       LINEAR_RASPIL: { price: 26, unit: 'linear' },
       SKLEIKA_OB: { price: 210, unit: 'm2' },
@@ -179,21 +198,50 @@
       TIME: { price: 330, unit: 'time' }
     };
 
-    // Инициализация
-    document.getElementById('viewDate').valueAsDate = new Date();
-    loadOrders();
-    updateUI();
+    // Формат даты: YYYY-MM-DD → DD.MM.YYYY
+    function formatDateYMD(dateStr) {
+      const [y, m, d] = dateStr.split('-');
+      return `${d}.${m}.${y}`;
+    }
 
-    // Обновление UI
+    // Получить текущую дату в формате YYYY-MM-DD
+    function todayYMD() {
+      const d = new Date();
+      return d.toISOString().split('T')[0];
+    }
+
+    // Загрузить все заказы из localStorage
+    function loadOrders() {
+      try {
+        const raw = localStorage.getItem('operator_orders');
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        console.error('Ошибка чтения orders:', e);
+        return [];
+      }
+    }
+
+    // Сохранить заказы
+    function saveOrders(orders) {
+      try {
+        localStorage.setItem('operator_orders', JSON.stringify(orders));
+      } catch (e) {
+        console.error('Ошибка записи orders:', e);
+      }
+    }
+
+    // Обновить UI: план, сегодня, всего
     function updateUI() {
-      const today = new Date().toISOString().split('T')[0];
-      const allOrders = JSON.parse(localStorage.getItem('orders') || '[]');
+      const orders = loadOrders();
+      const today = todayYMD();
+
       let totalAll = 0;
       let todayTotal = 0;
 
-      allOrders.forEach(o => {
-        totalAll += o.amount;
-        if (o.date === today) todayTotal += o.amount;
+      orders.forEach(order => {
+        const amt = parseFloat(order.amount) || 0;
+        totalAll += amt;
+        if (order.date === today) todayTotal += amt;
       });
 
       document.getElementById('totalAll').textContent = totalAll.toFixed(2);
@@ -203,8 +251,8 @@
       document.getElementById('progressFill').style.width = percent + '%';
     }
 
-    // Переключение полей по тарифу
-    document.getElementById('tariff').addEventListener('change', function() {
+    // Переключение полей при выборе тарифа
+    document.getElementById('tariff').addEventListener('change', function () {
       const t = this.value;
       const w = document.getElementById('widthGroup');
       const h = document.getElementById('hoursGroup');
@@ -226,25 +274,35 @@
     function createOrder() {
       const num = document.getElementById('orderNum').value.trim();
       const tariffKey = document.getElementById('tariff').value;
-      const detail = document.getElementById('detail').value || '—';
+      const detail = document.getElementById('detail').value.trim() || '—';
       const qty = parseInt(document.getElementById('qty').value) || 1;
 
-      if (!num) { alert('Укажите номер заказа'); return; }
+      if (!num) {
+        alert('⚠️ Укажите номер заказа');
+        return;
+      }
 
-      const tariff = tariffs[tariffKey];
+      const tariff = TARIFFS[tariffKey];
+      if (!tariff) {
+        alert('Неизвестный тариф');
+        return;
+      }
+
       let amount = 0;
+      let length = parseFloat(document.getElementById('length').value) || 0;
+      let width = parseFloat(document.getElementById('width').value) || 0;
+      let hours = parseFloat(document.getElementById('hours').value) || 0;
 
       if (tariff.unit === 'time') {
-        const hours = parseFloat(document.getElementById('hours').value) || 0;
         amount = tariff.price * hours * qty;
       } else if (tariff.unit === 'm2') {
-        const l = parseFloat(document.getElementById('length').value) || 0;
-        const w = parseFloat(document.getElementById('width').value) || 0;
-        amount = tariff.price * l * w * qty;
+        amount = tariff.price * length * width * qty;
       } else { // linear
-        const l = parseFloat(document.getElementById('length').value) || 0;
-        amount = tariff.price * l * qty;
+        amount = tariff.price * length * qty;
       }
+
+      // Округляем до копеек
+      amount = Math.round(amount * 100) / 100;
 
       const order = {
         id: Date.now(),
@@ -252,16 +310,19 @@
         tariff: tariffKey,
         detail: detail,
         qty: qty,
-        amount: parseFloat(amount.toFixed(2)),
-        date: new Date().toISOString().split('T')[0],
+        length: length || null,
+        width: width || null,
+        hours: hours || null,
+        amount: amount,
+        date: todayYMD(),
         timestamp: new Date().toISOString()
       };
 
-      const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+      const orders = loadOrders();
       orders.push(order);
-      localStorage.setItem('orders', JSON.stringify(orders));
+      saveOrders(orders);
 
-      alert('Заказ создан!');
+      alert(`Заказ "${num}" создан! Сумма: ${amount} ₽`);
       updateUI();
       resetForm();
     }
@@ -275,38 +336,51 @@
       document.getElementById('hours').value = '';
     }
 
-    // Показ заказов по дате
+    // Показать заказы за выбранную дату
     function showOrdersByDate() {
-      const date = document.getElementById('viewDate').value;
-      if (!date) { alert('Выберите дату'); return; }
+      const dateInput = document.getElementById('viewDate').value;
+      if (!dateInput) {
+        alert('Выберите дату');
+        return;
+      }
 
-      const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-      const filtered = orders.filter(o => o.date === date);
+      const orders = loadOrders();
+      const filtered = orders.filter(o => o.date === dateInput);
 
-      let html = `<h3>Заказы за ${date}</h3>`;
+      const formattedDate = formatDateYMD(dateInput);
+      let html = `<div class="date-header">Заказы за ${formattedDate}</div>`;
+
       if (filtered.length === 0) {
         html += '<p>Нет заказов за эту дату.</p>';
       } else {
         html += `
           <table>
-            <tr><th>№</th><th>Деталь</th><th>Сумма</th></tr>
-            ${filtered.map(o => `
-              <tr>
-                <td>${o.orderNumber}</td>
-                <td>${o.detail}</td>
-                <td>${o.amount.toFixed(2)} ₽</td>
-              </tr>
-            `).join('')}
-          </table>
+            <thead>
+              <tr><th>№</th><th>Деталь</th><th>Сумма</th></tr>
+            </thead>
+            <tbody>
         `;
+        filtered.forEach(o => {
+          html += `
+            <tr>
+              <td>${o.orderNumber}</td>
+              <td>${o.detail}</td>
+              <td>${o.amount.toFixed(2)} ₽</td>
+            </tr>
+          `;
+        });
+        html += '</tbody></table>';
       }
+
       document.getElementById('ordersList').innerHTML = html;
     }
 
-    // Загрузка при старте (для совместимости)
-    function loadOrders() {
-      // данные уже в localStorage — ничего делать не нужно
-    }
+    // Инициализация
+    document.addEventListener('DOMContentLoaded', () => {
+      const today = todayYMD();
+      document.getElementById('viewDate').value = today;
+      updateUI();
+    });
   </script>
 </body>
 </html>
