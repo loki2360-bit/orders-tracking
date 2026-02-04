@@ -6,11 +6,9 @@
   "display": "standalone",
   "background_color": "#fffde7",
   "theme_color": "#ffeb3b",
-  "icons": [
-    {
-      "src": "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 192 192%22><circle cx=%2296%22 cy=%2296%22 r=%2296%22 fill=%22%23ffeb3b%22/><text x=%2296%22 y=%22120%22 text-anchor=%22middle%22 font-size=%2296%22 fill=%22%23000%22>О</text></svg>",
-      "sizes": "192x192",
-      "type": "image/svg+xml"
-    }
-  ]
+  "icons": [{
+    "src": "icon-192.png",
+    "sizes": "192x192",
+    "type": "image/png"
+  }]
 }
