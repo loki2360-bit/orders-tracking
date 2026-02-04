@@ -32,6 +32,25 @@ function saveState() {
   localStorage.setItem('operatorState', JSON.stringify(state));
 }
 
+// Пересчёт заработка за день и всего (после удаления)
+function recalculateEarnings() {
+  let totalAll = 0;
+  let todayTotal = 0;
+  const today = getCurrentDate();
+
+  for (const [date, orders] of Object.entries(state.ordersByDate)) {
+    const daySum = orders.reduce((sum, order) => sum + order.total, 0);
+    totalAll += daySum;
+    if (date === today) {
+      todayTotal = daySum;
+    }
+  }
+
+  state.totalEarnings = totalAll;
+  state.todayEarnings = todayTotal;
+  saveState();
+}
+
 function updateUI() {
   const today = getCurrentDate();
 
@@ -57,7 +76,7 @@ function renderOrdersForDate(date, containerId) {
 
   container.innerHTML = `
     <div class="orders-list open">
-      ${orders.map(order => `
+      ${orders.map((order, idx) => `
         <div class="order-item">
           <div class="order-header">
             <span>№${order.number}</span>
@@ -68,6 +87,7 @@ function renderOrdersForDate(date, containerId) {
               `${i.detail} • ${i.service} • ×${i.quantity} • ${formatMoney(i.price)}`
             ).join('<br>')}
           </div>
+          <button class="btn-delete" onclick="deleteOrder('${date}', ${idx})">Удалить</button>
         </div>
       `).join('')}
     </div>
@@ -91,7 +111,7 @@ function renderAllDates() {
         <span>▶</span>
       </div>
       <div class="orders-list">
-        ${state.ordersByDate[date].map(order => `
+        ${state.ordersByDate[date].map((order, idx) => `
           <div class="order-item">
             <div class="order-header">
               <span>№${order.number}</span>
@@ -102,6 +122,7 @@ function renderAllDates() {
                 `${i.detail} • ${i.service} • ×${i.quantity} • ${formatMoney(i.price)}`
               ).join('<br>')}
             </div>
+            <button class="btn-delete" onclick="deleteOrder('${date}', ${idx})">Удалить</button>
           </div>
         `).join('')}
         <button class="btn" style="margin-top: 12px; width: auto;" onclick="exportDateToTxt('${date}')">Скачать TXT</button>
@@ -117,6 +138,28 @@ function toggleDateGroup(header) {
   header.querySelector('span:last-child').textContent = isOpen ? '▶' : '▼';
 }
 
+function deleteOrder(date, index) {
+  if (!confirm('Удалить этот заказ? Это действие нельзя отменить.')) return;
+
+  const orders = state.ordersByDate[date];
+  if (!orders || index < 0 || index >= orders.length) return;
+
+  // Удаляем заказ
+  const removed = orders.splice(index, 1)[0];
+
+  // Если массив стал пустым — удаляем дату из объекта
+  if (orders.length === 0) {
+    delete state.ordersByDate[date];
+  }
+
+  // Пересчитываем заработок
+  recalculateEarnings();
+
+  // Обновляем интерфейс
+  updateUI();
+}
+
+// --- Форма заказа (без ограничений!) ---
 function addItem() {
   const container = document.getElementById('items-container');
   const idx = container.children.length;
@@ -240,6 +283,7 @@ function exportDateToTxt(dateStr) {
   URL.revokeObjectURL(url);
 }
 
+// Аватарка
 document.getElementById('avatar-input').addEventListener('change', function(e) {
   const file = e.target.files[0];
   if (!file || !file.type.startsWith('image/')) return;
