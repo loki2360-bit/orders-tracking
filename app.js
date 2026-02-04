@@ -1,4 +1,4 @@
-// === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
+// --- ВСПОМОГАТЕЛЬНЫЕ ---
 function escapeHtml(text) {
   if (typeof text !== 'string') return '';
   const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
@@ -15,10 +15,14 @@ function formatDate(dateStr) {
 }
 
 function getCurrentDate() {
-  return new Date().toISOString().split('T')[0];
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
-// === СОСТОЯНИЕ ===
+// --- СОСТОЯНИЕ ---
 let state = JSON.parse(localStorage.getItem('operatorState')) || {
   totalEarnings: 0,
   todayEarnings: 0,
@@ -29,7 +33,7 @@ function saveState() {
   localStorage.setItem('operatorState', JSON.stringify(state));
 }
 
-// === ПЕРЕСЧЁТ ЗАРАБОТКА ===
+// --- ПЕРЕСЧЁТ ---
 function recalculateEarnings() {
   let totalAll = 0;
   const today = getCurrentDate();
@@ -37,9 +41,9 @@ function recalculateEarnings() {
 
   for (const [date, orders] of Object.entries(state.ordersByDate)) {
     if (!Array.isArray(orders)) continue;
-    const daySum = orders.reduce((sum, order) => sum + (order.total || 0), 0);
-    totalAll += daySum;
-    if (date === today) todayTotal = daySum;
+    const sum = orders.reduce((s, o) => s + (o.total || 0), 0);
+    totalAll += sum;
+    if (date === today) todayTotal = sum;
   }
 
   state.totalEarnings = totalAll;
@@ -47,13 +51,13 @@ function recalculateEarnings() {
   saveState();
 }
 
-// === РЕНДЕРИНГ ===
+// --- РЕНДЕРИНГ ---
 function renderOrdersForDate(date, containerId) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
   const orders = state.ordersByDate[date] || [];
-  console.log(`[DEBUG] Рендерим ${orders.length} заказов за ${date}`);
+  console.log(`[OK] Рендерим ${orders.length} заказов за ${date}`);
 
   if (orders.length === 0) {
     container.innerHTML = '<p>Заказов пока нет.</p>';
@@ -84,7 +88,7 @@ function renderOrdersForDate(date, containerId) {
 }
 
 function renderAllDates() {
-  const container = document.getElementById('all-dates-list');
+  const container = document('all-dates-list');
   if (!container) return;
 
   const dates = Object.keys(state.ordersByDate).sort((a, b) => b.localeCompare(a));
@@ -114,7 +118,7 @@ function renderAllDates() {
             <button class="btn-delete" type="button" onclick="deleteOrder('${date}', ${idx})">Удалить</button>
           </div>
         `).join('')}
-        <button class="btn" style="margin-top:12px;width:auto;" type="button" onclick="exportDateToTxt('${date}')">Скачать TXT</button>
+        <button class="btn" style="margin-top:1px;width:auto;" type="button" onclick="exportDateToTxt('${date}')">Скачать TXT</button>
       </div>
     </div>
   `).join('');
@@ -129,13 +133,13 @@ function toggleDateGroup(el) {
   el.querySelector('span:last-child').textContent = isOpen ? '▶' : '▼';
 }
 
-// === УДАЛЕНИЕ ===
+// --- УДАЛЕНИЕ ---
 function deleteOrder(date, index) {
-  if (!confirm('Удалить этот заказ? Действие нельзя отменить.')) return;
+  if (!confirm('Удалить заказ? Это действие нельзя отменить.')) return;
 
   const orders = state.ordersByDate[date];
   if (!orders || !Array.isArray(orders) || index < 0 || index >= orders.length) {
-    console.error('Невозможно удалить заказ: некорректные данные');
+    console.error('Ошибка удаления: заказ не найден');
     return;
   }
 
@@ -148,7 +152,7 @@ function deleteOrder(date, index) {
   updateUI();
 }
 
-// === ТАРИФЫ ===
+// --- ТАРИФЫ ---
 const SERVICES = [
   { id: 'RASPIL_M2', name: 'Распил', unit: 'м²', price: 65 },
   { id: 'LINEAR_RASPIL', name: 'Линейный распил', unit: 'п.м.', price: 26 },
@@ -159,10 +163,10 @@ const SERVICES = [
   { id: 'TIME', name: 'Время', unit: 'час', price: 330 },
 ];
 
-// === СОЗДАНИЕ ЗАКАЗА ===
+// --- СОЗДАНИЕ ЗАКАЗА ---
 function createOrder() {
-  const orderNumber = document.getElementById('order-number').value.trim();
-  if (!orderNumber) return alert('Укажите номер заказа!');
+  const num = document.getElementById('order-number').value.trim();
+  if (!num) return alert('Укажите номер заказа!');
 
   const blocks = Array.from(document.querySelectorAll('.item-block'));
   if (blocks.length === 0) return alert('Добавьте хотя бы одну деталь!');
@@ -170,63 +174,62 @@ function createOrder() {
   const items = blocks.map(block => {
     const detail = block.querySelector('[data-field="detail"]')?.value.trim() || '—';
     const serviceId = block.querySelector('[data-field="service"]')?.value;
-    const quantity = parseInt(block.querySelector('[data-field="quantity"]')?.value) || 1;
+    const qty = parseInt(block.querySelector('[data-field="quantity"]')?.value) || 1;
     const service = SERVICES.find(s => s.id === serviceId);
     if (!service) throw new Error('Неизвестный тариф');
 
     let price = 0;
     if (serviceId === 'TIME') {
       const hours = parseFloat(block.querySelector('[data-field="hours"]')?.value) || 0;
-      price = service.price * hours * quantity;
+      price = service.price * hours * qty;
     } else if (['RASPIL_M2', 'SKLEIKA_OB', 'SKLEIKA_NO_OB'].includes(serviceId)) {
       const length = parseFloat(block.querySelector('[data-field="length"]')?.value) || 0;
       const width = parseFloat(block.querySelector('[data-field="width"]')?.value) || 0;
-      price = service.price * length * width * quantity;
+      price = service.price * length * width * qty;
     } else {
       const length = parseFloat(block.querySelector('[data-field="length"]')?.value) || 0;
-      price = service.price * length * quantity;
+      price = service.price * length * qty;
     }
 
-    return { detail, service: service.name, quantity, price };
+    return { detail, service: service.name, quantity: qty, price };
   });
 
-  const total = items.reduce((sum, item) => sum + item.price, 0);
+  const total = items.reduce((sum, i) => sum + i.price, 0);
   const today = getCurrentDate();
 
   if (!state.ordersByDate[today]) state.ordersByDate[today] = [];
-  state.ordersByDate[today].push({ number: orderNumber, items, total });
+  state.ordersByDate[today].push({ number: num, items, total });
 
   recalculateEarnings();
   updateUI();
 
-  // Очистка формы
   document.getElementById('order-number').value = '';
   document.getElementById('items-container').innerHTML = '';
 }
 
-// === ФОРМА: ДОБАВЛЕНИЕ ДЕТАЛИ ===
+// --- ДОБАВЛЕНИЕ ДЕТАЛИ ---
 function addItem() {
   const container = document.getElementById('items-container');
-  const index = container.children.length;
+  const idx = container.children.length;
 
   container.insertAdjacentHTML('beforeend', `
     <div class="item-block">
       <button class="remove" type="button" onclick="this.closest('.item-block').remove()">✕</button>
       <div class="form-row"><label>Деталь:</label><input type="text" placeholder="название" data-field="detail" /></div>
       <div class="form-row"><label>Тариф:</label>
-        <select data-field="service" onchange="toggleFields(this, ${index})">
+        <select data-field="service" onchange="toggleFields(this, ${idx})">
           ${SERVICES.map(s => `<option value="${s.id}">${s.name} (${s.price}₽/${s.unit})</option>`).join('')}
         </select>
       </div>
       <div class="form-row"><label>Количество:</label><input type="number" value="1" min="1" data-field="quantity" /></div>
-      <div class="fields" id="fields-${index}"></div>
+      <div class="fields" id="fields-${idx}"></div>
     </div>
   `);
-  toggleFields(container.lastElementChild.querySelector('select'), index);
+  toggleFields(container.lastElementChild.querySelector('select'), idx);
 }
 
-function toggleFields(select, index) {
-  const fieldsDiv = document.getElementById(`fields-${index}`);
+function toggleFields(select, idx) {
+  const fieldsDiv = document.getElementById(`fields-${idx}`);
   const serviceId = select.value;
   let html = '';
 
@@ -240,11 +243,10 @@ function toggleFields(select, index) {
   } else {
     html = `<div class="form-row"><label>Длина (м):</label><input type="number" step="0.01" min="0.01" data-field="length" /></div>`;
   }
-
   fieldsDiv.innerHTML = html;
 }
 
-// === ПРОЧЕЕ ===
+// --- ПРОЧЕЕ ---
 function resetShift() {
   if (confirm('Начать новую смену? Сегодняшние заказы останутся в истории.')) {
     state.todayEarnings = 0;
@@ -284,7 +286,7 @@ function exportDateToTxt(dateStr) {
   URL.revokeObjectURL(url);
 }
 
-// === АВАТАРКА ===
+// --- АВАТАРКА ---
 document.getElementById('avatar-input')?.addEventListener('change', function(e) {
   const file = e.target.files[0];
   if (file && file.type.startsWith('image/')) {
@@ -307,16 +309,16 @@ function updateAvatar() {
   }
 }
 
-// === ОТЛАДКА ===
+// --- ОТЛАДКА ---
 function debugState() {
   const data = JSON.parse(localStorage.getItem('operatorState'));
-  console.log('Текущее состояние:', data);
+  console.log('Состояние:', data);
   alert(`Всего заказов: ${
     Object.values(data.ordersByDate || {}).reduce((sum, arr) => sum + arr.length, 0)
   }`);
 }
 
-// === ИНИЦИАЛИЗАЦИЯ ===
+// --- ИНИЦИАЛИЗАЦИЯ ---
 function updateUI() {
   const today = getCurrentDate();
   document.getElementById('total-earnings').textContent = formatMoney(state.totalEarnings);
@@ -328,7 +330,7 @@ function updateUI() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  console.log("✅ Загружен app.js v4 — бесконечный список заказов");
+  console.log("✅ Финальная версия загружена — всё как в начале");
   updateUI();
   updateAvatar();
 });
