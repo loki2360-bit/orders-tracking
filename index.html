@@ -6,7 +6,7 @@
   <title>Кабинет оператора</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="manifest" href="manifest.json" />
-  <link rel="icon" href="icon-192.png">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 192 192%22><circle cx=%2296%22 cy=%2296%22 r=%2296%22 fill=%22%23ffeb3b%22/><text x=%2296%22 y=%22120%22 text-anchor=%22middle%22 font-size=%2296%22 fill=%22%23000%22>О</text></svg>">
 </head>
 <body>
   <div class="container">
@@ -61,16 +61,20 @@
     <!-- Заказы за сегодня -->
     <div class="section">
       <h3>Заказы за сегодня</h3>
-      <div id="today-orders">
-        <p>Заказов пока нет.</p>
+      <div class="scrollable" id="today-orders-container">
+        <div id="today-orders">
+          <p>Заказов пока нет.</p>
+        </div>
       </div>
     </div>
 
     <!-- Все заказы по датам -->
     <div class="section">
       <h3>Все заказы по датам</h3>
-      <div id="all-dates-list">
-        <p>Нет заказов ни за одну дату.</p>
+      <div class="scrollable" id="all-dates-container">
+        <div id="all-dates-list">
+          <p>Нет заказов ни за одну дату.</p>
+        </div>
       </div>
     </div>
   </div>
