@@ -324,7 +324,7 @@
       <div class="header">
         <div class="avatar"><i class="fas fa-user"></i></div>
         <div class="info">
-          <h2>Оператор Александр №330<span id="opId">1</span></h2>
+          <h2>Оператор №<span id="opId">1</span></h2>
           <p>Всего: <b><span id="totalAll">0.00</span> ₽</b></p>
         </div>
       </div>
@@ -401,7 +401,7 @@
       </div>
 
       <div class="btn-row">
-        <button style="background:linear-gradient(135deg,#ffeb3b,#ff9800);color:#000;" onclick="createOrder(true)">
+        <button style="background:linear-gradient(135deg,#ffeb3b,#ff9800);color:#000;" onclick="createMainOrder()">
           <i class="fas fa-check"></i> Создать заказ
         </button>
       </div>
@@ -418,7 +418,7 @@
         </div>
       </div>
 
-      <div class "btn-row">
+      <div class="btn-row">
         <button onclick="showOrdersByDate()">
           <i class="fas fa-eye"></i> Показать
         </button>
@@ -558,6 +558,21 @@
       }
     }
 
+    // === Расчёт суммы ===
+    function calculateAmount(tariffKey, length, width, hours, qty) {
+      const tariff = TARIFFS[tariffKey];
+      if (!tariff) return 0;
+      let amount = 0;
+      if (tariff.unit === 'time') {
+        amount = tariff.price * hours * qty;
+      } else if (tariff.unit === 'm2') {
+        amount = tariff.price * length * width * qty;
+      } else {
+        amount = tariff.price * length * qty;
+      }
+      return Math.round(amount * 100) / 100;
+    }
+
     // === UI Update ===
     function updateUI() {
       const orders = loadOrders();
@@ -599,7 +614,6 @@
         document.getElementById('main-tab').classList.remove('hidden');
         document.getElementById('preorders-tab').classList.add('hidden');
         updateUI();
-        renderPreorders();
       } else {
         document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
         document.getElementById('main-tab').classList.add('hidden');
@@ -639,89 +653,127 @@
       updateUI();
     }
 
-    // === Создание заказа (основного или предзаказа) ===
-    function calculateAmount(tariffKey, length, width, hours, qty) {
-      const tariff = TARIFFS[tariffKey];
-      if (!tariff) return 0;
-      let amount = 0;
-      if (tariff.unit === 'time') {
-        amount = tariff.price * hours * qty;
-      } else if (tariff.unit === 'm2') {
-        amount = tariff.price * length * width * qty;
-      } else {
-        amount = tariff.price * length * qty;
-      }
-      return Math.round(amount * 100) / 100;
-    }
-
-    function createOrder(isMain = true) {
-      const numField = isMain ? 'orderNum' : 'preOrderNum';
-      const num = document.getElementById(numField).value.trim();
+    // === Основной заказ ===
+    function createMainOrder() {
+      const num = document.getElementById('orderNum').value.trim();
       if (!num) { alert('Укажите № заказа'); return; }
 
-      const tariffKey = document.getElementById(isMain ? 'tariff' : 'preTariff').value;
-      const detail = document.getElementById(isMain ? 'detail' : 'preDetail').value.trim() || '—';
-      const qty = parseInt(document.getElementById(isMain ? 'qty' : 'preQty').value) || 1;
-      const length = parseFloat(document.getElementById(isMain ? 'length' : 'preLength').value) || 0;
-      const width = parseFloat(document.getElementById(isMain ? 'width' : 'preWidth').value) || 0;
-      const hours = parseFloat(document.getElementById(isMain ? 'hours' : 'preHours').value) || 0;
+      const tariffKey = document.getElementById('tariff').value;
+      const detail = document.getElementById('detail').value.trim() || '—';
+      const qty = parseInt(document.getElementById('qty').value) || 1;
+      const length = parseFloat(document.getElementById('length').value) || 0;
+      const width = parseFloat(document.getElementById('width').value) || 0;
+      const hours = parseFloat(document.getElementById('hours').value) || 0;
 
       const amount = calculateAmount(tariffKey, length, width, hours, qty);
 
-      if (isMain) {
-        const shift = getCurrentShift();
-        if (!shift || !shift.active) {
-          alert('⚠️ Начните смену, чтобы создавать заказы!');
-          return;
-        }
-        const order = {
-          id: Date.now(),
-          orderNumber: num,
-          tariff: tariffKey,
-          detail: detail,
-          qty: qty,
-          length: length || null,
-          width: width || null,
-          hours: hours || null,
-          amount: amount,
-          date: todayYMD(),
-          shiftId: shift.id,
-          timestamp: new Date().toISOString()
-        };
-        const orders = loadOrders();
-        orders.push(order);
-        saveOrders(orders);
-        updateUI();
-      } else {
-        const preorder = {
-          id: Date.now(),
-          orderNumber: num,
-          tariff: tariffKey,
-          detail: detail,
-          qty: qty,
-          length: length || null,
-          width: width || null,
-          hours: hours || null,
-          amount: amount,
-          date: todayYMD(),
-          timestamp: new Date().toISOString()
-        };
-        const preorders = loadPreorders();
-        preorders.push(preorder);
-        savePreorders(preorders);
-        alert('✅ Предзаказ сохранён!');
-        renderPreorders();
+      const shift = getCurrentShift();
+      if (!shift || !shift.active) {
+        alert('⚠️ Начните смену, чтобы создавать заказы!');
+        return;
       }
 
-      // Сброс формы
-      const fields = ['Num', 'Detail', 'Qty', 'Length', 'Width', 'Hours'];
-      fields.forEach(f => {
-        const el = document.getElementById((isMain ? '' : 'pre') + f.toLowerCase());
-        if (el) el.value = f === 'Qty' ? '1' : '';
+      const order = {
+        id: Date.now(),
+        orderNumber: num,
+        tariff: tariffKey,
+        detail: detail,
+        qty: qty,
+        length: length || null,
+        width: width || null,
+        hours: hours || null,
+        amount: amount,
+        date: todayYMD(),
+        shiftId: shift.id,
+        timestamp: new Date().toISOString()
+      };
+
+      const orders = loadOrders();
+      orders.push(order);
+      saveOrders(orders);
+      updateUI();
+
+      // Сброс
+      document.getElementById('orderNum').value = '';
+      document.getElementById('detail').value = '';
+      document.getElementById('qty').value = '1';
+      document.getElementById('length').value = '';
+      document.getElementById('width').value = '';
+      document.getElementById('hours').value = '';
+    }
+
+    // === Предзаказ ===
+    function createPreorder() {
+      const num = document.getElementById('preOrderNum').value.trim();
+      if (!num) { alert('Укажите № предзаказа'); return; }
+
+      const tariffKey = document.getElementById('preTariff').value;
+      const detail = document.getElementById('preDetail').value.trim() || '—';
+      const qty = parseInt(document.getElementById('preQty').value) || 1;
+      const length = parseFloat(document.getElementById('preLength').value) || 0;
+      const width = parseFloat(document.getElementById('preWidth').value) || 0;
+      const hours = parseFloat(document.getElementById('preHours').value) || 0;
+
+      const amount = calculateAmount(tariffKey, length, width, hours, qty);
+
+      const preorder = {
+        id: Date.now(),
+        orderNumber: num,
+        tariff: tariffKey,
+        detail: detail,
+        qty: qty,
+        length: length || null,
+        width: width || null,
+        hours: hours || null,
+        amount: amount,
+        date: todayYMD(),
+        timestamp: new Date().toISOString()
+      };
+
+      const preorders = loadPreorders();
+      preorders.push(preorder);
+      savePreorders(preorders);
+      alert('✅ Предзаказ сохранён!');
+      renderPreorders();
+
+      // Сброс
+      document.getElementById('preOrderNum').value = '';
+      document.getElementById('preDetail').value = '';
+      document.getElementById('preQty').value = '1';
+      document.getElementById('preLength').value = '';
+      document.getElementById('preWidth').value = '';
+      document.getElementById('preHours').value = '';
+    }
+
+    // === Переключение полей ===
+    function setupFieldToggles() {
+      document.getElementById('tariff').addEventListener('change', function () {
+        toggleFields(this.value, false);
+      });
+      document.getElementById('preTariff').addEventListener('change', function () {
+        toggleFields(this.value, true);
       });
     }
 
-    // === Предзаказы ===
+    function toggleFields(tariffKey, isPre = false) {
+      const prefix = isPre ? 'pre' : '';
+      const w = document.getElementById(`${prefix}WidthGroup`);
+      const h = document.getElementById(`${prefix}HoursGroup`);
+      const l = document.getElementById(`${prefix}LengthGroup`);
+
+      w.classList.add('hidden');
+      h.classList.add('hidden');
+      l.classList.remove('hidden');
+
+      if (['RASPIL_M2', 'SKLEIKA_OB', 'SKLEIKA_NO_OB'].includes(tariffKey)) {
+        w.classList.remove('hidden');
+      } else if (tariffKey === 'TIME') {
+        l.classList.add('hidden');
+        h.classList.remove('hidden');
+      }
+    }
+
+    // === Предзаказы: рендер и принятие ===
     function renderPreorders() {
       const preorders = loadPreorders();
       const container = document.getElementById('preordersList');
@@ -774,7 +826,6 @@
         return;
       }
 
-      // Перемещаем в основные заказы
       const order = {
         ...preorder,
         shiftId: shift.id
@@ -784,7 +835,6 @@
       orders.push(order);
       saveOrders(orders);
 
-      // Удаляем из предзаказов
       preorders.splice(preorderIndex, 1);
       savePreorders(preorders);
 
@@ -793,7 +843,7 @@
       renderPreorders();
     }
 
-    // === Основные заказы по дате ===
+    // === История по дате ===
     function showOrdersByDate() {
       const dateInput = document.getElementById('viewDate').value;
       if (!dateInput) {
@@ -886,37 +936,10 @@
     // === Инициализация ===
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('viewDate').value = todayYMD();
-
-      // Переключение полей для основных заказов
-      document.getElementById('tariff').addEventListener('change', function () {
-        toggleFields(this.value, false);
-      });
-      // Для предзаказов
-      document.getElementById('preTariff').addEventListener('change', function () {
-        toggleFields(this.value, true);
-      });
-
+      setupFieldToggles(); // <-- КЛЮЧЕВОЙ ВЫЗОВ
       updateUI();
       renderPreorders();
     });
-
-    function toggleFields(tariffKey, isPre = false) {
-      const prefix = isPre ? 'pre' : '';
-      const w = document.getElementById(`${prefix}WidthGroup`);
-      const h = document.getElementById(`${prefix}HoursGroup`);
-      const l = document.getElementById(`${prefix}LengthGroup`);
-
-      w.classList.add('hidden');
-      h.classList.add('hidden');
-      l.classList.remove('hidden');
-
-      if (['RASPIL_M2', 'SKLEIKA_OB', 'SKLEIKA_NO_OB'].includes(tariffKey)) {
-        w.classList.remove('hidden');
-      } else if (tariffKey === 'TIME') {
-        l.classList.add('hidden');
-        h.classList.remove('hidden');
-      }
-    }
   </script>
 </body>
 </html>
