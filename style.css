@@ -215,6 +215,28 @@ body {
   font-size: 18px;
 }
 
+/* Прокручиваемые области */
+.scrollable {
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.scrollable::-webkit-scrollbar {
+  width: 6px;
+}
+.scrollable::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+.scrollable::-webkit-scrollbar-thumb {
+  background: #c5c5c5;
+  border-radius: 3px;
+}
+.scrollable::-webkit-scrollbar-thumb:hover {
+  background: #a0a0a0;
+}
+
 .date-group {
   margin-bottom: 12px;
 }
@@ -270,6 +292,7 @@ body {
   font-size: 13px;
   line-height: 1.4;
 }
+
 .btn-delete {
   background: #ff7675;
   color: white;
