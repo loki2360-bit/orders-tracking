@@ -425,7 +425,6 @@
         <button class="btn-outline" onclick="saveOrdersToFile()">
           <i class="fas fa-download"></i> В TXT
         </button>
-        <!-- НОВАЯ КНОПКА ЭКСПОРТА В JSON -->
         <button class="btn-outline" onclick="saveOrdersToJSON()">
           <i class="fas fa-file-code"></i> В JSON
         </button>
@@ -485,13 +484,11 @@
         <button class="btn-blue" onclick="createPreorder()">
           <i class="fas fa-save"></i> Сохранить предзаказ
         </button>
-        <!-- НОВАЯ КНОПКА ИМПОРТА JSON -->
         <button class="btn-outline" onclick="document.getElementById('jsonImportInput').click()">
           <i class="fas fa-upload"></i> Загрузить JSON
         </button>
       </div>
 
-      <!-- Скрытый файловый ввод -->
       <input type="file" id="jsonImportInput" accept=".json" style="display: none;" />
 
       <div class="preorders-label">Список предзаказов</div>
@@ -524,6 +521,37 @@
     FREZER_FASKA: 'Фаска',
     TIME: 'Время'
   };
+
+  // === Звуковой сигнал: чёткий двойной звонок ===
+  function playBellSound() {
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return;
+
+      const audioContext = new AudioContext();
+      const frequencies = [600, 800]; // два тона
+      let time = audioContext.currentTime;
+
+      frequencies.forEach((freq, i) => {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        oscillator.type = 'sine';
+        oscillator.frequency.value = freq;
+        gainNode.gain.setValueAtTime(0.2, time);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, time + 0.3);
+
+        oscillator.start(time);
+        oscillator.stop(time + 0.3);
+        time += 0.25;
+      });
+    } catch (e) {
+      console.warn('Звук не поддерживается:', e);
+    }
+  }
 
   // === Утилиты ===
   function formatDateYMD(dateStr) {
@@ -617,7 +645,7 @@
     document.getElementById('shiftStatus').textContent = statusText;
   }
 
-  // === Переключение полей — НАДЕЖНАЯ ВЕРСИЯ ===
+  // === Переключение полей ===
   function updateMainFormFields() {
     const tariffSelect = document.getElementById('tariff');
     if (!tariffSelect) return;
@@ -627,12 +655,10 @@
     const h = document.getElementById('hoursGroup');
     const l = document.getElementById('lengthGroup');
 
-    // Сброс
     if (w) w.classList.add('hidden');
     if (h) h.classList.add('hidden');
     if (l) l.classList.remove('hidden');
 
-    // Логика
     if (['RASPIL_M2', 'SKLEIKA_OB', 'SKLEIKA_NO_OB'].includes(tariff)) {
       if (w) w.classList.remove('hidden');
     } else if (tariff === 'TIME') {
@@ -670,7 +696,6 @@
       document.getElementById('main-tab').classList.remove('hidden');
       document.getElementById('preorders-tab').classList.add('hidden');
       updateUI();
-      // Принудительно обновляем поля основной формы
       setTimeout(updateMainFormFields, 50);
     } else {
       document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
@@ -681,7 +706,7 @@
     }
   }
 
-  // === Смена ===
+  // === Смена с ОДИНАКОВЫМ звуком ===
   function startShift() {
     const shift = getCurrentShift();
     if (shift && shift.active) {
@@ -690,6 +715,8 @@
     }
     const newShift = { id: Date.now(), startedAt: new Date().toISOString(), active: true };
     setCurrentShift(newShift);
+    
+    playBellSound(); // 🔔 Чёткий звонок при НАЧАЛЕ
     alert('✅ Смена начата!');
     updateUI();
   }
@@ -708,11 +735,13 @@
     shift.finishedAt = new Date().toISOString();
     shift.finalAmount = finalAmount;
     setCurrentShift(shift);
+    
+    playBellSound(); // 🔔 Тот же звонок при ЗАВЕРШЕНИИ
     alert(`✅ Смена завершена!\nЗаработано: ${finalAmount.toFixed(2)} ₽`);
     updateUI();
   }
 
-  // === Основной заказ ===
+  // === Остальной код без изменений ===
   function createMainOrder() {
     const num = document.getElementById('orderNum').value.trim();
     if (!num) { alert('Укажите № заказа'); return; }
@@ -752,7 +781,6 @@
     saveOrders(orders);
     updateUI();
 
-    // Сброс
     document.getElementById('orderNum').value = '';
     document.getElementById('detail').value = '';
     document.getElementById('qty').value = '1';
@@ -760,11 +788,9 @@
     document.getElementById('width').value = '';
     document.getElementById('hours').value = '';
 
-    // Обновляем поля после сброса
     updateMainFormFields();
   }
 
-  // === Предзаказ ===
   function createPreorder() {
     const num = document.getElementById('preOrderNum').value.trim();
     if (!num) { alert('Укажите № предзаказа'); return; }
@@ -798,7 +824,6 @@
     alert('✅ Предзаказ сохранён!');
     renderPreorders();
 
-    // Сброс
     document.getElementById('preOrderNum').value = '';
     document.getElementById('preDetail').value = '';
     document.getElementById('preQty').value = '1';
@@ -809,7 +834,6 @@
     updatePreorderFormFields();
   }
 
-  // === Принятие предзаказа ===
   function acceptPreorder(preorderId) {
     const preorders = loadPreorders();
     const preorderIndex = preorders.findIndex(p => p.id === preorderId);
@@ -840,7 +864,6 @@
     renderPreorders();
   }
 
-  // === Рендер предзаказов ===
   function renderPreorders() {
     const preorders = loadPreorders();
     const container = document.getElementById('preordersList');
@@ -880,7 +903,6 @@
     container.innerHTML = html;
   }
 
-  // === История по дате ===
   function showOrdersByDate() {
     const dateInput = document.getElementById('viewDate').value;
     if (!dateInput) {
@@ -970,11 +992,6 @@
     URL.revokeObjectURL(url);
   }
 
-  // ==============================
-  // === НОВЫЕ ФУНКЦИИ: JSON ЭКСПОРТ И ИМПОРТ ===
-  // ==============================
-
-  // Экспорт заказов за дату в JSON
   function saveOrdersToJSON() {
     const dateInput = document.getElementById('viewDate').value;
     if (!dateInput) {
@@ -1002,7 +1019,6 @@
     URL.revokeObjectURL(url);
   }
 
-  // Импорт JSON в предзаказы
   document.getElementById('jsonImportInput').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -1019,7 +1035,7 @@
 
         const preorders = loadPreorders();
         const newPreorders = imported.map(item => ({
-          id: Date.now() + Math.random(), // уникальный ID
+          id: Date.now() + Math.random(),
           orderNumber: item.orderNumber || 'ИМП-' + (preorders.length + 1),
           tariff: item.tariff || 'RASPIL_M2',
           detail: item.detail || '—',
@@ -1051,11 +1067,9 @@
     reader.readAsText(file);
   });
 
-  // === Инициализация ===
   document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('viewDate').value = todayYMD();
 
-    // Надёжная привязка обработчиков
     const mainSelect = document.getElementById('tariff');
     const preSelect = document.getElementById('preTariff');
 
