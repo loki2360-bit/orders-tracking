@@ -423,7 +423,11 @@
           <i class="fas fa-eye"></i> Показать
         </button>
         <button class="btn-outline" onclick="saveOrdersToFile()">
-          <i class="fas fa-download"></i> В файл
+          <i class="fas fa-download"></i> В TXT
+        </button>
+        <!-- НОВАЯ КНОПКА ЭКСПОРТА В JSON -->
+        <button class="btn-outline" onclick="saveOrdersToJSON()">
+          <i class="fas fa-file-code"></i> В JSON
         </button>
       </div>
 
@@ -481,7 +485,14 @@
         <button class="btn-blue" onclick="createPreorder()">
           <i class="fas fa-save"></i> Сохранить предзаказ
         </button>
+        <!-- НОВАЯ КНОПКА ИМПОРТА JSON -->
+        <button class="btn-outline" onclick="document.getElementById('jsonImportInput').click()">
+          <i class="fas fa-upload"></i> Загрузить JSON
+        </button>
       </div>
+
+      <!-- Скрытый файловый ввод -->
+      <input type="file" id="jsonImportInput" accept=".json" style="display: none;" />
 
       <div class="preorders-label">Список предзаказов</div>
       <div id="preordersList"></div>
@@ -959,6 +970,87 @@
     URL.revokeObjectURL(url);
   }
 
+  // ==============================
+  // === НОВЫЕ ФУНКЦИИ: JSON ЭКСПОРТ И ИМПОРТ ===
+  // ==============================
+
+  // Экспорт заказов за дату в JSON
+  function saveOrdersToJSON() {
+    const dateInput = document.getElementById('viewDate').value;
+    if (!dateInput) {
+      alert('Сначала выберите дату');
+      return;
+    }
+
+    const orders = loadOrders();
+    const filtered = orders.filter(o => o.date === dateInput);
+
+    if (filtered.length === 0) {
+      alert('Нет заказов за эту дату');
+      return;
+    }
+
+    const jsonContent = JSON.stringify(filtered, null, 2);
+    const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `заказы_${formatDateYMD(dateInput)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // Импорт JSON в предзаказы
+  document.getElementById('jsonImportInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      try {
+        const imported = JSON.parse(event.target.result);
+
+        if (!Array.isArray(imported)) {
+          alert('Файл должен содержать массив заказов!');
+          return;
+        }
+
+        const preorders = loadPreorders();
+        const newPreorders = imported.map(item => ({
+          id: Date.now() + Math.random(), // уникальный ID
+          orderNumber: item.orderNumber || 'ИМП-' + (preorders.length + 1),
+          tariff: item.tariff || 'RASPIL_M2',
+          detail: item.detail || '—',
+          qty: item.qty || 1,
+          length: item.length || null,
+          width: item.width || null,
+          hours: item.hours || null,
+          amount: typeof item.amount === 'number' ? item.amount : calculateAmount(
+            item.tariff || 'RASPIL_M2',
+            item.length || 0,
+            item.width || 0,
+            item.hours || 0,
+            item.qty || 1
+          ),
+          date: todayYMD(),
+          timestamp: new Date().toISOString()
+        }));
+
+        const updated = [...preorders, ...newPreorders];
+        savePreorders(updated);
+        renderPreorders();
+        alert(`✅ Загружено ${newPreorders.length} предзаказов!`);
+
+      } catch (err) {
+        console.error(err);
+        alert('Ошибка при чтении JSON:\n' + err.message);
+      }
+    };
+    reader.readAsText(file);
+  });
+
   // === Инициализация ===
   document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('viewDate').value = todayYMD();
@@ -969,7 +1061,6 @@
 
     if (mainSelect) {
       mainSelect.addEventListener('change', updateMainFormFields);
-      // Принудительный вызов при загрузке
       updateMainFormFields();
     }
 
@@ -982,3 +1073,5 @@
     renderPreorders();
   });
 </script>
+</body>
+</html>
