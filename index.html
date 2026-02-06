@@ -532,11 +532,11 @@
           <i class="fas fa-save"></i> Сохранить предзаказ
         </button>
         <button class="btn-outline" onclick="document.getElementById('jsonImportInput').click()">
-          <i class="fas fa-upload"></i> Загрузить JSON
+          <i class="fas fa-upload"></i> Загрузить TXT/JSON
         </button>
       </div>
 
-      <input type="file" id="jsonImportInput" accept=".json" style="display: none;" />
+      <input type="file" id="jsonImportInput" accept=".txt,.json" style="display: none;" />
 
       <div class="preorders-label">Список предзаказов</div>
       <div id="preordersList"></div>
@@ -547,13 +547,61 @@
     </div>
   </div>
 
-  <!-- Modal for Date Selection -->
+  <!-- Modal for editing orders -->
+  <div id="editModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-title">Редактировать заказ</div>
+      <input type="hidden" id="editOrderId">
+      <div class="modal-row">
+        <label>№ заказа</label>
+        <input type="text" id="editOrderNum" class="form-control" style="width:100%;padding:10px;border:1px solid #eaeaea;border-radius:8px;">
+      </div>
+      <div class="modal-row">
+        <label>Деталь</label>
+        <input type="text" id="editDetail" class="form-control" style="width:100%;padding:10px;border:1px solid #eaeaea;border-radius:8px;">
+      </div>
+      <div class="modal-row">
+        <label>Тариф</label>
+        <select id="editTariff" style="width:100%;padding:10px;border:1px solid #eaeaea;border-radius:8px;">
+          <option value="RASPIL_M2">Распил — 65 ₽/м²</option>
+          <option value="LINEAR_RASPIL">Лин. распил — 26 ₽/м</option>
+          <option value="SKLEIKA_OB">Склейка + — 210 ₽/м²</option>
+          <option value="SKLEIKA_NO_OB">Склейка – — 165 ₽/м²</option>
+          <option value="PAZY">Пазы — 30 ₽/м</option>
+          <option value="FREZER_FASKA">Фаска — 16 ₽/м</option>
+          <option value="TIME">Время — 330 ₽/ч</option>
+        </select>
+      </div>
+      <div class "modal-row">
+        <label>Кол-во</label>
+        <input type="number" id="editQty" min="1" style="width:100%;padding:10px;border:1px solid #eaeaea;border-radius:8px;">
+      </div>
+      <div class="modal-row" id="editLengthGroup">
+        <label>Длина (м)</label>
+        <input type="number" step="0.01" id="editLength" style="width:100%;padding:10px;border:1px solid #eaeaea;border-radius:8px;">
+      </div>
+      <div class="modal-row hidden" id="editWidthGroup">
+        <label>Ширина (м)</label>
+        <input type="number" step="0.01" id="editWidth" style="width:100%;padding:10px;border:1px solid #eaeaea;border-radius:8px;">
+      </div>
+      <div class="modal-row hidden" id="editHoursGroup">
+        <label>Часы</label>
+        <input type="number" step="0.1" id="editHours" style="width:100%;padding:10px;border:1px solid #eaeaea;border-radius:8px;">
+      </div>
+      <div class="modal-buttons">
+        <button class="btn-outline" onclick="closeEditModal()">Отмена</button>
+        <button class="btn-blue" onclick="saveEditedOrder()">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for date selection -->
   <div id="dateModal" class="modal">
     <div class="modal-content">
       <div class="modal-title">Выберите дату для заказа</div>
       <div class="modal-row">
         <label>Дата</label>
-        <input type="date" id="modalDate" class="form-control">
+        <input type="date" id="modalDate" class="form-control" style="width:100%;padding:10px;border:1px solid #eaeaea;border-radius:8px;">
       </div>
       <div class="modal-buttons">
         <button class="btn-outline" onclick="closeDateModal()">Отмена</button>
@@ -584,8 +632,24 @@
     TIME: 'Время'
   };
 
-  // === Глобальные переменные для модального окна ===
+  // === Глобальные переменные ===
+  let hasNotified1000 = false;
+  let editingOrder = null;
   let pendingPreorderId = null;
+
+  // === Анимации для уведомления ===
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+  `;
+  document.head.appendChild(style);
 
   // === Звуковой сигнал: чёткий двойной звонок ===
   function playBellSound() {
@@ -615,6 +679,53 @@
       });
     } catch (e) {
       console.warn('Звук не поддерживается:', e);
+    }
+  }
+
+  // === Уведомление на 1000₽ ===
+  function checkAndNotify1000(currentAmount) {
+    const shift = getCurrentShift();
+    
+    // Сброс флага при новой смене
+    if (!shift || !shift.active) {
+      hasNotified1000 = false;
+      return;
+    }
+    
+    // Уведомление только один раз за смену
+    if (currentAmount >= 1000 && !hasNotified1000) {
+      hasNotified1000 = true;
+      
+      // Звуковое уведомление
+      playBellSound();
+      
+      // Визуальное уведомление
+      const notification = document.createElement('div');
+      notification.innerHTML = `
+        <div style="
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: linear-gradient(135deg, #ff9800, #ff5722);
+          color: white;
+          padding: 16px 24px;
+          border-radius: 12px;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+          z-index: 2000;
+          font-weight: bold;
+          animation: slideIn 0.3s ease-out, fadeOut 0.5s ease-in 3s forwards;
+        ">
+          🎯 Достигнуто 1000₽!
+        </div>
+      `;
+      document.body.appendChild(notification);
+      
+      // Удалить через 4 секунды
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.parentNode.removeChild(notification);
+        }
+      }, 4000);
     }
   }
 
@@ -695,6 +806,9 @@
       progressWidth = Math.min(100, (currentShiftAmount / 3000) * 100);
       fillColor = `linear-gradient(90deg, #ffeb3b 0%, #ff9800 50%, #4caf50 100%)`;
       statusText = 'Смена активна';
+      
+      // Проверить уведомление на 1000₽
+      checkAndNotify1000(currentShiftAmount);
     } else if (shift && !shift.active) {
       currentShiftAmount = shift.finalAmount || 0;
       progressWidth = Math.min(100, (currentShiftAmount / 3000) * 100);
@@ -855,7 +969,10 @@
   // === Модальное окно для выбора даты ===
   function openDateModal(preorderId) {
     pendingPreorderId = preorderId;
-    document.getElementById('modalDate').value = todayYMD();
+    const modalDateInput = document.getElementById('modalDate');
+    if (modalDateInput) {
+      modalDateInput.value = todayYMD();
+    }
     document.getElementById('dateModal').classList.add('active');
   }
 
@@ -865,7 +982,9 @@
   }
 
   function confirmDateSelection() {
-    const selectedDate = document.getElementById('modalDate').value;
+    const modalDateInput = document.getElementById('modalDate');
+    const selectedDate = modalDateInput ? modalDateInput.value : null;
+    
     if (!selectedDate) {
       alert('Выберите дату');
       return;
@@ -876,6 +995,99 @@
     }
     
     closeDateModal();
+  }
+
+  // === Редактирование заказов ===
+  function openEditModal(orderId) {
+    const orders = loadOrders();
+    const order = orders.find(o => o.id === orderId);
+    
+    if (!order) return;
+    
+    editingOrder = order;
+    
+    // Заполнить форму
+    document.getElementById('editOrderId').value = order.id;
+    document.getElementById('editOrderNum').value = order.orderNumber;
+    document.getElementById('editDetail').value = order.detail;
+    document.getElementById('editTariff').value = order.tariff;
+    document.getElementById('editQty').value = order.qty;
+    document.getElementById('editLength').value = order.length || '';
+    document.getElementById('editWidth').value = order.width || '';
+    document.getElementById('editHours').value = order.hours || '';
+    
+    // Обновить видимость полей
+    updateEditFormFields();
+    
+    // Показать модальное окно
+    document.getElementById('editModal').classList.add('active');
+  }
+
+  function closeEditModal() {
+    document.getElementById('editModal').classList.remove('active');
+    editingOrder = null;
+  }
+
+  function updateEditFormFields() {
+    const tariff = document.getElementById('editTariff').value;
+    const w = document.getElementById('editWidthGroup');
+    const h = document.getElementById('editHoursGroup');
+    const l = document.getElementById('editLengthGroup');
+
+    w.classList.add('hidden');
+    h.classList.add('hidden');
+    l.classList.remove('hidden');
+
+    if (['RASPIL_M2', 'SKLEIKA_OB', 'SKLEIKA_NO_OB'].includes(tariff)) {
+      w.classList.remove('hidden');
+    } else if (tariff === 'TIME') {
+      l.classList.add('hidden');
+      h.classList.remove('hidden');
+    }
+  }
+
+  function saveEditedOrder() {
+    if (!editingOrder) return;
+    
+    const orderId = parseInt(document.getElementById('editOrderId').value);
+    const num = document.getElementById('editOrderNum').value.trim();
+    if (!num) {
+      alert('Укажите № заказа');
+      return;
+    }
+
+    const tariffKey = document.getElementById('editTariff').value;
+    const detail = document.getElementById('editDetail').value.trim() || '—';
+    const qty = parseInt(document.getElementById('editQty').value) || 1;
+    const length = parseFloat(document.getElementById('editLength').value) || 0;
+    const width = parseFloat(document.getElementById('editWidth').value) || 0;
+    const hours = parseFloat(document.getElementById('editHours').value) || 0;
+
+    const amount = calculateAmount(tariffKey, length, width, hours, qty);
+
+    // Найти и обновить заказ
+    const orders = loadOrders();
+    const orderIndex = orders.findIndex(o => o.id === orderId);
+    
+    if (orderIndex !== -1) {
+      orders[orderIndex] = {
+        ...orders[orderIndex],
+        orderNumber: num,
+        tariff: tariffKey,
+        detail: detail,
+        qty: qty,
+        length: length || null,
+        width: width || null,
+        hours: hours || null,
+        amount: amount
+      };
+      
+      saveOrders(orders);
+      updateUI();
+      showOrdersByDate(); // Обновить текущий список
+      closeEditModal();
+      alert('✅ Заказ обновлен!');
+    }
   }
 
   // === Остальной код без изменений ===
@@ -1085,6 +1297,9 @@
             <td>${o.detail}</td>
             <td class="amount">${o.amount.toFixed(2)} ₽</td>
             <td>
+              <button class="btn-accept" onclick="openEditModal(${o.id})" style="background:linear-gradient(135deg,#2196f3,#1976d2);min-width:auto;padding:8px 10px;margin-right:4px;">
+                <i class="fas fa-edit"></i>
+              </button>
               <button class="btn-delete" onclick="deleteOrder(${o.id})">
                 <i class="fas fa-trash"></i>
               </button>
@@ -1172,6 +1387,7 @@
     URL.revokeObjectURL(url);
   }
 
+  // === УНИВЕРСАЛЬНЫЙ ИМПОРТ TXT/JSON ===
   document.getElementById('jsonImportInput').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -1179,15 +1395,28 @@
     const reader = new FileReader();
     reader.onload = function(event) {
       try {
-        const imported = JSON.parse(event.target.result);
+        const content = event.target.result;
+        let importedOrders = [];
 
-        if (!Array.isArray(imported)) {
-          alert('Файл должен содержать массив заказов!');
+        // Определяем формат файла по содержимому
+        if (content.trim().startsWith('{') || content.trim().startsWith('[')) {
+          // Это JSON
+          importedOrders = JSON.parse(content);
+          if (!Array.isArray(importedOrders)) {
+            importedOrders = [importedOrders]; // Оборачиваем в массив если один объект
+          }
+        } else {
+          // Это TXT - парсим вручную
+          importedOrders = parseTxtOrders(content);
+        }
+
+        if (importedOrders.length === 0) {
+          alert('Не удалось найти заказы в файле!');
           return;
         }
 
         const preorders = loadPreorders();
-        const newPreorders = imported.map(item => ({
+        const newPreorders = importedOrders.map(item => ({
           id: Date.now() + Math.random(),
           orderNumber: item.orderNumber || 'ИМП-' + (preorders.length + 1),
           tariff: item.tariff || 'RASPIL_M2',
@@ -1214,17 +1443,114 @@
 
       } catch (err) {
         console.error(err);
-        alert('Ошибка при чтении JSON:\n' + err.message);
+        alert('Ошибка при чтении файла:\n' + err.message);
       }
     };
-    reader.readAsText(file);
+    
+    // Читаем как текст (не как JSON!)
+    reader.readAsText(file, 'utf-8');
   });
+
+  // НОВАЯ ФУНКЦИЯ: Парсинг TXT-файла с заказами
+  function parseTxtOrders(txtContent) {
+    const orders = [];
+    const blocks = txtContent.split('---\n');
+    
+    for (const block of blocks) {
+      const lines = block.trim().split('\n').filter(line => line.trim() !== '');
+      if (lines.length < 3) continue; // Слишком короткий блок
+      
+      const order = {
+        orderNumber: '',
+        detail: '',
+        tariff: '',
+        qty: 1,
+        length: null,
+        width: null,
+        hours: null,
+        amount: 0
+      };
+      
+      let currentDetail = '';
+      let currentTariff = '';
+      
+      for (const line of lines) {
+        const cleanLine = line.trim();
+        
+        // № заказа (например: "№1. ORD-123" или просто "ORD-123")
+        if (cleanLine.startsWith('№') && cleanLine.includes('.')) {
+          const match = cleanLine.match(/№\d+\.\s*(.+)/);
+          if (match) order.orderNumber = match[1].trim();
+        } else if (/^[A-Z0-9]/.test(cleanLine) && !cleanLine.includes(':') && !cleanLine.includes('Сумма') && !cleanLine.includes('ИТОГО')) {
+          // Предполагаем, что это номер заказа (если нет префикса №)
+          if (!order.orderNumber && cleanLine.length > 2) {
+            order.orderNumber = cleanLine;
+          }
+        }
+        
+        // Деталь и тариф (строка типа: "   Деталь (Тариф)")
+        if (cleanLine.includes('(') && cleanLine.includes(')') && !cleanLine.includes('Сумма')) {
+          const match = cleanLine.match(/(.+)\s*\((.+)\)/);
+          if (match) {
+            currentDetail = match[1].trim();
+            currentTariff = match[2].trim();
+          }
+        }
+        
+        // Параметры
+        if (cleanLine.startsWith('Длина:')) {
+          const match = cleanLine.match(/Длина:\s*([\d.]+)\s*м/);
+          if (match) order.length = parseFloat(match[1]);
+        }
+        if (cleanLine.startsWith('Ширина:')) {
+          const match = cleanLine.match(/Ширина:\s*([\d.]+)\s*м/);
+          if (match) order.width = parseFloat(match[1]);
+        }
+        if (cleanLine.startsWith('Часы:')) {
+          const match = cleanLine.match(/Часы:\s*([\d.]+)\s*ч/);
+          if (match) order.hours = parseFloat(match[1]);
+        }
+        if (cleanLine.startsWith('Кол-во:')) {
+          const match = cleanLine.match(/Кол-во:\s*(\d+)/);
+          if (match) order.qty = parseInt(match[1]);
+        }
+        if (cleanLine.startsWith('Сумма:')) {
+          const match = cleanLine.match(/Сумма:\s*([\d.]+)\s*₽/);
+          if (match) order.amount = parseFloat(match[1]);
+        }
+      }
+      
+      // Определяем тариф по названию
+      if (currentTariff) {
+        const tariffMap = {
+          'Распил': 'RASPIL_M2',
+          'Лин. распил': 'LINEAR_RASPIL',
+          'Склейка +': 'SKLEIKA_OB',
+          'Склейка –': 'SKLEIKA_NO_OB',
+          'Пазы': 'PAZY',
+          'Фаска': 'FREZER_FASKA',
+          'Время': 'TIME'
+        };
+        order.tariff = tariffMap[currentTariff] || 'RASPIL_M2';
+      }
+      
+      order.detail = currentDetail || '—';
+      
+      // Добавляем заказ только если есть номер
+      if (order.orderNumber) {
+        orders.push(order);
+      }
+    }
+    
+    return orders;
+  }
 
   document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('viewDate').value = todayYMD();
 
     const mainSelect = document.getElementById('tariff');
     const preSelect = document.getElementById('preTariff');
+    const editTariffSelect = document.getElementById('editTariff');
 
     if (mainSelect) {
       mainSelect.addEventListener('change', updateMainFormFields);
@@ -1234,6 +1560,10 @@
     if (preSelect) {
       preSelect.addEventListener('change', updatePreorderFormFields);
       updatePreorderFormFields();
+    }
+
+    if (editTariffSelect) {
+      editTariffSelect.addEventListener('change', updateEditFormFields);
     }
 
     updateUI();
