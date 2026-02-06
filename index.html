@@ -15,6 +15,7 @@
       --accent-orange: #ff9800;
       --accent-green: #4caf50;
       --accent-blue: #2196f3;
+      --accent-red: #f44336;
       --border: #eaeaea;
       --shadow: rgba(0,0,0,0.05);
     }
@@ -246,6 +247,13 @@
       font-size: 13px;
       padding: 8px 10px;
     }
+    .btn-delete {
+      background: linear-gradient(135deg, var(--accent-red), #c62828);
+      color: white;
+      font-size: 13px;
+      padding: 8px 10px;
+      min-width: auto;
+    }
 
     /* Orders list */
     .date-label, .preorders-label {
@@ -307,6 +315,45 @@
     }
 
     .hidden { display: none; }
+
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal.active {
+      display: flex;
+    }
+    .modal-content {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      max-width: 400px;
+      width: 90%;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+    .modal-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--text-dark);
+    }
+    .modal-row {
+      margin-bottom: 16px;
+    }
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
   </style>
 </head>
 <body>
@@ -500,6 +547,21 @@
     </div>
   </div>
 
+  <!-- Modal for Date Selection -->
+  <div id="dateModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-title">Выберите дату для заказа</div>
+      <div class="modal-row">
+        <label>Дата</label>
+        <input type="date" id="modalDate" class="form-control">
+      </div>
+      <div class="modal-buttons">
+        <button class="btn-outline" onclick="closeDateModal()">Отмена</button>
+        <button class="btn-blue" onclick="confirmDateSelection()">Подтвердить</button>
+      </div>
+    </div>
+  </div>
+
   <script>
   // === Константы ===
   const TARIFFS = {
@@ -521,6 +583,9 @@
     FREZER_FASKA: 'Фаска',
     TIME: 'Время'
   };
+
+  // === Глобальные переменные для модального окна ===
+  let pendingPreorderId = null;
 
   // === Звуковой сигнал: чёткий двойной звонок ===
   function playBellSound() {
@@ -741,6 +806,78 @@
     updateUI();
   }
 
+  // === Удаление заказов ===
+  function deleteOrder(orderId) {
+    if (!confirm('Вы уверены, что хотите удалить этот заказ?')) {
+      return;
+    }
+
+    const orders = loadOrders();
+    const orderIndex = orders.findIndex(o => o.id === orderId);
+    
+    if (orderIndex === -1) return;
+
+    const deletedOrder = orders[orderIndex];
+    orders.splice(orderIndex, 1);
+    saveOrders(orders);
+    
+    // Если удаленный заказ был в активной смене, обновить прогресс
+    const shift = getCurrentShift();
+    if (shift && shift.active && deletedOrder.shiftId === shift.id) {
+      updateUI();
+    }
+    
+    // Перезагрузить список заказов для текущей даты
+    showOrdersByDate();
+    
+    alert('✅ Заказ удален!');
+  }
+
+  // === Удаление предзаказов ===
+  function deletePreorder(preorderId) {
+    if (!confirm('Вы уверены, что хотите удалить этот предзаказ?')) {
+      return;
+    }
+
+    const preorders = loadPreorders();
+    const preorderIndex = preorders.findIndex(p => p.id === preorderId);
+    
+    if (preorderIndex === -1) return;
+
+    preorders.splice(preorderIndex, 1);
+    savePreorders(preorders);
+    
+    renderPreorders();
+    
+    alert('✅ Предзаказ удален!');
+  }
+
+  // === Модальное окно для выбора даты ===
+  function openDateModal(preorderId) {
+    pendingPreorderId = preorderId;
+    document.getElementById('modalDate').value = todayYMD();
+    document.getElementById('dateModal').classList.add('active');
+  }
+
+  function closeDateModal() {
+    document.getElementById('dateModal').classList.remove('active');
+    pendingPreorderId = null;
+  }
+
+  function confirmDateSelection() {
+    const selectedDate = document.getElementById('modalDate').value;
+    if (!selectedDate) {
+      alert('Выберите дату');
+      return;
+    }
+
+    if (pendingPreorderId !== null) {
+      acceptPreorder(pendingPreorderId, selectedDate);
+    }
+    
+    closeDateModal();
+  }
+
   // === Остальной код без изменений ===
   function createMainOrder() {
     const num = document.getElementById('orderNum').value.trim();
@@ -834,7 +971,7 @@
     updatePreorderFormFields();
   }
 
-  function acceptPreorder(preorderId) {
+  function acceptPreorder(preorderId, selectedDate = null) {
     const preorders = loadPreorders();
     const preorderIndex = preorders.findIndex(p => p.id === preorderId);
     if (preorderIndex === -1) return;
@@ -847,9 +984,16 @@
       return;
     }
 
+    // Если дата не выбрана, показать модальное окно
+    if (!selectedDate) {
+      openDateModal(preorderId);
+      return;
+    }
+
     const order = {
       ...preorder,
-      shiftId: shift.id
+      shiftId: shift.id,
+      date: selectedDate // Используем выбранную дату
     };
 
     const orders = loadOrders();
@@ -859,7 +1003,7 @@
     preorders.splice(preorderIndex, 1);
     savePreorders(preorders);
 
-    alert(`✅ Предзаказ "${preorder.orderNumber}" принят!`);
+    alert(`✅ Предзаказ "${preorder.orderNumber}" принят на дату ${formatDateYMD(selectedDate)}!`);
     updateUI();
     renderPreorders();
   }
@@ -895,6 +1039,9 @@
             <button class="btn-accept" onclick="acceptPreorder(${p.id})">
               <i class="fas fa-check"></i> Принять
             </button>
+            <button class="btn-delete" onclick="deletePreorder(${p.id})">
+              <i class="fas fa-trash"></i>
+            </button>
           </td>
         </tr>
       `;
@@ -926,6 +1073,7 @@
               <th>№</th>
               <th>Деталь</th>
               <th>Сумма</th>
+              <th>Действия</th>
             </tr>
           </thead>
           <tbody>
@@ -936,6 +1084,11 @@
             <td>${o.orderNumber}</td>
             <td>${o.detail}</td>
             <td class="amount">${o.amount.toFixed(2)} ₽</td>
+            <td>
+              <button class="btn-delete" onclick="deleteOrder(${o.id})">
+                <i class="fas fa-trash"></i>
+              </button>
+            </td>
           </tr>
         `;
       });
