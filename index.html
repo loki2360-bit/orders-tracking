@@ -7,17 +7,18 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
     :root {
-      --bg-light: #fffdf5;
-      --bg-card: #ffffff;
-      --text-dark: #2d2d2d;
-      --text-muted: #777;
+      --bg-dark: #1a1a1a;
+      --bg-card: #2d2d2d;
+      --text-light: #ffffff;
+      --text-muted: #bbbbbb;
       --accent-yellow: #ffeb3b;
-      --accent-orange: #ff9800;
-      --accent-green: #4caf50;
-      --accent-blue: #2196f3;
-      --accent-red: #f44336;
-      --border: #eaeaea;
-      --shadow: rgba(0,0,0,0.05);
+      --accent-yellow-dark: #fbc02d;
+      --accent-red: #ff5252;
+      --accent-red-dark: #ff1744;
+      --accent-green: #69f0ae;
+      --accent-green-dark: #00e676;
+      --border: #444444;
+      --shadow: rgba(0,0,0,0.3);
     }
 
     * {
@@ -28,8 +29,8 @@
     }
 
     body {
-      background: linear-gradient(135deg, #fff9c4 0%, #fffde7 100%);
-      color: var(--text-dark);
+      background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+      color: var(--text-light);
       padding: 12px;
       min-height: 100vh;
       line-height: 1.4;
@@ -43,12 +44,13 @@
       box-shadow: 0 6px 20px var(--shadow);
       overflow: hidden;
       font-size: 15px;
+      position: relative;
     }
 
     /* Tabs */
     .tabs {
       display: flex;
-      background: #fafafa;
+      background: #333333;
       border-bottom: 1px solid var(--border);
     }
     .tab-btn {
@@ -60,11 +62,15 @@
       color: var(--text-muted);
       cursor: pointer;
       transition: all 0.2s;
+      position: relative;
     }
     .tab-btn.active {
-      color: var(--accent-blue);
-      background: white;
-      border-bottom: 3px solid var(--accent-blue);
+      color: var(--accent-yellow);
+      background: #252525;
+      border-bottom: 3px solid var(--accent-yellow);
+    }
+    .tab-btn:hover {
+      color: var(--accent-yellow);
     }
 
     /* Header */
@@ -73,7 +79,7 @@
       align-items: center;
       gap: 14px;
       padding: 18px 16px 14px;
-      background: white;
+      background: #252525;
       border-bottom: 1px solid var(--border);
     }
 
@@ -81,7 +87,7 @@
       width: 56px;
       height: 56px;
       border-radius: 50%;
-      background: linear-gradient(135deg, var(--accent-yellow), var(--accent-orange));
+      background: linear-gradient(135deg, var(--accent-yellow), var(--accent-yellow-dark));
       display: flex;
       align-items: center;
       justify-content: center;
@@ -89,6 +95,7 @@
       color: #000;
       font-size: 20px;
       flex-shrink: 0;
+      box-shadow: 0 0 15px rgba(255, 235, 59, 0.4);
     }
 
     .info h2 {
@@ -104,10 +111,11 @@
     /* Plan Box */
     .plan-box {
       padding: 18px 16px;
-      background: #fffde7;
+      background: linear-gradient(135deg, #333333, #2d2d2d);
       margin: 16px;
       border-radius: 12px;
       position: relative;
+      border: 1px solid var(--border);
     }
 
     .plan-title {
@@ -117,14 +125,16 @@
       display: flex;
       align-items: center;
       gap: 6px;
+      color: var(--accent-yellow);
     }
 
     .progress-container {
       height: 16px;
-      background: #f0f0f0;
+      background: #444444;
       border-radius: 8px;
       overflow: hidden;
       margin: 8px 0;
+      border: 1px solid #555555;
     }
 
     .progress-fill {
@@ -157,7 +167,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      color: var(--text-dark);
+      color: var(--accent-yellow);
     }
 
     /* Form */
@@ -183,7 +193,7 @@
       margin-bottom: 6px;
       font-weight: 600;
       font-size: 0.9rem;
-      color: var(--text-dark);
+      color: var(--text-light);
     }
 
     input, select {
@@ -192,6 +202,8 @@
       border: 1px solid var(--border);
       border-radius: 8px;
       font-size: 14px;
+      background: #333333;
+      color: var(--text-light);
       transition: all 0.2s;
     }
     input:focus, select:focus {
@@ -216,49 +228,101 @@
       font-weight: 600;
       font-size: 14px;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.3s ease;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      position: relative;
+      overflow: hidden;
     }
 
+    /* Свечение для кнопок */
     .btn-start {
-      background: linear-gradient(135deg, #4caf50, #2e7d32);
-      color: white;
+      background: linear-gradient(135deg, #00e676, #00c853);
+      color: #000;
+      box-shadow: 0 4px 15px rgba(0, 230, 118, 0.3);
     }
+    .btn-start:hover {
+      box-shadow: 0 4px 20px rgba(0, 230, 118, 0.5), 0 0 20px rgba(0, 230, 118, 0.3);
+      transform: translateY(-2px);
+    }
+
     .btn-end {
-      background: linear-gradient(135deg, #f44336, #d32f2f);
+      background: linear-gradient(135deg, #ff5252, #ff1744);
       color: white;
+      box-shadow: 0 4px 15px rgba(255, 82, 82, 0.3);
     }
+    .btn-end:hover {
+      box-shadow: 0 4px 20px rgba(255, 82, 82, 0.5), 0 0 20px rgba(255, 82, 82, 0.3);
+      transform: translateY(-2px);
+    }
+
     .btn-blue {
-      background: linear-gradient(135deg, var(--accent-blue), #1976d2);
+      background: linear-gradient(135deg, #2979ff, #2962ff);
       color: white;
+      box-shadow: 0 4px 15px rgba(41, 121, 255, 0.3);
     }
+    .btn-blue:hover {
+      box-shadow: 0 4px 20px rgba(41, 121, 255, 0.5), 0 0 20px rgba(41, 121, 255, 0.3);
+      transform: translateY(-2px);
+    }
+
     .btn-outline {
       background: transparent;
       border: 1px solid var(--border);
-      color: var(--text-dark);
+      color: var(--text-light);
+      box-shadow: 0 4px 15px rgba(100, 100, 100, 0.2);
     }
+    .btn-outline:hover {
+      border-color: var(--accent-yellow);
+      color: var(--accent-yellow);
+      box-shadow: 0 4px 20px rgba(255, 235, 59, 0.3), 0 0 15px rgba(255, 235, 59, 0.2);
+      transform: translateY(-2px);
+    }
+
     .btn-accept {
-      background: linear-gradient(135deg, #4caf50, #2e7d32);
-      color: white;
+      background: linear-gradient(135deg, #00e676, #00c853);
+      color: #000;
       font-size: 13px;
       padding: 8px 10px;
+      box-shadow: 0 4px 15px rgba(0, 230, 118, 0.3);
     }
+    .btn-accept:hover {
+      box-shadow: 0 4px 20px rgba(0, 230, 118, 0.5), 0 0 20px rgba(0, 230, 118, 0.3);
+      transform: translateY(-2px);
+    }
+
     .btn-delete {
-      background: linear-gradient(135deg, var(--accent-red), #c62828);
+      background: linear-gradient(135deg, #ff5252, #ff1744);
       color: white;
       font-size: 13px;
       padding: 8px 10px;
       min-width: auto;
+      box-shadow: 0 4px 15px rgba(255, 82, 82, 0.3);
+    }
+    .btn-delete:hover {
+      box-shadow: 0 4px 20px rgba(255, 82, 82, 0.5), 0 0 20px rgba(255, 82, 82, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .btn-view {
+      background: linear-gradient(135deg, #ffeb3b, #fbc02d);
+      color: #000;
+      font-size: 13px;
+      padding: 8px 10px;
+      min-width: auto;
+      box-shadow: 0 4px 15px rgba(255, 235, 59, 0.3);
+    }
+    .btn-view:hover {
+      box-shadow: 0 4px 20px rgba(255, 235, 59, 0.5), 0 0 20px rgba(255, 235, 59, 0.3);
+      transform: translateY(-2px);
     }
 
     /* Orders list */
     .date-label, .preorders-label {
       font-weight: 600;
-      color: var(--text-muted);
+      color: var(--accent-yellow);
       margin: 16px 0 12px;
       padding: 0 16px;
       display: block;
@@ -272,16 +336,18 @@
     }
 
     th {
-      background: #fafafa;
+      background: #333333;
       padding: 10px 8px;
       text-align: left;
       font-weight: 600;
       border-bottom: 1px solid var(--border);
+      color: var(--accent-yellow);
     }
 
     td {
       padding: 10px 8px;
-      border-bottom: 1px solid #f5f5f5;
+      border-bottom: 1px solid #444444;
+      color: var(--text-light);
     }
 
     .amount {
@@ -304,6 +370,7 @@
       font-size: 13px;
       border: 1px dashed var(--border);
       border-radius: 8px;
+      background: #333333;
     }
 
     .fade-in {
@@ -324,7 +391,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0,0,0,0.5);
+      background: rgba(0,0,0,0.7);
       z-index: 1000;
       justify-content: center;
       align-items: center;
@@ -333,18 +400,20 @@
       display: flex;
     }
     .modal-content {
-      background: white;
+      background: linear-gradient(135deg, #2d2d2d, #333333);
       padding: 24px;
       border-radius: 12px;
       max-width: 400px;
       width: 90%;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      border: 1px solid var(--border);
+      position: relative;
     }
     .modal-title {
       font-size: 1.2rem;
       font-weight: 600;
       margin-bottom: 16px;
-      color: var(--text-dark);
+      color: var(--accent-yellow);
     }
     .modal-row {
       margin-bottom: 16px;
@@ -353,6 +422,21 @@
       display: flex;
       gap: 10px;
       justify-content: flex-end;
+    }
+    
+    /* Details modal */
+    .details-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #444444;
+    }
+    .details-label {
+      font-weight: 600;
+      color: var(--text-light);
+    }
+    .details-value {
+      color: var(--accent-yellow);
     }
   </style>
 </head>
@@ -448,7 +532,7 @@
       </div>
 
       <div class="btn-row">
-        <button style="background:linear-gradient(135deg,#ffeb3b,#ff9800);color:#000;" onclick="createMainOrder()">
+        <button style="background:linear-gradient(135deg,#ffeb3b,#fbc02d);color:#000;box-shadow:0 4px 15px rgba(255, 235, 59, 0.3);" onmouseover="this.style.boxShadow='0 4px 20px rgba(255, 235, 59, 0.5), 0 0 20px rgba(255, 235, 59, 0.3)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='0 4px 15px rgba(255, 235, 59, 0.3)'; this.style.transform='translateY(0)'">
           <i class="fas fa-check"></i> Создать заказ
         </button>
       </div>
@@ -554,15 +638,15 @@
       <input type="hidden" id="editOrderId">
       <div class="modal-row">
         <label>№ заказа</label>
-        <input type="text" id="editOrderNum" class="form-control" style="width:100%;padding:10px;border:1px solid #eaeaea;border-radius:8px;">
+        <input type="text" id="editOrderNum" class="form-control" style="width:100%;padding:10px;border:1px solid #444444;border-radius:8px;background:#333333;color:white;">
       </div>
       <div class="modal-row">
         <label>Деталь</label>
-        <input type="text" id="editDetail" class="form-control" style="width:100%;padding:10px;border:1px solid #eaeaea;border-radius:8px;">
+        <input type="text" id="editDetail" class="form-control" style="width:100%;padding:10px;border:1px solid #444444;border-radius:8px;background:#333333;color:white;">
       </div>
       <div class="modal-row">
         <label>Тариф</label>
-        <select id="editTariff" style="width:100%;padding:10px;border:1px solid #eaeaea;border-radius:8px;">
+        <select id="editTariff" style="width:100%;padding:10px;border:1px solid #444444;border-radius:8px;background:#333333;color:white;">
           <option value="RASPIL_M2">Распил — 65 ₽/м²</option>
           <option value="LINEAR_RASPIL">Лин. распил — 26 ₽/м</option>
           <option value="SKLEIKA_OB">Склейка + — 210 ₽/м²</option>
@@ -572,21 +656,21 @@
           <option value="TIME">Время — 330 ₽/ч</option>
         </select>
       </div>
-      <div class "modal-row">
+      <div class="modal-row">
         <label>Кол-во</label>
-        <input type="number" id="editQty" min="1" style="width:100%;padding:10px;border:1px solid #eaeaea;border-radius:8px;">
+        <input type="number" id="editQty" min="1" style="width:100%;padding:10px;border:1px solid #444444;border-radius:8px;background:#333333;color:white;">
       </div>
       <div class="modal-row" id="editLengthGroup">
         <label>Длина (м)</label>
-        <input type="number" step="0.01" id="editLength" style="width:100%;padding:10px;border:1px solid #eaeaea;border-radius:8px;">
+        <input type="number" step="0.01" id="editLength" style="width:100%;padding:10px;border:1px solid #444444;border-radius:8px;background:#333333;color:white;">
       </div>
       <div class="modal-row hidden" id="editWidthGroup">
         <label>Ширина (м)</label>
-        <input type="number" step="0.01" id="editWidth" style="width:100%;padding:10px;border:1px solid #eaeaea;border-radius:8px;">
+        <input type="number" step="0.01" id="editWidth" style="width:100%;padding:10px;border:1px solid #444444;border-radius:8px;background:#333333;color:white;">
       </div>
       <div class="modal-row hidden" id="editHoursGroup">
         <label>Часы</label>
-        <input type="number" step="0.1" id="editHours" style="width:100%;padding:10px;border:1px solid #eaeaea;border-radius:8px;">
+        <input type="number" step="0.1" id="editHours" style="width:100%;padding:10px;border:1px solid #444444;border-radius:8px;background:#333333;color:white;">
       </div>
       <div class="modal-buttons">
         <button class="btn-outline" onclick="closeEditModal()">Отмена</button>
@@ -601,11 +685,22 @@
       <div class="modal-title">Выберите дату для заказа</div>
       <div class="modal-row">
         <label>Дата</label>
-        <input type="date" id="modalDate" class="form-control" style="width:100%;padding:10px;border:1px solid #eaeaea;border-radius:8px;">
+        <input type="date" id="modalDate" class="form-control" style="width:100%;padding:10px;border:1px solid #444444;border-radius:8px;background:#333333;color:white;">
       </div>
       <div class="modal-buttons">
         <button class="btn-outline" onclick="closeDateModal()">Отмена</button>
         <button class="btn-blue" onclick="confirmDateSelection()">Подтвердить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for viewing order details -->
+  <div id="detailsModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-title">Детали заказа</div>
+      <div id="detailsContent"></div>
+      <div class="modal-buttons">
+        <button class="btn-outline" onclick="closeDetailsModal()">Закрыть</button>
       </div>
     </div>
   </div>
@@ -630,6 +725,12 @@
     PAZY: 'Пазы',
     FREZER_FASKA: 'Фаска',
     TIME: 'Время'
+  };
+
+  const UNIT_LABELS = {
+    m2: 'м²',
+    linear: 'пог. м',
+    time: 'часы'
   };
 
   // === Глобальные переменные ===
@@ -706,11 +807,11 @@
           position: fixed;
           top: 20px;
           right: 20px;
-          background: linear-gradient(135deg, #ff9800, #ff5722);
-          color: white;
+          background: linear-gradient(135deg, #ffeb3b, #fbc02d);
+          color: #000;
           padding: 16px 24px;
           border-radius: 12px;
-          box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+          box-shadow: 0 8px 24px rgba(255, 235, 59, 0.4);
           z-index: 2000;
           font-weight: bold;
           animation: slideIn 0.3s ease-out, fadeOut 0.5s ease-in 3s forwards;
@@ -788,6 +889,25 @@
     return Math.round(amount * 100) / 100;
   }
 
+  // === Расчёт количества единиц ===
+  function calculateUnits(tariffKey, length, width, hours, qty) {
+    const tariff = TARIFFS[tariffKey];
+    if (!tariff) return { value: 0, unit: '' };
+    
+    let value = 0;
+    let unit = tariff.unit;
+    
+    if (tariff.unit === 'time') {
+      value = hours * qty;
+    } else if (tariff.unit === 'm2') {
+      value = length * width * qty;
+    } else {
+      value = length * qty;
+    }
+    
+    return { value: Math.round(value * 100) / 100, unit: UNIT_LABELS[unit] || unit };
+  }
+
   // === Обновление UI плана ===
   function updateUI() {
     const orders = loadOrders();
@@ -796,7 +916,7 @@
     const shift = getCurrentShift();
     let currentShiftAmount = 0;
     let progressWidth = 0;
-    let fillColor = '#e0e0e0';
+    let fillColor = '#444444';
     let statusText = 'Смена не начата';
 
     if (shift && shift.active) {
@@ -804,7 +924,7 @@
         .filter(o => o.shiftId === shift.id)
         .reduce((sum, o) => sum + (parseFloat(o.amount) || 0), 0);
       progressWidth = Math.min(100, (currentShiftAmount / 3000) * 100);
-      fillColor = `linear-gradient(90deg, #ffeb3b 0%, #ff9800 50%, #4caf50 100%)`;
+      fillColor = `linear-gradient(90deg, #ffeb3b 0%, #fbc02d 50%, #00e676 100%)`;
       statusText = 'Смена активна';
       
       // Проверить уведомление на 1000₽
@@ -812,7 +932,7 @@
     } else if (shift && !shift.active) {
       currentShiftAmount = shift.finalAmount || 0;
       progressWidth = Math.min(100, (currentShiftAmount / 3000) * 100);
-      fillColor = shift.finalAmount >= 3000 ? '#4caf50' : '#ff9800';
+      fillColor = shift.finalAmount >= 3000 ? '#00e676' : '#ff5252';
       statusText = 'Смена завершена';
     }
 
@@ -995,6 +1115,77 @@
     }
     
     closeDateModal();
+  }
+
+  // === Просмотр деталей заказа ===
+  function viewOrderDetails(orderId) {
+    const orders = loadOrders();
+    const order = orders.find(o => o.id === orderId);
+    
+    if (!order) return;
+    
+    const units = calculateUnits(order.tariff, order.length, order.width, order.hours, order.qty);
+    const tariffName = TARIFF_NAMES[order.tariff] || order.tariff;
+    
+    let html = '';
+    
+    html += `<div class="details-item">
+      <span class="details-label">№ заказа:</span>
+      <span class="details-value">${order.orderNumber}</span>
+    </div>`;
+    
+    html += `<div class="details-item">
+      <span class="details-label">Деталь:</span>
+      <span class="details-value">${order.detail}</span>
+    </div>`;
+    
+    html += `<div class="details-item">
+      <span class="details-label">Тариф:</span>
+      <span class="details-value">${tariffName}</span>
+    </div>`;
+    
+    html += `<div class="details-item">
+      <span class="details-label">Количество:</span>
+      <span class="details-value">${order.qty}</span>
+    </div>`;
+    
+    if (order.length !== null) {
+      html += `<div class="details-item">
+        <span class="details-label">Длина:</span>
+        <span class="details-value">${order.length} м</span>
+      </div>`;
+    }
+    
+    if (order.width !== null) {
+      html += `<div class="details-item">
+        <span class="details-label">Ширина:</span>
+        <span class="details-value">${order.width} м</span>
+      </div>`;
+    }
+    
+    if (order.hours !== null) {
+      html += `<div class="details-item">
+        <span class="details-label">Часы:</span>
+        <span class="details-value">${order.hours} ч</span>
+      </div>`;
+    }
+    
+    html += `<div class="details-item">
+      <span class="details-label">Объем работ:</span>
+      <span class="details-value">${units.value} ${units.unit}</span>
+    </div>`;
+    
+    html += `<div class="details-item">
+      <span class="details-label">Сумма:</span>
+      <span class="details-value">${order.amount.toFixed(2)} ₽</span>
+    </div>`;
+    
+    document.getElementById('detailsContent').innerHTML = html;
+    document.getElementById('detailsModal').classList.add('active');
+  }
+
+  function closeDetailsModal() {
+    document.getElementById('detailsModal').classList.remove('active');
   }
 
   // === Редактирование заказов ===
@@ -1297,7 +1488,10 @@
             <td>${o.detail}</td>
             <td class="amount">${o.amount.toFixed(2)} ₽</td>
             <td>
-              <button class="btn-accept" onclick="openEditModal(${o.id})" style="background:linear-gradient(135deg,#2196f3,#1976d2);min-width:auto;padding:8px 10px;margin-right:4px;">
+              <button class="btn-view" onclick="viewOrderDetails(${o.id})" style="margin-right:4px;">
+                <i class="fas fa-eye"></i>
+              </button>
+              <button class="btn-accept" onclick="openEditModal(${o.id})" style="background:linear-gradient(135deg,#2979ff,#2962ff);min-width:auto;padding:8px 10px;margin-right:4px;box-shadow:0 4px 15px rgba(41, 121, 255, 0.3);">
                 <i class="fas fa-edit"></i>
               </button>
               <button class="btn-delete" onclick="deleteOrder(${o.id})">
@@ -1333,19 +1527,44 @@
     content += `========================\n\n`;
 
     let totalSum = 0;
+    let totalM2 = 0;
+    let totalLinear = 0;
+    let totalTime = 0;
+    
     filtered.forEach((o, idx) => {
       const tariffName = TARIFF_NAMES[o.tariff] || o.tariff;
+      const units = calculateUnits(o.tariff, o.length, o.width, o.hours, o.qty);
+      
       content += `№${idx + 1}. ${o.orderNumber}\n`;
       content += `   ${o.detail} (${tariffName})\n`;
       if (o.length) content += `   Длина: ${o.length} м\n`;
       if (o.width) content += `   Ширина: ${o.width} м\n`;
       if (o.hours) content += `   Часы: ${o.hours} ч\n`;
       content += `   Кол-во: ${o.qty}\n`;
+      
+      // Добавляем строку с объемом работ
+      content += `   Объем: ${units.value} ${units.unit}\n`;
+      
       content += `   Сумма: ${o.amount.toFixed(2)} ₽\n---\n`;
       totalSum += o.amount;
+      
+      // Собираем статистику
+      if (units.unit === 'м²') {
+        totalM2 += units.value;
+      } else if (units.unit === 'пог. м') {
+        totalLinear += units.value;
+      } else if (units.unit === 'часы') {
+        totalTime += units.value;
+      }
     });
 
     content += `\nИТОГО: ${totalSum.toFixed(2)} ₽\n`;
+    
+    // Добавляем сводку по объемам
+    if (totalM2 > 0) content += `Общая площадь: ${totalM2.toFixed(2)} м²\n`;
+    if (totalLinear > 0) content += `Общая длина: ${totalLinear.toFixed(2)} пог. м\n`;
+    if (totalTime > 0) content += `Общее время: ${totalTime.toFixed(1)} ч\n`;
+    
     content += `\nЭкспорт: ${new Date().toLocaleString('ru-RU')}`;
 
     const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
