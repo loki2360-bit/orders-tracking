@@ -7,268 +7,159 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
 :root {
-  --bg-dark: #0f172a;
-  --bg-card: rgba(30, 41, 59, 0.6);
-  --bg-overlay: rgba(15, 23, 42, 0.85);
-  --text-light: #e2e8f0;
-  --text-muted: #94a3b8;
-  --text-strong: #f1f5f9;
-  --accent-blue: #60a5fa;
-  --accent-blue-dark: #3b82f6;
-  --accent-purple: #a78bfa;
-  --accent-green: #6ee7b7;
-  --accent-red: #f87171;
-  --border: rgba(100, 116, 139, 0.3);
-  --shadow: rgba(0, 0, 0, 0.3);
-  --glow-blue: rgba(96, 165, 250, 0.4);
-  --glow-purple: rgba(167, 139, 250, 0.3);
+  --bg-light: #F8F9FA;
+  --card-bg: #FFFFFF;
+  --text-primary: #202020;
+  --text-secondary: #757575;
+  --accent-orange: #FF6D1A;
+  --border-color: #E0E0E0;
+  --progress-bg: #E0E0E0;
+  --progress-fill: #FF6D1A;
 }
 
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 body {
-  background: linear-gradient(135deg, #0c1445 0%, #0f172a 100%);
-  color: var(--text-light);
+  background: var(--bg-light);
+  color: var(--text-primary);
   padding: 12px;
   min-height: 100vh;
   line-height: 1.5;
-  overflow-x: hidden;
 }
 
 .container {
   max-width: 768px;
   margin: 0 auto;
-  background: var(--bg-card);
-  backdrop-filter: blur(12px);
-  border-radius: 18px;
-  box-shadow: 
-    0 8px 32px var(--shadow),
-    0 0 20px var(--glow-blue);
+  background: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: none;
   overflow: hidden;
   font-size: 15px;
-  position: relative;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-color);
 }
 
 /* Tabs */
 .tabs {
   display: flex;
-  background: var(--bg-overlay);
-  border-bottom: 1px solid var(--border);
-  backdrop-filter: blur(10px);
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border-color);
 }
 .tab-btn {
   flex: 1;
-  padding: 16px 12px;
-  background: transparent;
+  padding: 14px;
+  background: none;
   border: none;
   font-weight: 600;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   cursor: pointer;
-  transition: all 0.3s ease;
   position: relative;
-  font-size: 0.95rem;
-}
-.tab-btn::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 50%;
-  transform: translateX(-50%) scaleX(0);
-  width: 30%;
-  height: 2px;
-  background: var(--accent-blue);
-  transition: transform 0.3s ease;
 }
 .tab-btn.active {
-  color: var(--accent-blue);
+  color: var(--accent-orange);
 }
-.tab-btn.active::after {
-  transform: translateX(-50%) scaleX(1);
-}
-.tab-btn:hover:not(.active) {
-  color: var(--text-strong);
+.tab-btn:hover {
+  color: var(--accent-orange);
 }
 
 /* Header */
 .header {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 20px 18px;
-  background: var(--bg-overlay);
-  border-bottom: 1px solid var(--border);
-  backdrop-filter: blur(10px);
+  gap: 14px;
+  padding: 18px 16px;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border-color);
 }
 .avatar {
-  width: 60px;
-  height: 60px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+  background: var(--accent-orange);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  color: #0f172a;
-  font-size: 22px;
+  color: white;
+  font-size: 20px;
   flex-shrink: 0;
-  box-shadow: 
-    0 0 20px var(--glow-blue),
-    inset 0 0 10px rgba(255,255,255,0.2);
-  backdrop-filter: blur(4px);
 }
 .info h2 {
-  font-size: 1.4rem;
-  font-weight: 700;
+  font-size: 1.3rem;
+  font-weight: 600;
   margin-bottom: 4px;
-  background: linear-gradient(to right, #cbd5e1, #e2e8f0);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
 }
 .info p {
   font-size: 1rem;
-  color: var(--text-muted);
+  color: var(--text-secondary);
 }
 
 /* Plan Box */
 .plan-box {
-  padding: 20px 18px;
-  background: var(--bg-overlay);
-  margin: 18px;
-  border-radius: 16px;
-  position: relative;
-  border: 1px solid var(--border);
-  backdrop-filter: blur(10px);
+  padding: 18px 16px;
+  background: var(--card-bg);
+  margin: 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
 }
 .plan-title {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: 600;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  color: var(--accent-blue);
+  gap: 6px;
+  color: var(--accent-orange);
 }
 .progress-container {
-  height: 16px;
-  background: rgba(68, 68, 68, 0.6);
-  border-radius: 8px;
+  height: 12px;
+  background: var(--progress-bg);
+  border-radius: 6px;
   overflow: hidden;
   margin: 8px 0;
-  border: 1px solid rgba(100, 100, 100, 0.4);
-  position: relative;
-  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.5);
 }
 .progress-fill {
   height: 100%;
-  border-radius: 8px;
-  /* Переливающийся градиент */
-  background: linear-gradient(
-    90deg,
-    #60a5fa 0%,
-    #818cf8 30%,
-    #a78bfa 60%,
-    #c084fc 100%
-  );
-  background-size: 300% 100%;
-  animation: glowPulse 4s ease-in-out infinite;
-  /* Плавная ширина */
-  transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.6s ease;
-  /* Свечение */
-  box-shadow: 
-    0 0 12px rgba(96, 165, 250, 0.5),
-    0 0 20px rgba(167, 139, 250, 0.3);
-  position: relative;
-}
-.progress-fill::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.4),
-    transparent
-  );
-  background-size: 200% 100%;
-  animation: shineWave 3s ease-in-out infinite;
-  opacity: 0.7;
-  border-radius: 8px;
-}
-@keyframes glowPulse {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-@keyframes shineWave {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-/* При 100% — зелёный неон */
-.progress-fill[data-percentage="100"] {
-  background: linear-gradient(
-    90deg,
-    #6ee7b7 0%,
-    #34d399 30%,
-    #10b981 60%,
-    #059669 100%
-  );
-  box-shadow: 
-    0 0 16px rgba(110, 231, 183, 0.6),
-    0 0 24px rgba(110, 231, 183, 0.3);
-}
-.progress-fill[data-percentage="100"]::after {
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.5),
-    transparent
-  );
+  background: var(--progress-fill);
+  border-radius: 6px;
 }
 .progress-text {
   display: flex;
   justify-content: space-between;
   font-size: 0.95rem;
   font-weight: 500;
-  margin-top: 8px;
-  color: var(--text-muted);
+  margin-top: 6px;
+  color: var(--text-primary);
 }
 .shift-status {
   font-size: 0.9rem;
-  color: var(--text-muted);
-  margin-top: 10px;
+  color: var(--text-secondary);
+  margin-top: 6px;
   font-style: italic;
-  opacity: 0.9;
 }
 
 /* Section title */
 .section-title {
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   font-weight: 600;
-  margin: 24px 0 16px;
-  padding: 0 18px;
+  margin: 20px 0 14px;
+  padding: 0 16px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  color: var(--accent-blue);
-  text-shadow: 0 0 8px rgba(96, 165, 250, 0.3);
+  gap: 8px;
+  color: var(--accent-orange);
 }
 
 /* Form */
 .form-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 16px;
-  padding: 0 18px 20px;
+  gap: 14px;
+  padding: 0 16px 16px;
 }
 @media (min-width: 600px) {
   .form-grid {
@@ -283,237 +174,128 @@ label {
   margin-bottom: 6px;
   font-weight: 600;
   font-size: 0.9rem;
-  color: var(--text-strong);
+  color: var(--text-primary);
 }
 input, select {
   width: 100%;
-  padding: 12px 14px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
   font-size: 14px;
-  background: rgba(15, 23, 42, 0.5);
-  color: var(--text-strong);
-  transition: all 0.3s ease;
-  backdrop-filter: blur(6px);
+  background: white;
+  color: var(--text-primary);
 }
 input:focus, select:focus {
   outline: none;
-  border-color: var(--accent-blue);
-  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.3);
+  border-color: var(--accent-orange);
 }
 
 /* Buttons */
 .btn-row {
   display: flex;
-  gap: 12px;
-  padding: 0 18px 20px;
+  gap: 10px;
+  padding: 0 16px 16px;
   flex-wrap: wrap;
 }
 button {
   flex: 1;
-  min-width: 130px;
+  min-width: 120px;
   border: none;
-  border-radius: 12px;
-  padding: 12px 14px;
+  border-radius: 8px;
+  padding: 11px;
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.17, 0.67, 0.88, 1.01);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  position: relative;
-  overflow: hidden;
-  backdrop-filter: blur(6px);
-  background: rgba(30, 41, 59, 0.7);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-  transition: 0.5s;
-}
-button:hover::before {
-  left: 100%;
+  gap: 6px;
+  background: white;
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
 }
 button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 18px var(--glow-blue);
+  background: #f5f5f5;
 }
 
-/* === Единый стиль для основных действий === */
-.btn-blue {
-  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+/* Accent buttons */
+.btn-accent {
+  background: var(--accent-orange);
   color: white;
-  font-weight: 600;
   border: none;
-  border-radius: 12px;
-  padding: 12px 16px;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.17, 0.67, 0.88, 1.01);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  position: relative;
-  overflow: hidden;
-  backdrop-filter: blur(6px);
-  box-shadow: 
-    0 4px 16px rgba(96, 165, 250, 0.4),
-    0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+.btn-accent:hover {
+  background: #e05a0d;
 }
 
-.btn-blue:hover {
-  transform: translateY(-2px);
-  box-shadow: 
-    0 6px 20px rgba(96, 165, 250, 0.6),
-    0 0 20px var(--glow-blue),
-    0 0 0 1px rgba(255, 255, 255, 0.1);
-}
-
-/* === Особый эффект для "Создать заказ" === */
-.btn-create {
-  animation: pulseGlow 2s infinite;
-}
-
-@keyframes pulseGlow {
-  0%, 100% { 
-    box-shadow: 
-      0 4px 16px rgba(96, 165, 250, 0.4),
-      0 0 0 1px rgba(255,255,255,0.05); 
-  }
-  50% { 
-    box-shadow: 
-      0 4px 16px rgba(96, 165, 250, 0.6),
-      0 0 24px var(--glow-blue),
-      0 0 0 1px rgba(255,255,255,0.1); 
-  }
-}
-
-.btn-create:hover {
-  animation: none;
-  box-shadow: 
-    0 8px 24px rgba(167, 139, 250, 0.7),
-    0 0 30px var(--glow-purple),
-    0 0 0 1px rgba(255,255,255,0.15);
-}
-
-/* === Компактные яркие кнопки действий === */
+/* Action buttons in table */
 .btn-action {
   width: 32px;
   height: 32px;
   min-width: auto;
   padding: 0;
-  border: none;
-  border-radius: 8px;
-  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-  color: white;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: white;
+  color: var(--text-primary);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.25s ease;
-  box-shadow: 0 2px 6px rgba(96, 165, 250, 0.4);
-  margin: 0 2px;
 }
 .btn-action:hover {
-  transform: translateY(-2px) scale(1.1);
-  box-shadow: 
-    0 4px 10px rgba(96, 165, 250, 0.6),
-    0 0 12px var(--glow-blue);
+  background: #f5f5f5;
 }
 .btn-action i {
   font-size: 14px;
-  line-height: 1;
-}
-.btn-view { background: linear-gradient(135deg, #60a5fa, #3b82f6); }
-.btn-edit { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
-.btn-delete {
-  background: linear-gradient(135deg, var(--accent-red), #ef4444);
-  box-shadow: 0 2px 6px rgba(248, 113, 113, 0.4);
-}
-.btn-delete:hover {
-  box-shadow: 
-    0 4px 10px rgba(248, 113, 113, 0.6),
-    0 0 12px rgba(248, 113, 113, 0.4);
-}
-
-/* === Чаевые: прогресс-бары без жёлтого === */
-#tips-tab .progress-fill {
-  background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple)) !important;
-  box-shadow: 
-    0 0 12px rgba(96, 165, 250, 0.5),
-    0 0 20px rgba(167, 139, 250, 0.3) !important;
 }
 
 /* Orders list */
 .date-label, .preorders-label {
   font-weight: 600;
-  color: var(--accent-blue);
-  margin: 18px 0 14px;
-  padding: 0 18px;
+  color: var(--accent-orange);
+  margin: 16px 0 12px;
+  padding: 0 16px;
   display: block;
-  text-shadow: 0 0 6px rgba(96, 165, 250, 0.2);
 }
 table {
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
-  margin: 0 18px 18px;
+  margin: 0 16px 16px;
 }
 th {
-  background: rgba(30, 41, 59, 0.5);
-  padding: 12px 10px;
+  background: #fafafa;
+  padding: 10px 8px;
   text-align: left;
   font-weight: 600;
-  border-bottom: 1px solid var(--border);
-  color: var(--accent-blue);
-  backdrop-filter: blur(4px);
+  border-bottom: 1px solid var(--border-color);
+  color: var(--accent-orange);
 }
 td {
-  padding: 12px 10px;
-  border-bottom: 1px solid rgba(100, 116, 139, 0.2);
-  color: var(--text-strong);
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
 }
 .amount {
   font-weight: 600;
-  color: var(--accent-green);
-  text-shadow: 0 0 6px rgba(110, 231, 183, 0.3);
+  color: var(--accent-orange);
 }
-
 .empty-msg {
   text-align: center;
-  color: var(--text-muted);
-  padding: 24px 18px;
+  color: var(--text-secondary);
+  padding: 20px 16px;
   font-style: italic;
-  opacity: 0.8;
 }
-
 .hint {
   text-align: center;
-  margin: 24px 18px;
-  padding: 14px;
-  color: var(--text-muted);
+  margin: 20px 16px;
+  padding: 12px;
+  color: var(--text-secondary);
   font-size: 13px;
-  border: 1px dashed var(--border);
-  border-radius: 12px;
-  background: rgba(30, 41, 59, 0.4);
-  backdrop-filter: blur(6px);
-}
-
-/* Animations */
-.fade-in {
-  animation: fadeIn 0.4s ease-out;
-}
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  border: 1px dashed var(--border-color);
+  border-radius: 8px;
+  background: #fafafa;
 }
 .hidden { display: none; }
 
@@ -525,62 +307,53 @@ td {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0,0,0,0.5);
   z-index: 1000;
   justify-content: center;
   align-items: center;
-  backdrop-filter: blur(6px);
 }
 .modal.active {
   display: flex;
 }
 .modal-content {
-  background: var(--bg-card);
-  padding: 28px;
-  border-radius: 18px;
-  max-width: 420px;
-  width: 92%;
-  box-shadow: 
-    0 12px 40px var(--shadow),
-    0 0 30px var(--glow-blue);
-  border: 1px solid var(--border);
-  position: relative;
-  backdrop-filter: blur(12px);
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  max-width: 400px;
+  width: 90%;
+  border: 1px solid var(--border-color);
 }
 .modal-title {
-  font-size: 1.3rem;
-  font-weight: 700;
-  margin-bottom: 20px;
-  color: var(--accent-blue);
-  text-shadow: 0 0 8px rgba(96, 165, 250, 0.3);
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: var(--accent-orange);
 }
 .modal-row {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 .modal-buttons {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   justify-content: flex-end;
 }
-
 .details-item {
   display: flex;
   justify-content: space-between;
-  padding: 10px 0;
-  border-bottom: 1px solid rgba(100, 116, 139, 0.2);
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-color);
 }
 .details-label {
   font-weight: 600;
-  color: var(--text-strong);
+  color: var(--text-primary);
 }
 .details-value {
-  color: var(--accent-blue);
-  font-weight: 500;
+  color: var(--accent-orange);
 }
 </style>
 </head>
 <body>
-<div class="container fade-in">
+<div class="container">
 <!-- Tabs -->
 <div class="tabs">
 <button class="tab-btn active" onclick="switchTab('main')">Основное</button>
@@ -594,7 +367,7 @@ td {
 <div class="header">
 <div class="avatar"><i class="fas fa-user"></i></div>
 <div class="info">
-<h2>Александр Сергеевич<span id="opId">1</span></h2>
+<h2>Оператор №<span id="opId">1</span></h2>
 <p>Всего: <b><span id="totalAll">0.00</span> ₽</b></p>
 </div>
 </div>
@@ -616,12 +389,12 @@ td {
 
 <!-- Shift Controls -->
 <div class="btn-row">
-  <button class="btn-blue" onclick="startShift()">
-    <i class="fas fa-play"></i> Начать смену
-  </button>
-  <button class="btn-blue" onclick="endShift()">
-    <i class="fas fa-stop"></i> Завершить смену
-  </button>
+<button class="btn-accent" onclick="startShift()">
+<i class="fas fa-play"></i> Начать смену
+</button>
+<button class="btn-accent" onclick="endShift()">
+<i class="fas fa-stop"></i> Завершить смену
+</button>
 </div>
 
 <!-- Create Order -->
@@ -668,9 +441,9 @@ td {
 </div>
 
 <div class="btn-row">
-  <button class="btn-blue btn-create" onclick="createMainOrderWithSound()">
-    <i class="fas fa-check"></i> Создать заказ
-  </button>
+<button class="btn-accent" onclick="createMainOrder()">
+<i class="fas fa-check"></i> Создать заказ
+</button>
 </div>
 
 <!-- View Orders by Date -->
@@ -684,13 +457,13 @@ td {
 </div>
 </div>
 <div class="btn-row">
-<button class="btn-blue" onclick="showOrdersByDate()">
+<button class="btn-accent" onclick="showOrdersByDate()">
 <i class="fas fa-eye"></i> Показать
 </button>
-<button class="btn-outline" onclick="saveOrdersToFile()">
+<button onclick="saveOrdersToFile()">
 <i class="fas fa-download"></i> В TXT
 </button>
-<button class="btn-outline" onclick="saveOrdersToJSON()">
+<button onclick="saveOrdersToJSON()">
 <i class="fas fa-file-code"></i> В JSON
 </button>
 </div>
@@ -741,10 +514,10 @@ td {
 </div>
 </div>
 <div class="btn-row">
-<button class="btn-blue" onclick="createPreorder()">
+<button class="btn-accent" onclick="createPreorder()">
 <i class="fas fa-save"></i> Сохранить предзаказ
 </button>
-<button class="btn-outline" onclick="document.getElementById('jsonImportInput').click()">
+<button onclick="document.getElementById('jsonImportInput').click()">
 <i class="fas fa-upload"></i> Загрузить TXT/JSON
 </button>
 </div>
@@ -762,24 +535,19 @@ td {
   <div class="section-title">
     <i class="fas fa-mug-hot"></i> Чаевые
   </div>
-
   <div class="form-grid">
     <div class="form-group">
       <label>Сумма чаевых (₽)</label>
       <input type="number" id="tipAmount" placeholder="Напр.: 300" min="0" step="1">
     </div>
   </div>
-
   <div class="btn-row">
-    <button class="btn-blue" onclick="addTip()">
+    <button class="btn-accent" onclick="addTip()">
       <i class="fas fa-plus"></i> Добавить чаевые
     </button>
   </div>
-
-  <!-- Stats Cards -->
-  <div style="padding: 0 18px 18px;">
-    <!-- Total Packets -->
-    <div class="plan-box" style="margin: 18px 0;">
+  <div style="padding: 0 16px 16px;">
+    <div class="plan-box" style="margin: 16px 0;">
       <div class="plan-title">
         <i class="fas fa-box"></i> Всего пакетиков
       </div>
@@ -791,9 +559,7 @@ td {
         <b><span id="totalPacketsCount">0</span> шт</b>
       </div>
     </div>
-
-    <!-- Today's Packets -->
-    <div class="plan-box" style="margin: 18px 0;">
+    <div class="plan-box" style="margin: 16px 0;">
       <div class="plan-title">
         <i class="fas fa-sun"></i> Сегодня
       </div>
@@ -805,15 +571,13 @@ td {
         <b><span id="todayPacketsCount">0</span> шт</b>
       </div>
     </div>
-
-    <!-- Tea Consumed -->
-    <div class="plan-box" style="margin: 18px 0;">
+    <div class="plan-box" style="margin: 16px 0;">
       <div class="plan-title">
         <i class="fas fa-wine-bottle"></i> Выпито чая
       </div>
       <div class="progress-text" style="margin-top: 12px; font-size: 1.1rem;">
         <b><span id="teaLiters">0.0</span> л</b>
-        <span style="color: var(--text-muted);">(1 пакетик = 200 мл)</span>
+        <span style="color: var(--text-secondary);">(1 пакетик = 200 мл)</span>
       </div>
     </div>
   </div>
@@ -826,15 +590,15 @@ td {
 <input type="hidden" id="editOrderId">
 <div class="modal-row">
 <label>№ заказа</label>
-<input type="text" id="editOrderNum" class="form-control">
+<input type="text" id="editOrderNum">
 </div>
 <div class="modal-row">
 <label>Деталь</label>
-<input type="text" id="editDetail" class="form-control">
+<input type="text" id="editDetail">
 </div>
 <div class="modal-row">
 <label>Тариф</label>
-<select id="editTariff" class="form-control">
+<select id="editTariff">
 <option value="RASPIL_M2">Распил — 65 ₽/м²</option>
 <option value="LINEAR_RASPIL">Лин. распил — 26 ₽/м</option>
 <option value="SKLEIKA_OB">Склейка + — 210 ₽/м²</option>
@@ -846,23 +610,23 @@ td {
 </div>
 <div class="modal-row">
 <label>Кол-во</label>
-<input type="number" id="editQty" min="1" class="form-control">
+<input type="number" id="editQty" min="1">
 </div>
 <div class="modal-row" id="editLengthGroup">
 <label>Длина (м)</label>
-<input type="number" step="0.01" id="editLength" class="form-control">
+<input type="number" step="0.01" id="editLength">
 </div>
 <div class="modal-row hidden" id="editWidthGroup">
 <label>Ширина (м)</label>
-<input type="number" step="0.01" id="editWidth" class="form-control">
+<input type="number" step="0.01" id="editWidth">
 </div>
 <div class="modal-row hidden" id="editHoursGroup">
 <label>Часы</label>
-<input type="number" step="0.1" id="editHours" class="form-control">
+<input type="number" step="0.1" id="editHours">
 </div>
 <div class="modal-buttons">
-<button class="btn-outline" onclick="closeEditModal()">Отмена</button>
-<button class="btn-blue" onclick="saveEditedOrder()">Сохранить</button>
+<button onclick="closeEditModal()">Отмена</button>
+<button class="btn-accent" onclick="saveEditedOrder()">Сохранить</button>
 </div>
 </div>
 </div>
@@ -872,11 +636,11 @@ td {
 <div class="modal-title">Выберите дату для заказа</div>
 <div class="modal-row">
 <label>Дата</label>
-<input type="date" id="modalDate" class="form-control">
+<input type="date" id="modalDate">
 </div>
 <div class="modal-buttons">
-<button class="btn-outline" onclick="closeDateModal()">Отмена</button>
-<button class="btn-blue" onclick="confirmDateSelection()">Подтвердить</button>
+<button onclick="closeDateModal()">Отмена</button>
+<button class="btn-accent" onclick="confirmDateSelection()">Подтвердить</button>
 </div>
 </div>
 </div>
@@ -886,15 +650,12 @@ td {
 <div class="modal-title">Детали заказа</div>
 <div id="detailsContent"></div>
 <div class="modal-buttons">
-<button class="btn-outline" onclick="closeDetailsModal()">Закрыть</button>
+<button onclick="closeDetailsModal()">Закрыть</button>
 </div>
 </div>
 </div>
 
 <script>
-// === ФЛАГ ЗВУКА ===
-let soundEnabled = true; // ✅ true = звук включён, false = выключен
-
 // === Константы ===
 const TARIFFS = {
 RASPIL_M2: { price: 65, unit: 'm2' },
@@ -919,54 +680,6 @@ m2: 'м²',
 linear: 'пог. м',
 time: 'часы'
 };
-
-// === Глобальные переменные ===
-let hasNotified1000 = false;
-let editingOrder = null;
-let pendingPreorderId = null;
-
-// === Анимации для уведомления ===
-const style = document.createElement('style');
-style.textContent = `
-@keyframes slideIn {
-from { transform: translateX(100%); opacity: 0; }
-to { transform: translateX(0); opacity: 1; }
-}
-@keyframes fadeOut {
-from { opacity: 1; }
-to { opacity: 0; }
-}
-`;
-document.head.appendChild(style);
-
-// === Звуковой сигнал ===
-function playSuccessSound() {
-  if (!soundEnabled) return;
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = ctx.createOscillator();
-    const gainNode = ctx.createGain();
-
-    oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
-
-    oscillator.type = 'sine';
-    oscillator.frequency.value = 800;
-    gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-
-    oscillator.start(ctx.currentTime);
-    oscillator.stop(ctx.currentTime + 0.3);
-  } catch (e) {
-    console.warn("Audio feedback not supported", e);
-  }
-}
-
-// === Обёртка для создания заказа + звук ===
-function createMainOrderWithSound() {
-  createMainOrder();
-  setTimeout(playSuccessSound, 100);
-}
 
 // === Утилиты ===
 function formatDateYMD(dateStr) {
@@ -1005,84 +718,46 @@ localStorage.setItem('current_shift', JSON.stringify(shift));
 }
 }
 
-// === Чаевые: утилиты ===
+// === Чаевые ===
 function loadTipsData() {
-  try {
-    return JSON.parse(localStorage.getItem('tea_tips_data') || '{}');
-  } catch (e) {
-    return {};
-  }
+try {
+return JSON.parse(localStorage.getItem('tea_tips_data') || '{}');
+} catch (e) {
+return {};
+}
 }
 function saveTipsData(data) {
-  localStorage.setItem('tea_tips_data', JSON.stringify(data));
+localStorage.setItem('tea_tips_data', JSON.stringify(data));
 }
-
-// Обновление статистики чаевых
 function updateTipsUI() {
-  const data = loadTipsData();
-  const today = todayYMD();
-
-  // Всего пакетиков
-  const totalPackets = data.totalPackets || 0;
-  const totalProgress = Math.min(100, totalPackets / 1000 * 100); // шкала до 1000
-
-  // Сегодняшние пакетики
-  const todayPackets = (data.daily && data.daily[today]) || 0;
-  const todayProgress = Math.min(100, todayPackets / 200 * 100); // шкала до 200
-
-  // Чай в литрах
-  const teaLiters = (totalPackets * 0.2).toFixed(1);
-
-  // Обновляем DOM
-  document.getElementById('totalPacketsCount').textContent = totalPackets;
-  document.getElementById('todayPacketsCount').textContent = todayPackets;
-  document.getElementById('teaLiters').textContent = teaLiters;
-
-  // Прогресс-бары
-  document.getElementById('totalPacketsFill').style.width = `${totalProgress}%`;
-  document.getElementById('todayPacketsFill').style.width = `${todayProgress}%`;
-
-  // Для анимации перелива (опционально)
-  document.getElementById('totalPacketsFill').setAttribute('data-percentage', Math.round(totalProgress));
-  document.getElementById('todayPacketsFill').setAttribute('data-percentage', Math.round(todayProgress));
+const data = loadTipsData();
+const today = todayYMD();
+const totalPackets = data.totalPackets || 0;
+const todayPackets = (data.daily && data.daily[today]) || 0;
+const teaLiters = (totalPackets * 0.2).toFixed(1);
+document.getElementById('totalPacketsCount').textContent = totalPackets;
+document.getElementById('todayPacketsCount').textContent = todayPackets;
+document.getElementById('teaLiters').textContent = teaLiters;
+document.getElementById('totalPacketsFill').style.width = `${Math.min(100, totalPackets / 1000 * 100)}%`;
+document.getElementById('todayPacketsFill').style.width = `${Math.min(100, todayPackets / 200 * 100)}%`;
 }
-
-// Добавление чаевых
 function addTip() {
-  const input = document.getElementById('tipAmount');
-  const value = parseFloat(input.value);
-  if (!value || value <= 0) {
-    alert('Введите сумму чаевых (больше 0)');
-    return;
-  }
-
-  const packets = Math.floor(value); // 1 ₽ = 1 пакетик
-  const today = todayYMD();
-  const data = loadTipsData();
-
-  // Инициализация
-  data.totalPackets = data.totalPackets || 0;
-  data.daily = data.daily || {};
-
-  // Обновление
-  data.totalPackets += packets;
-  data.daily[today] = (data.daily[today] || 0) + packets;
-
-  // Сохранение
-  saveTipsData(data);
-
-  // Сброс поля
-  input.value = '';
-
-  // Обновление UI
-  updateTipsUI();
-
-  // Звук (если включён)
-  if (typeof playSuccessSound === 'function') {
-    setTimeout(playSuccessSound, 100);
-  }
-
-  alert(`✅ Добавлено ${packets} чайных пакетиков!`);
+const input = document.getElementById('tipAmount');
+const value = parseFloat(input.value);
+if (!value || value <= 0) {
+alert('Введите сумму чаевых (больше 0)');
+return;
+}
+const packets = Math.floor(value);
+const today = todayYMD();
+const data = loadTipsData();
+data.totalPackets = (data.totalPackets || 0) + packets;
+data.daily = data.daily || {};
+data.daily[today] = (data.daily[today] || 0) + packets;
+saveTipsData(data);
+input.value = '';
+updateTipsUI();
+alert(`✅ Добавлено ${packets} чайных пакетиков!`);
 }
 
 // === Расчёт суммы ===
@@ -1100,22 +775,6 @@ amount = tariff.price * length * qty;
 return Math.round(amount * 100) / 100;
 }
 
-// === Расчёт количества единиц ===
-function calculateUnits(tariffKey, length, width, hours, qty) {
-const tariff = TARIFFS[tariffKey];
-if (!tariff) return { value: 0, unit: '' };
-let value = 0;
-let unit = tariff.unit;
-if (tariff.unit === 'time') {
-value = hours * qty;
-} else if (tariff.unit === 'm2') {
-value = length * width * qty;
-} else {
-value = length * qty;
-}
-return { value: Math.round(value * 100) / 100, unit: UNIT_LABELS[unit] || unit };
-}
-
 // === Обновление UI плана ===
 function updateUI() {
 const orders = loadOrders();
@@ -1124,7 +783,6 @@ const shift = getCurrentShift();
 let currentShiftAmount = 0;
 let progressWidth = 0;
 let statusText = 'Смена не начата';
-
 if (shift && shift.active) {
 currentShiftAmount = orders
 .filter(o => o.shiftId === shift.id)
@@ -1136,73 +794,66 @@ currentShiftAmount = shift.finalAmount || 0;
 progressWidth = Math.min(100, (currentShiftAmount / 3000) * 100);
 statusText = 'Смена завершена';
 }
-
 document.getElementById('totalAll').textContent = totalAll.toFixed(2);
 document.getElementById('todayEarned').textContent = currentShiftAmount.toFixed(2);
-const fillEl = document.getElementById('progressFill');
-fillEl.style.width = `${progressWidth}%`;
-fillEl.setAttribute('data-percentage', Math.round(progressWidth)); // ← для зелёного неона при 100%
+document.getElementById('progressFill').style.width = `${progressWidth}%`;
 document.getElementById('shiftStatus').textContent = statusText;
 }
 
 // === Переключение полей ===
 function updateMainFormFields() {
-const tariffSelect = document.getElementById('tariff');
-if (!tariffSelect) return;
-const tariff = tariffSelect.value;
-const w = document.getElementById('widthGroup');
-const h = document.getElementById('hoursGroup');
-const l = document.getElementById('lengthGroup');
-if (w) w.classList.add('hidden');
-if (h) h.classList.add('hidden');
-if (l) l.classList.remove('hidden');
+const tariff = document.getElementById('tariff').value;
+['widthGroup', 'hoursGroup'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
+document.getElementById('lengthGroup')?.classList.remove('hidden');
 if (['RASPIL_M2', 'SKLEIKA_OB', 'SKLEIKA_NO_OB'].includes(tariff)) {
-if (w) w.classList.remove('hidden');
+document.getElementById('widthGroup')?.classList.remove('hidden');
 } else if (tariff === 'TIME') {
-if (l) l.classList.add('hidden');
-if (h) h.classList.remove('hidden');
+document.getElementById('lengthGroup')?.classList.add('hidden');
+document.getElementById('hoursGroup')?.classList.remove('hidden');
 }
 }
 function updatePreorderFormFields() {
-const tariffSelect = document.getElementById('preTariff');
-if (!tariffSelect) return;
-const tariff = tariffSelect.value;
-const w = document.getElementById('preWidthGroup');
-const h = document.getElementById('preHoursGroup');
-const l = document.getElementById('preLengthGroup');
-if (w) w.classList.add('hidden');
-if (h) h.classList.add('hidden');
-if (l) l.classList.remove('hidden');
+const tariff = document.getElementById('preTariff').value;
+['preWidthGroup', 'preHoursGroup'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
+document.getElementById('preLengthGroup')?.classList.remove('hidden');
 if (['RASPIL_M2', 'SKLEIKA_OB', 'SKLEIKA_NO_OB'].includes(tariff)) {
-if (w) w.classList.remove('hidden');
+document.getElementById('preWidthGroup')?.classList.remove('hidden');
 } else if (tariff === 'TIME') {
-if (l) l.classList.add('hidden');
-if (h) h.classList.remove('hidden');
+document.getElementById('preLengthGroup')?.classList.add('hidden');
+document.getElementById('preHoursGroup')?.classList.remove('hidden');
+}
+}
+function updateEditFormFields() {
+const tariff = document.getElementById('editTariff').value;
+['editWidthGroup', 'editHoursGroup'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
+document.getElementById('editLengthGroup')?.classList.remove('hidden');
+if (['RASPIL_M2', 'SKLEIKA_OB', 'SKLEIKA_NO_OB'].includes(tariff)) {
+document.getElementById('editWidthGroup')?.classList.remove('hidden');
+} else if (tariff === 'TIME') {
+document.getElementById('editLengthGroup')?.classList.add('hidden');
+document.getElementById('editHoursGroup')?.classList.remove('hidden');
 }
 }
 
 // === Tabs ===
 function switchTab(tabName) {
-  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-  document.getElementById('main-tab').classList.add('hidden');
-  document.getElementById('preorders-tab').classList.add('hidden');
-  document.getElementById('tips-tab').classList.add('hidden');
-
-  if (tabName === 'main') {
-    document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
-    document.getElementById('main-tab').classList.remove('hidden');
-    updateUI();
-    setTimeout(updateMainFormFields, 50);
-  } else if (tabName === 'preorders') {
-    document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
-    document.getElementById('preorders-tab').classList.remove('hidden');
-    renderPreorders();
-    setTimeout(updatePreorderFormFields, 50);
-  } else if (tabName === 'tips') {
-    document.querySelector('.tab-btn:nth-child(3)').classList.add('active');
-    document.getElementById('tips-tab').classList.remove('hidden');
-    updateTipsUI();
-  }
+document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+['main-tab', 'preorders-tab', 'tips-tab'].forEach(id => document.getElementById(id).classList.add('hidden'));
+if (tabName === 'main') {
+document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+document.getElementById('main-tab').classList.remove('hidden');
+updateUI();
+setTimeout(updateMainFormFields, 50);
+} else if (tabName === 'preorders') {
+document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+document.getElementById('preorders-tab').classList.remove('hidden');
+renderPreorders();
+setTimeout(updatePreorderFormFields, 50);
+} else if (tabName === 'tips') {
+document.querySelector('.tab-btn:nth-child(3)').classList.add('active');
+document.getElementById('tips-tab').classList.remove('hidden');
+updateTipsUI();
+}
 }
 
 // === Смена ===
@@ -1235,43 +886,35 @@ alert(`✅ Смена завершена!\nЗаработано: ${finalAmount.t
 updateUI();
 }
 
-// === Удаление заказов ===
+// === Удаление ===
 function deleteOrder(orderId) {
-if (!confirm('Вы уверены, что хотите удалить этот заказ?')) {
-return;
-}
+if (!confirm('Вы уверены, что хотите удалить этот заказ?')) return;
 const orders = loadOrders();
-const orderIndex = orders.findIndex(o => o.id === orderId);
-if (orderIndex === -1) return;
-orders.splice(orderIndex, 1);
+const idx = orders.findIndex(o => o.id === orderId);
+if (idx === -1) return;
+orders.splice(idx, 1);
 saveOrders(orders);
 const shift = getCurrentShift();
-if (shift && shift.active) {
-updateUI();
-}
+if (shift && shift.active) updateUI();
 showOrdersByDate();
 alert('✅ Заказ удален!');
 }
 function deletePreorder(preorderId) {
-if (!confirm('Вы уверены, что хотите удалить этот предзаказ?')) {
-return;
-}
+if (!confirm('Вы уверены, что хотите удалить этот предзаказ?')) return;
 const preorders = loadPreorders();
-const preorderIndex = preorders.findIndex(p => p.id === preorderId);
-if (preorderIndex === -1) return;
-preorders.splice(preorderIndex, 1);
+const idx = preorders.findIndex(p => p.id === preorderId);
+if (idx === -1) return;
+preorders.splice(idx, 1);
 savePreorders(preorders);
 renderPreorders();
 alert('✅ Предзаказ удален!');
 }
 
-// === Модальное окно для выбора даты ===
+// === Модальные окна ===
+let pendingPreorderId = null;
 function openDateModal(preorderId) {
 pendingPreorderId = preorderId;
-const modalDateInput = document.getElementById('modalDate');
-if (modalDateInput) {
-modalDateInput.value = todayYMD();
-}
+document.getElementById('modalDate').value = todayYMD();
 document.getElementById('dateModal').classList.add('active');
 }
 function closeDateModal() {
@@ -1279,19 +922,13 @@ document.getElementById('dateModal').classList.remove('active');
 pendingPreorderId = null;
 }
 function confirmDateSelection() {
-const modalDateInput = document.getElementById('modalDate');
-const selectedDate = modalDateInput ? modalDateInput.value : null;
-if (!selectedDate) {
-alert('Выберите дату');
-return;
-}
+const date = document.getElementById('modalDate').value;
+if (!date) { alert('Выберите дату'); return; }
 if (pendingPreorderId !== null) {
-acceptPreorder(pendingPreorderId, selectedDate);
+acceptPreorder(pendingPreorderId, date);
 }
 closeDateModal();
 }
-
-// === Просмотр деталей заказа ===
 function viewOrderDetails(orderId) {
 const orders = loadOrders();
 const order = orders.find(o => o.id === orderId);
@@ -1299,56 +936,21 @@ if (!order) return;
 const units = calculateUnits(order.tariff, order.length, order.width, order.hours, order.qty);
 const tariffName = TARIFF_NAMES[order.tariff] || order.tariff;
 let html = '';
-html += `<div class="details-item">
-<span class="details-label">№ заказа:</span>
-<span class="details-value">${order.orderNumber}</span>
-</div>`;
-html += `<div class="details-item">
-<span class="details-label">Деталь:</span>
-<span class="details-value">${order.detail}</span>
-</div>`;
-html += `<div class="details-item">
-<span class="details-label">Тариф:</span>
-<span class="details-value">${tariffName}</span>
-</div>`;
-html += `<div class="details-item">
-<span class="details-label">Количество:</span>
-<span class="details-value">${order.qty}</span>
-</div>`;
-if (order.length !== null) {
-html += `<div class="details-item">
-<span class="details-label">Длина:</span>
-<span class="details-value">${order.length} м</span>
-</div>`;
-}
-if (order.width !== null) {
-html += `<div class="details-item">
-<span class="details-label">Ширина:</span>
-<span class="details-value">${order.width} м</span>
-</div>`;
-}
-if (order.hours !== null) {
-html += `<div class="details-item">
-<span class="details-label">Часы:</span>
-<span class="details-value">${order.hours} ч</span>
-</div>`;
-}
-html += `<div class="details-item">
-<span class="details-label">Объем работ:</span>
-<span class="details-value">${units.value} ${units.unit}</span>
-</div>`;
-html += `<div class="details-item">
-<span class="details-label">Сумма:</span>
-<span class="details-value">${order.amount.toFixed(2)} ₽</span>
-</div>`;
+html += `<div class="details-item"><span class="details-label">№ заказа:</span><span class="details-value">${order.orderNumber}</span></div>`;
+html += `<div class="details-item"><span class="details-label">Деталь:</span><span class="details-value">${order.detail}</span></div>`;
+html += `<div class="details-item"><span class="details-label">Тариф:</span><span class="details-value">${tariffName}</span></div>`;
+html += `<div class="details-item"><span class="details-label">Количество:</span><span class="details-value">${order.qty}</span></div>`;
+if (order.length !== null) html += `<div class="details-item"><span class="details-label">Длина:</span><span class="details-value">${order.length} м</span></div>`;
+if (order.width !== null) html += `<div class="details-item"><span class="details-label">Ширина:</span><span class="details-value">${order.width} м</span></div>`;
+if (order.hours !== null) html += `<div class="details-item"><span class="details-label">Часы:</span><span class="details-value">${order.hours} ч</span></div>`;
+html += `<div class="details-item"><span class="details-label">Объем работ:</span><span class="details-value">${units.value} ${units.unit}</span></div>`;
+html += `<div class="details-item"><span class="details-label">Сумма:</span><span class="details-value">${order.amount.toFixed(2)} ₽</span></div>`;
 document.getElementById('detailsContent').innerHTML = html;
 document.getElementById('detailsModal').classList.add('active');
 }
 function closeDetailsModal() {
 document.getElementById('detailsModal').classList.remove('active');
 }
-
-// === Редактирование заказов ===
 function openEditModal(orderId) {
 const orders = loadOrders();
 const order = orders.find(o => o.id === orderId);
@@ -1365,33 +967,16 @@ document.getElementById('editHours').value = order.hours || '';
 updateEditFormFields();
 document.getElementById('editModal').classList.add('active');
 }
+let editingOrder = null;
 function closeEditModal() {
 document.getElementById('editModal').classList.remove('active');
 editingOrder = null;
-}
-function updateEditFormFields() {
-const tariff = document.getElementById('editTariff').value;
-const w = document.getElementById('editWidthGroup');
-const h = document.getElementById('editHoursGroup');
-const l = document.getElementById('editLengthGroup');
-w.classList.add('hidden');
-h.classList.add('hidden');
-l.classList.remove('hidden');
-if (['RASPIL_M2', 'SKLEIKA_OB', 'SKLEIKA_NO_OB'].includes(tariff)) {
-w.classList.remove('hidden');
-} else if (tariff === 'TIME') {
-l.classList.add('hidden');
-h.classList.remove('hidden');
-}
 }
 function saveEditedOrder() {
 if (!editingOrder) return;
 const orderId = parseInt(document.getElementById('editOrderId').value);
 const num = document.getElementById('editOrderNum').value.trim();
-if (!num) {
-alert('Укажите № заказа');
-return;
-}
+if (!num) { alert('Укажите № заказа'); return; }
 const tariffKey = document.getElementById('editTariff').value;
 const detail = document.getElementById('editDetail').value.trim() || '—';
 const qty = parseInt(document.getElementById('editQty').value) || 1;
@@ -1400,10 +985,10 @@ const width = parseFloat(document.getElementById('editWidth').value) || 0;
 const hours = parseFloat(document.getElementById('editHours').value) || 0;
 const amount = calculateAmount(tariffKey, length, width, hours, qty);
 const orders = loadOrders();
-const orderIndex = orders.findIndex(o => o.id === orderId);
-if (orderIndex !== -1) {
-orders[orderIndex] = {
-...orders[orderIndex],
+const idx = orders.findIndex(o => o.id === orderId);
+if (idx !== -1) {
+orders[idx] = {
+...orders[idx],
 orderNumber: num,
 tariff: tariffKey,
 detail: detail,
@@ -1421,7 +1006,7 @@ alert('✅ Заказ обновлен!');
 }
 }
 
-// === Основные функции заказов ===
+// === Основные функции ===
 function createMainOrder() {
 const num = document.getElementById('orderNum').value.trim();
 if (!num) { alert('Укажите № заказа'); return; }
@@ -1455,12 +1040,10 @@ const orders = loadOrders();
 orders.push(order);
 saveOrders(orders);
 updateUI();
-document.getElementById('orderNum').value = '';
-document.getElementById('detail').value = '';
-document.getElementById('qty').value = '1';
-document.getElementById('length').value = '';
-document.getElementById('width').value = '';
-document.getElementById('hours').value = '';
+['orderNum','detail','qty','length','width','hours'].forEach(id => {
+const el = document.getElementById(id);
+if (el) el.value = (id === 'qty') ? '1' : '';
+});
 updateMainFormFields();
 }
 function createPreorder() {
@@ -1491,19 +1074,17 @@ preorders.push(preorder);
 savePreorders(preorders);
 alert('✅ Предзаказ сохранён!');
 renderPreorders();
-document.getElementById('preOrderNum').value = '';
-document.getElementById('preDetail').value = '';
-document.getElementById('preQty').value = '1';
-document.getElementById('preLength').value = '';
-document.getElementById('preWidth').value = '';
-document.getElementById('preHours').value = '';
+['preOrderNum','preDetail','preQty','preLength','preWidth','preHours'].forEach(id => {
+const el = document.getElementById(id);
+if (el) el.value = (id === 'preQty') ? '1' : '';
+});
 updatePreorderFormFields();
 }
 function acceptPreorder(preorderId, selectedDate = null) {
 const preorders = loadPreorders();
-const preorderIndex = preorders.findIndex(p => p.id === preorderId);
-if (preorderIndex === -1) return;
-const preorder = preorders[preorderIndex];
+const idx = preorders.findIndex(p => p.id === preorderId);
+if (idx === -1) return;
+const preorder = preorders[idx];
 const shift = getCurrentShift();
 if (!shift || !shift.active) {
 alert('Начните смену, чтобы принять предзаказ!');
@@ -1513,15 +1094,11 @@ if (!selectedDate) {
 openDateModal(preorderId);
 return;
 }
-const order = {
-...preorder,
-shiftId: shift.id,
-date: selectedDate
-};
+const order = {...preorder, shiftId: shift.id, date: selectedDate};
 const orders = loadOrders();
 orders.push(order);
 saveOrders(orders);
-preorders.splice(preorderIndex, 1);
+preorders.splice(idx, 1);
 savePreorders(preorders);
 alert(`✅ Предзаказ "${preorder.orderNumber}" принят на дату ${formatDateYMD(selectedDate)}!`);
 updateUI();
@@ -1534,18 +1111,7 @@ if (preorders.length === 0) {
 container.innerHTML = '<div class="empty-msg">Нет предзаказов</div>';
 return;
 }
-let html = `
-<table>
-<thead>
-<tr>
-<th>№</th>
-<th>Деталь</th>
-<th>Сумма</th>
-<th>Действия</th>
-</tr>
-</thead>
-<tbody>
-`;
+let html = `<table><thead><tr><th>№</th><th>Деталь</th><th>Сумма</th><th>Действия</th></tr></thead><tbody>`;
 preorders.forEach(p => {
 html += `
 <tr>
@@ -1553,25 +1119,17 @@ html += `
 <td>${p.detail}</td>
 <td class="amount">${p.amount.toFixed(2)} ₽</td>
 <td>
-<button class="btn-accept" onclick="acceptPreorder(${p.id})">
-<i class="fas fa-check"></i> Принять
-</button>
-<button class="btn-delete" onclick="deletePreorder(${p.id})">
-<i class="fas fa-trash"></i>
-</button>
+<button class="btn-action" onclick="acceptPreorder(${p.id})"><i class="fas fa-check"></i></button>
+<button class="btn-action" onclick="deletePreorder(${p.id})"><i class="fas fa-trash"></i></button>
 </td>
-</tr>
-`;
+</tr>`;
 });
 html += '</tbody></table>';
 container.innerHTML = html;
 }
 function showOrdersByDate() {
 const dateInput = document.getElementById('viewDate').value;
-if (!dateInput) {
-alert('Выберите дату');
-return;
-}
+if (!dateInput) { alert('Выберите дату'); return; }
 const orders = loadOrders();
 const filtered = orders.filter(o => o.date === dateInput);
 const formattedDate = formatDateYMD(dateInput);
@@ -1579,18 +1137,7 @@ let html = `<div class="date-label">Заказы за ${formattedDate}</div>`;
 if (filtered.length === 0) {
 html += '<div class="empty-msg">Нет заказов за эту дату</div>';
 } else {
-html += `
-<table>
-<thead>
-<tr>
-<th>№</th>
-<th>Деталь</th>
-<th>Сумма</th>
-<th>Действия</th>
-</tr>
-</thead>
-<tbody>
-`;
+html += `<table><thead><tr><th>№</th><th>Деталь</th><th>Сумма</th><th>Действия</th></tr></thead><tbody>`;
 filtered.forEach(o => {
 html += `
 <tr>
@@ -1598,18 +1145,11 @@ html += `
 <td>${o.detail}</td>
 <td class="amount">${o.amount.toFixed(2)} ₽</td>
 <td>
-  <button class="btn-action btn-view" onclick="viewOrderDetails(${o.id})">
-    <i class="fas fa-eye"></i>
-  </button>
-  <button class="btn-action btn-edit" onclick="openEditModal(${o.id})">
-    <i class="fas fa-edit"></i>
-  </button>
-  <button class="btn-action btn-delete" onclick="deleteOrder(${o.id})">
-    <i class="fas fa-trash"></i>
-  </button>
+<button class="btn-action" onclick="viewOrderDetails(${o.id})"><i class="fas fa-eye"></i></button>
+<button class="btn-action" onclick="openEditModal(${o.id})"><i class="fas fa-edit"></i></button>
+<button class="btn-action" onclick="deleteOrder(${o.id})"><i class="fas fa-trash"></i></button>
 </td>
-</tr>
-`;
+</tr>`;
 });
 html += '</tbody></table>';
 }
@@ -1617,101 +1157,56 @@ document.getElementById('ordersList').innerHTML = html;
 }
 function saveOrdersToFile() {
 const dateInput = document.getElementById('viewDate').value;
-if (!dateInput) {
-alert('Сначала выберите дату');
-return;
-}
+if (!dateInput) { alert('Сначала выберите дату'); return; }
 const orders = loadOrders();
 const filtered = orders.filter(o => o.date === dateInput);
-if (filtered.length === 0) {
-alert('Нет заказов за эту дату');
-return;
-}
+if (filtered.length === 0) { alert('Нет заказов за эту дату'); return; }
 const formattedDate = formatDateYMD(dateInput);
-let content = `ЗАКАЗЫ ЗА ${formattedDate}
-`;
-content += `========================
-`;
+let content = `ЗАКАЗЫ ЗА ${formattedDate}\n========================\n`;
 let totalSum = 0;
-let totalM2 = 0;
-let totalLinear = 0;
-let totalTime = 0;
 filtered.forEach((o, idx) => {
 const tariffName = TARIFF_NAMES[o.tariff] || o.tariff;
 const units = calculateUnits(o.tariff, o.length, o.width, o.hours, o.qty);
-content += `№${idx + 1}. ${o.orderNumber}
-`;
-content += `   ${o.detail} (${tariffName})
-`;
-if (o.length) content += `   Длина: ${o.length} м
-`;
-if (o.width) content += `   Ширина: ${o.width} м
-`;
-if (o.hours) content += `   Часы: ${o.hours} ч
-`;
-content += `   Кол-во: ${o.qty}
-`;
-content += `   Объем: ${units.value} ${units.unit}
-`;
-content += `   Сумма: ${o.amount.toFixed(2)} ₽
----
-`;
+content += `№${idx + 1}. ${o.orderNumber}\n   ${o.detail} (${tariffName})\n`;
+if (o.length) content += `   Длина: ${o.length} м\n`;
+if (o.width) content += `   Ширина: ${o.width} м\n`;
+if (o.hours) content += `   Часы: ${o.hours} ч\n`;
+content += `   Кол-во: ${o.qty}\n   Объем: ${units.value} ${units.unit}\n   Сумма: ${o.amount.toFixed(2)} ₽\n---\n`;
 totalSum += o.amount;
-if (units.unit === 'м²') {
-totalM2 += units.value;
-} else if (units.unit === 'пог. м') {
-totalLinear += units.value;
-} else if (units.unit === 'часы') {
-totalTime += units.value;
-}
 });
-content += `
-ИТОГО: ${totalSum.toFixed(2)} ₽
-`;
-if (totalM2 > 0) content += `Общая площадь: ${totalM2.toFixed(2)} м²
-`;
-if (totalLinear > 0) content += `Общая длина: ${totalLinear.toFixed(2)} пог. м
-`;
-if (totalTime > 0) content += `Общее время: ${totalTime.toFixed(1)} ч
-`;
-content += `
-Экспорт: ${new Date().toLocaleString('ru-RU')}`;
+content += `\nИТОГО: ${totalSum.toFixed(2)} ₽\nЭкспорт: ${new Date().toLocaleString('ru-RU')}`;
 const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
 const blob = new Blob([bom, content], { type: 'text/plain;charset=utf-8' });
-const url = URL.createObjectURL(blob);
 const a = document.createElement('a');
-a.href = url;
+a.href = URL.createObjectURL(blob);
 a.download = `заказы_${formattedDate}.txt`;
-document.body.appendChild(a);
 a.click();
-document.body.removeChild(a);
-URL.revokeObjectURL(url);
+URL.revokeObjectURL(a.href);
 }
 function saveOrdersToJSON() {
 const dateInput = document.getElementById('viewDate').value;
-if (!dateInput) {
-alert('Сначала выберите дату');
-return;
-}
+if (!dateInput) { alert('Сначала выберите дату'); return; }
 const orders = loadOrders();
 const filtered = orders.filter(o => o.date === dateInput);
-if (filtered.length === 0) {
-alert('Нет заказов за эту дату');
-return;
-}
+if (filtered.length === 0) { alert('Нет заказов за эту дату'); return; }
 const jsonContent = JSON.stringify(filtered, null, 2);
 const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8' });
-const url = URL.createObjectURL(blob);
 const a = document.createElement('a');
-a.href = url;
+a.href = URL.createObjectURL(blob);
 a.download = `заказы_${formatDateYMD(dateInput)}.json`;
-document.body.appendChild(a);
 a.click();
-document.body.removeChild(a);
-URL.revokeObjectURL(url);
+URL.revokeObjectURL(a.href);
 }
-
-// === Импорт файлов ===
+function calculateUnits(tariffKey, length, width, hours, qty) {
+const tariff = TARIFFS[tariffKey];
+if (!tariff) return { value: 0, unit: '' };
+let value = 0;
+let unit = tariff.unit;
+if (tariff.unit === 'time') value = hours * qty;
+else if (tariff.unit === 'm2') value = length * width * qty;
+else value = length * qty;
+return { value: Math.round(value * 100) / 100, unit: UNIT_LABELS[unit] || unit };
+}
 document.getElementById('jsonImportInput').addEventListener('change', function(e) {
 const file = e.target.files[0];
 if (!file) return;
@@ -1722,16 +1217,11 @@ const content = event.target.result;
 let importedOrders = [];
 if (content.trim().startsWith('{') || content.trim().startsWith('[')) {
 importedOrders = JSON.parse(content);
-if (!Array.isArray(importedOrders)) {
-importedOrders = [importedOrders];
-}
+if (!Array.isArray(importedOrders)) importedOrders = [importedOrders];
 } else {
 importedOrders = parseTxtOrders(content);
 }
-if (importedOrders.length === 0) {
-alert('Не удалось найти заказы в файле!');
-return;
-}
+if (importedOrders.length === 0) { alert('Не удалось найти заказы в файле!'); return; }
 const preorders = loadPreorders();
 const newPreorders = importedOrders.map(item => ({
 id: Date.now() + Math.random(),
@@ -1752,53 +1242,34 @@ item.qty || 1
 date: todayYMD(),
 timestamp: new Date().toISOString()
 }));
-const updated = [...preorders, ...newPreorders];
-savePreorders(updated);
+savePreorders([...preorders, ...newPreorders]);
 renderPreorders();
 alert(`✅ Загружено ${newPreorders.length} предзаказов!`);
 } catch (err) {
-console.error(err);
 alert('Ошибка при чтении файла:\n' + err.message);
 }
 };
 reader.readAsText(file, 'utf-8');
 });
-
-// === Парсинг TXT ===
 function parseTxtOrders(txtContent) {
 const orders = [];
 const blocks = txtContent.split('---');
 for (const block of blocks) {
 const lines = block.trim().split('\n').filter(line => line.trim() !== '');
 if (lines.length < 3) continue;
-const order = {
-orderNumber: '',
-detail: '',
-tariff: '',
-qty: 1,
-length: null,
-width: null,
-hours: null,
-amount: 0
-};
-let currentDetail = '';
-let currentTariff = '';
+const order = { orderNumber: '', detail: '', tariff: '', qty: 1, length: null, width: null, hours: null, amount: 0 };
+let currentDetail = '', currentTariff = '';
 for (const line of lines) {
 const cleanLine = line.trim();
 if (cleanLine.startsWith('№') && cleanLine.includes('.')) {
 const match = cleanLine.match(/№\d+\.\s*(.+)/);
 if (match) order.orderNumber = match[1].trim();
 } else if (/^[A-Z0-9]/.test(cleanLine) && !cleanLine.includes(':') && !cleanLine.includes('Сумма') && !cleanLine.includes('ИТОГО')) {
-if (!order.orderNumber && cleanLine.length > 2) {
-order.orderNumber = cleanLine;
-}
+if (!order.orderNumber && cleanLine.length > 2) order.orderNumber = cleanLine;
 }
 if (cleanLine.includes('(') && cleanLine.includes(')') && !cleanLine.includes('Сумма')) {
 const match = cleanLine.match(/(.+)\s*\((.+)\)/);
-if (match) {
-currentDetail = match[1].trim();
-currentTariff = match[2].trim();
-}
+if (match) { currentDetail = match[1].trim(); currentTariff = match[2].trim(); }
 }
 if (cleanLine.startsWith('Длина:')) {
 const match = cleanLine.match(/Длина:\s*([\d.]+)\s*м/);
@@ -1821,43 +1292,23 @@ const match = cleanLine.match(/Сумма:\s*([\d.]+)\s*₽/);
 if (match) order.amount = parseFloat(match[1]);
 }
 }
-if (currentTariff) {
-const tariffMap = {
-'Распил': 'RASPIL_M2',
-'Лин. распил': 'LINEAR_RASPIL',
-'Склейка +': 'SKLEIKA_OB',
-'Склейка –': 'SKLEIKA_NO_OB',
-'Пазы': 'PAZY',
-'Фаска': 'FREZER_FASKA',
-'Время': 'TIME'
-};
+const tariffMap = {'Распил':'RASPIL_M2','Лин. распил':'LINEAR_RASPIL','Склейка +':'SKLEIKA_OB','Склейка –':'SKLEIKA_NO_OB','Пазы':'PAZY','Фаска':'FREZER_FASKA','Время':'TIME'};
 order.tariff = tariffMap[currentTariff] || 'RASPIL_M2';
-}
 order.detail = currentDetail || '—';
-if (order.orderNumber) {
-orders.push(order);
-}
+if (order.orderNumber) orders.push(order);
 }
 return orders;
 }
-
-// === Инициализация ===
 document.addEventListener('DOMContentLoaded', () => {
 document.getElementById('viewDate').value = todayYMD();
-const mainSelect = document.getElementById('tariff');
-const preSelect = document.getElementById('preTariff');
-const editTariffSelect = document.getElementById('editTariff');
-if (mainSelect) {
-mainSelect.addEventListener('change', updateMainFormFields);
-updateMainFormFields();
-}
-if (preSelect) {
-preSelect.addEventListener('change', updatePreorderFormFields);
-updatePreorderFormFields();
-}
-if (editTariffSelect) {
-editTariffSelect.addEventListener('change', updateEditFormFields);
-}
+['tariff','preTariff','editTariff'].forEach(id => {
+const el = document.getElementById(id);
+if (el) el.addEventListener('change', () => {
+if (id === 'tariff') updateMainFormFields();
+else if (id === 'preTariff') updatePreorderFormFields();
+else updateEditFormFields();
+});
+});
 updateUI();
 renderPreorders();
 });
