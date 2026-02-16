@@ -19,14 +19,12 @@
   --shadow-light: #444444;
   --shadow-dark: #222222;
 }
-
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
-
 body {
   background: var(--bg);
   color: var(--text);
@@ -34,8 +32,7 @@ body {
   min-height: 100vh;
   line-height: 1.4;
 }
-
-/* === ШАПКА === */
+/* Шапка с аватаркой и поиском */
 .header-bar {
   position: fixed;
   top: 0;
@@ -49,7 +46,6 @@ body {
   z-index: 200;
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
-
 .avatar-btn {
   width: 40px;
   height: 40px;
@@ -62,15 +58,21 @@ body {
   font-weight: bold;
   font-size: 18px;
   cursor: pointer;
-  /* ❌ УБРАНО СВЕЧЕНИЕ */
-  /* box-shadow: 0 0 15px rgba(255, 235, 59, 0.4); */
+  overflow: hidden;
+  position: relative;
 }
-
+.avatar-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.avatar-btn i {
+  pointer-events: none;
+}
 .search-container {
   flex: 1;
   position: relative;
 }
-
 .search-input {
   width: 100%;
   padding: 8px 12px 8px 36px;
@@ -80,11 +82,9 @@ body {
   color: var(--text);
   font-size: 0.95rem;
 }
-
 .search-input::placeholder {
   color: var(--text-muted);
 }
-
 .search-icon {
   position: absolute;
   left: 12px;
@@ -93,15 +93,13 @@ body {
   color: var(--text-muted);
   pointer-events: none;
 }
-
-/* === Основной контент === */
+/* Основной контент */
 .main-content {
-  padding: 72px 16px 70px; /* отступ под шапку + под панель */
+  padding: 72px 16px 70px;
   max-width: 768px;
   margin: 0 auto;
 }
-
-/* === СТЕКЛЯННАЯ ПАНЕЛЬ — ТОНКАЯ, БЕЗ СВЕЧЕНИЯ === */
+/* Стеклянная панель */
 .glass-panel {
   position: fixed;
   bottom: 20px;
@@ -121,7 +119,6 @@ body {
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
   z-index: 200;
 }
-
 .panel-item {
   display: flex;
   flex-direction: column;
@@ -135,16 +132,13 @@ body {
   padding: 4px 2px;
   user-select: none;
 }
-
 .panel-item i {
   font-size: 1.2rem;
 }
-
 .panel-item.active {
   color: #ffffff;
 }
-
-/* === Неоморфические кнопки — БЕЗ ЖЁЛТОГО СВЕЧЕНИЯ === */
+/* Неоморфические кнопки — без жёлтого свечения */
 .neu-btn {
   background: var(--card);
   border: none;
@@ -165,18 +159,10 @@ body {
 .neu-btn-accent {
   background: var(--accent-yellow);
   color: #000;
-  /* ❌ УДАЛЕНО ВНЕШНЕЕ СВЕЧЕНИЕ */
   box-shadow:
     inset 2px 2px 5px rgba(200, 180, 0, 0.3),
     inset -2px -2px 5px rgba(255, 255, 255, 0.3);
 }
-.neu-btn-accent:active {
-  box-shadow:
-    inset -2px -2px 5px rgba(200, 180, 0, 0.3),
-    inset 2px 2px 5px rgba(255, 255, 255, 0.3);
-}
-
-/* Поля ввода */
 .neu-input,
 .neu-select {
   background: var(--card);
@@ -187,16 +173,6 @@ body {
   box-shadow: inset 2px 2px 5px var(--shadow-dark), inset -2px -2px 5px var(--shadow-light);
   width: 100%;
 }
-.neu-input:focus,
-.neu-select:focus {
-  outline: none;
-  box-shadow:
-    inset 2px 2px 5px var(--shadow-dark),
-    inset -2px -2px 5px var(--shadow-light),
-    0 0 8px rgba(255, 235, 59, 0.4); /* только для фокуса — можно убрать, если нужно */
-}
-
-/* Прогресс-бары — БЕЗ СВЕЧЕНИЯ */
 .progress-container {
   height: 24px;
   background: var(--card);
@@ -210,12 +186,10 @@ body {
   height: 100%;
   border-radius: 12px;
   background: var(--accent-yellow);
-  /* ❌ УДАЛЕНО: box-shadow: 0 0 12px rgba(255, 235, 59, 0.5); */
   width: 0;
   transition: width 1.2s cubic-bezier(0.22, 0.61, 0.36, 1);
   position: relative;
 }
-
 .bar-container {
   height: 28px;
   background: var(--card);
@@ -229,10 +203,7 @@ body {
   border-radius: 14px;
   width: 0;
   transition: width 1.4s cubic-bezier(0.22, 0.61, 0.36, 1);
-  /* ❌ УДАЛЕНО: box-shadow: 0 0 10px rgba(255, 235, 59, 0.4); */
 }
-
-/* Остальной стиль — без изменений */
 .status-bar {
   display: flex;
   align-items: center;
@@ -262,7 +233,7 @@ body {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.modal { /* ... */ display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:1000; justify-content:center; align-items:center; }
+.modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:1000; justify-content:center; align-items:center; }
 .modal.active { display: flex; }
 .modal-content {
   background: var(--card);
@@ -303,7 +274,6 @@ body {
 }
 .hidden { display: none !important; }
 
-/* Адаптивность */
 @media (max-width: 480px) {
   .glass-panel {
     bottom: 16px;
@@ -321,12 +291,12 @@ body {
 
 <!-- ШАПКА -->
 <div class="header-bar">
-  <!-- Аватарка -->
+  <!-- Аватарка с возможностью загрузки -->
   <div class="avatar-btn" id="avatarBtn" title="Загрузить аватар">
     <i class="fas fa-user"></i>
   </div>
 
-  <!-- Поиск по номеру заказа -->
+  <!-- Поиск -->
   <div class="search-container">
     <i class="fas fa-search search-icon"></i>
     <input type="text" class="search-input" id="orderSearch" placeholder="Поиск по № заказа...">
@@ -337,15 +307,13 @@ body {
 <div class="main-content" id="mainContent">
   <!-- Основное -->
   <div id="main" class="content-block active">
-    <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 20px;">
-      <div class="avatar-btn" style="width: 56px; height: 56px; font-size: 20px;">
-        <i class="fas fa-user"></i>
-      </div>
-      <div>
-        <h2>Александр<span id="opId"></span></h2>
-        <p>Всего: <b><span id="totalAll">0.00</span> ₽</b></p>
-      </div>
+    <!-- ❌ УДАЛЕНА аватарка из контента -->
+
+    <div>
+      <h2>Александр<span id="opId"></span></h2>
+      <p>Всего: <b><span id="totalAll">0.00</span> ₽</b></p>
     </div>
+
     <div class="progress-title">
       <i class="fas fa-bullseye"></i> План: <b>3000 ₽</b>
     </div>
@@ -594,7 +562,7 @@ body {
   </div>
 </div>
 
-<!-- СТЕКЛЯННАЯ ПАНЕЛЬ -->
+<!-- Стеклянная панель -->
 <div class="glass-panel">
   <div class="panel-item active" data-target="main">
     <i class="fas fa-home"></i>
@@ -613,6 +581,9 @@ body {
     <span>Статистика</span>
   </div>
 </div>
+
+<!-- Скрытый input для загрузки аватара -->
+<input type="file" id="avatarUpload" accept="image/jpeg,image/png,image/webp" style="display: none;" />
 
 <!-- Модальные окна -->
 <div id="editModal" class="modal">
@@ -1219,7 +1190,7 @@ document.getElementById('orderSearch').addEventListener('keypress', function(e) 
   if (e.key === 'Enter') {
     const query = this.value.trim().toLowerCase();
     if (!query) {
-      showOrdersByDate(); // или просто очистить
+      showOrdersByDate();
       return;
     }
     const orders = loadOrders();
@@ -1245,7 +1216,6 @@ document.getElementById('orderSearch').addEventListener('keypress', function(e) 
       html += '</tbody></table>';
     }
     document.getElementById('ordersListContainer').innerHTML = html;
-    // Переключиться на "Основное", если не там
     if (!document.getElementById('main').classList.contains('active')) {
       document.querySelectorAll('.panel-item').forEach(i => i.classList.remove('active'));
       document.querySelectorAll('.content-block').forEach(c => c.classList.remove('active'));
@@ -1528,6 +1498,44 @@ document.querySelectorAll('.panel-item').forEach(item => {
   });
 });
 
+// === ЗАГРУЗКА АВАТАРКИ ===
+function loadAvatar() {
+  const avatarData = localStorage.getItem('operator_avatar');
+  const avatarBtn = document.getElementById('avatarBtn');
+  if (avatarData) {
+    const img = document.createElement('img');
+    img.src = avatarData;
+    img.onerror = () => {
+      // Если изображение битое — удаляем и показываем иконку
+      localStorage.removeItem('operator_avatar');
+      avatarBtn.innerHTML = '<i class="fas fa-user"></i>';
+    };
+    avatarBtn.innerHTML = '';
+    avatarBtn.appendChild(img);
+  } else {
+    avatarBtn.innerHTML = '<i class="fas fa-user"></i>';
+  }
+}
+
+document.getElementById('avatarBtn').addEventListener('click', () => {
+  document.getElementById('avatarUpload').click();
+});
+
+document.getElementById('avatarUpload').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (!file.type.match('image.*')) {
+    alert('Пожалуйста, выберите изображение (JPG, PNG, WEBP)');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(event) {
+    localStorage.setItem('operator_avatar', event.target.result);
+    loadAvatar();
+  };
+  reader.readAsDataURL(file);
+});
+
 // === Инициализация ===
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('viewDate').value = todayYMD();
@@ -1542,6 +1550,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateUI();
   updateTipsUI();
   renderPreorders();
+  loadAvatar(); // Загрузить аватар при старте
 });
 </script>
 </body>
