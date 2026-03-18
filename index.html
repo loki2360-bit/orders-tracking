@@ -79,12 +79,12 @@ body { background: var(--bg); color: var(--text); padding: 0; min-height: 100vh;
 .calendar-day { aspect-ratio: 1; background: var(--card); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; position: relative; box-shadow: 2px 2px 4px var(--shadow-dark), -2px -2px 4px var(--shadow-light); transition: all 0.2s; border: 1px solid var(--border); }
 .calendar-day:hover { transform: translateY(-2px); }
 .calendar-day.today { border-color: var(--accent-solid); border-width: 2px; box-shadow: 0 0 10px rgba(59, 66, 86, 0.3); }
-.calendar-day.worked { background: var(--accent-solid); color: #F0F1F3; }
-.calendar-day.weekend { opacity: 0.7; border-color: var(--accent-red); }
+.calendar-day.worked { background: var(--accent-green); color: #fff; border-color: var(--accent-green); }
+.calendar-day.weekend { opacity: 0.8; border-color: var(--accent-red); }
 .calendar-day.holiday { border-color: var(--accent-red); border-width: 2px; box-shadow: 0 0 8px rgba(220, 38, 38, 0.4); }
-.calendar-day .day-num { font-size: 0.9rem; font-weight: 600; }
-.calendar-day .day-hours { font-size: 0.7rem; opacity: 0.9; }
-.calendar-day .holiday-icon { position: absolute; top: 4px; right: 4px; font-size: 0.7rem; color: var(--accent-red); }
+.calendar-day .day-num { font-size: 0.9rem; font-weight: 700; margin-bottom: 2px; }
+.calendar-day .day-earnings { font-size: 0.65rem; font-weight: 600; opacity: 0.95; text-align: center; line-height: 1.1; }
+.calendar-day .holiday-icon { position: absolute; top: 4px; right: 4px; font-size: 0.7rem; color: var(--accent-red); background: rgba(255,255,255,0.8); border-radius: 50%; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; }
 .progress-title { margin: 16px 0 8px; color: var(--text-muted); font-size: 0.9rem; display: flex; align-items: center; gap: 8px; }
 .progress-title i { color: var(--accent-solid); }
 .progress-label { display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--text-muted); }
@@ -140,39 +140,37 @@ body { background: var(--bg); color: var(--text); padding: 0; min-height: 100vh;
     pointer-events: none;
 }
 /* Цвета тегов */
-.tag-RASPIL_M2 { background-color: #3B82F6; } 
-.tag-LINEAR_RASPIL { background-color: #10B981; } 
-.tag-SKLEIKA_OB, .tag-SKLEIKA_NO_OB { background-color: #8B5CF6; } 
-.tag-PAZY { background-color: #F59E0B; } 
-.tag-FREZER_FASKA { background-color: #EC4899; } 
-.tag-TIME { background-color: #6B7285; } 
+.tag-RASPIL_M2 { background-color: #3B82F6; } /* Синий */
+.tag-LINEAR_RASPIL { background-color: #10B981; } /* Зеленый */
+.tag-SKLEIKA_OB { background-color: #8B5CF6; } /* Фиолетовый */
+.tag-SKLEIKA_NO_OB { background-color: #6D28D9; } /* Темно-фиолетовый */
+.tag-PAZY { background-color: #F59E0B; } /* Оранжевый */
+.tag-FREZER_FASKA { background-color: #EC4899; } /* Розовый */
+.tag-TIME { background-color: #6B7285; } /* Серый */
 .tag-UNKNOWN { background-color: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
 
-/* Контейнер для селекторов (тег и дата) */
-.photo-controls {
+/* Контейнер для селектора тега на карточке */
+.photo-tag-selector {
     position: absolute;
     bottom: 32px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 15;
     width: 90%;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
     text-align: center;
     opacity: 0;
     transition: opacity 0.2s;
 }
-.photo-card:hover .photo-controls, .photo-card:active .photo-controls { opacity: 1; }
+.photo-card:hover .photo-tag-selector, .photo-card:active .photo-tag-selector { opacity: 1; }
 @media (max-width: 600px) {
-    .photo-controls { opacity: 1; bottom: 36px; }
+    .photo-tag-selector { opacity: 1; bottom: 36px; }
 }
 
-.control-select {
+.tag-select-mini {
     width: 100%;
-    font-size: 0.65rem;
-    padding: 3px;
-    border-radius: 4px;
+    font-size: 0.7rem;
+    padding: 4px;
+    border-radius: 6px;
     border: 1px solid rgba(255,255,255,0.5);
     background: rgba(59, 66, 86, 0.9);
     color: white;
@@ -180,7 +178,7 @@ body { background: var(--bg); color: var(--text); padding: 0; min-height: 100vh;
     cursor: pointer;
     backdrop-filter: blur(4px);
 }
-.control-select option { background: var(--card); color: var(--text); }
+.tag-select-mini option { background: var(--card); color: var(--text); }
 
 /* Панель действий */
 .photo-actions { 
@@ -317,7 +315,7 @@ body { background: var(--bg); color: var(--text); padding: 0; min-height: 100vh;
 <!-- Календарь -->
 <div id="calendar" class="content-block">
 <div class="container">
-<h2 style="color: var(--accent-solid); margin-bottom: 16px;"><i class="fas fa-calendar-alt"></i> Календарь</h2>
+<h2 style="color: var(--accent-solid); margin-bottom: 16px;"><i class="fas fa-calendar-alt"></i> Календарь заработка</h2>
 <div class="calendar-header">
 <button class="calendar-nav-btn" onclick="changeMonth(-1)"><i class="fas fa-chevron-left"></i></button>
 <div style="font-size: 1.2rem; font-weight: 600;" id="calendarMonthYear"></div>
@@ -326,9 +324,10 @@ body { background: var(--bg); color: var(--text); padding: 0; min-height: 100vh;
 <div class="calendar-grid" id="calendarGrid"></div>
 <div class="progress-title" style="margin-top: 24px;"><i class="fas fa-info-circle"></i> Легенда</div>
 <div style="display: flex; gap: 12px; flex-wrap: wrap; font-size: 0.85rem; color: var(--text-muted);">
-<div style="display:flex; align-items:center; gap:6px;"><div style="width:12px; height:12px; border-radius:50%; background:var(--accent-solid);"></div> Отработано</div>
-<div style="display:flex; align-items:center; gap:6px;"><div style="width:12px; height:12px; border-radius:50%; border:2px solid var(--accent-red);"></div> Выходной/Праздник</div>
-<div style="display:flex; align-items:center; gap:6px;"><div style="width:12px; height:12px; border-radius:50%; border:2px solid var(--accent-solid);"></div> Сегодня</div>
+<div style="display:flex; align-items:center; gap:6px;"><div style="width:12px; height:12px; border-radius:4px; background:var(--accent-green);"></div> Были заказы (сумма)</div>
+<div style="display:flex; align-items:center; gap:6px;"><div style="width:12px; height:12px; border-radius:4px; background:var(--card); border:1px solid var(--border);"></div> Нет заказов</div>
+<div style="display:flex; align-items:center; gap:6px;"><div style="width:12px; height:12px; border-radius:4px; border:2px solid var(--accent-red);"></div> Выходной/Праздник</div>
+<div style="display:flex; align-items:center; gap:6px;"><div style="width:12px; height:12px; border-radius:4px; border:2px solid var(--accent-solid);"></div> Сегодня</div>
 </div>
 </div>
 </div>
@@ -337,13 +336,13 @@ body { background: var(--bg); color: var(--text); padding: 0; min-height: 100vh;
 <div class="container">
 <h2 style="color: var(--accent-solid); margin-bottom: 16px;"><i class="fas fa-camera"></i> Фото заказов</h2>
 <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px; text-align: center;">
-    <i class="fas fa-info-circle"></i> Выберите тип операции и дату на фото.
+    <i class="fas fa-info-circle"></i> Выберите тариф на фото, чтобы появился цветной ярлык. После оформления фото удалится.
 </p>
 <div class="capture-btn-container">
 <label for="cameraInput" class="capture-btn" title="Сделать фото"><i class="fas fa-camera"></i></label>
 <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;" />
 </div>
-<div class="progress-title"><i class="fas fa-images"></i> Галерея</div>
+<div class="progress-title"><i class="fas fa-images"></i> Галерея (Неоформленные)</div>
 <div id="photosListContainer" class="photo-grid"></div>
 </div>
 </div>
@@ -435,18 +434,6 @@ body { background: var(--bg); color: var(--text); padding: 0; min-height: 100vh;
 <img id="photoPreviewImg" src="" alt="Preview" class="zoom-preview-img">
 <button class="zoom-btn" onclick="openPhotoZoom()" title="Увеличить фото"><i class="fas fa-search-plus"></i></button>
 </div>
-<!-- Отображение выбранных параметров -->
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
-    <div class="modal-row" style="margin-bottom:0;">
-        <label>Тип (выбран на фото)</label>
-        <div id="photoTagDisplay" style="font-weight:bold; color:var(--accent-solid); padding: 6px; background:var(--bg); border-radius:6px; text-align:center; font-size:0.8rem;">Не выбран</div>
-    </div>
-    <div class="modal-row" style="margin-bottom:0;">
-        <label>Дата (выбрана на фото)</label>
-        <div id="photoDateDisplay" style="font-weight:bold; color:var(--accent-solid); padding: 6px; background:var(--bg); border-radius:6px; text-align:center; font-size:0.8rem;">Не выбрана</div>
-    </div>
-</div>
-
 <div class="modal-row"><label>№ заказа</label><input type="text" id="photoOrderNum" class="neu-input" placeholder="ORD-001"></div>
 <div class="modal-row"><label>Тариф</label><select id="photoTariff" class="neu-select">
 <option value="RASPIL_M2">Распил — 65 ₽/м²</option><option value="LINEAR_RASPIL">Лин. распил — 26 ₽/м</option>
@@ -495,13 +482,19 @@ installPrompt.classList.remove('show');
 }
 }
 function closeInstallPrompt() { installPrompt.classList.remove('show'); }
-
-// === КОНСТАНТЫ И УТИЛИТЫ ===
+// === Константы и утилиты ===
 let soundEnabled = true;
+const TARIFFS = {
+RASPIL_M2: { price: 65, unit: 'm2' }, LINEAR_RASPIL: { price: 26, unit: 'linear' },
+SKLEIKA_OB: { price: 210, unit: 'm2' }, SKLEIKA_NO_OB: { price: 165, unit: 'm2' },
+PAZY: { price: 30, unit: 'linear' }, FREZER_FASKA: { price: 16, unit: 'linear' }, TIME: { price: 330, unit: 'time' }
+};
+const TARIFF_NAMES = { RASPIL_M2: 'Распил', LINEAR_RASPIL: 'Лин. распил', SKLEIKA_OB: 'Склейка +', SKLEIKA_NO_OB: 'Склейка –', PAZY: 'Пазы', FREZER_FASKA: 'Фаска', TIME: 'Время' };
+const UNIT_LABELS = { m2: 'м²', linear: 'пог. м', time: 'часы' };
 
-// ОПЦИИ ТЕГОВ
+// Опции для тегов
 const TAG_OPTIONS = [
-    { val: '', label: '-- Тип --' },
+    { val: '', label: '-- Тариф --' },
     { val: 'RASPIL_M2', label: 'Распил' },
     { val: 'LINEAR_RASPIL', label: 'Лин. распил' },
     { val: 'SKLEIKA_OB', label: 'Склейка +' },
@@ -513,37 +506,9 @@ const TAG_OPTIONS = [
 
 function getTagName(val) {
     const opt = TAG_OPTIONS.find(o => o.val === val);
-    return opt ? opt.label : 'Не выбрано';
+    return opt ? opt.label : '';
 }
 
-// Генерация опций для дат (Сегодня, Завтра, +7 дней)
-function getDateOptions() {
-    const options = [{ val: '', label: '-- Дата --' }];
-    const today = new Date();
-    for (let i = 0; i <= 7; i++) {
-        const d = new Date(today);
-        d.setDate(today.getDate() + i);
-        const dateStr = d.toISOString().split('T')[0];
-        let label = '';
-        if (i === 0) label = 'Сегодня';
-        else if (i === 1) label = 'Завтра';
-        else {
-            const day = d.getDate().toString().padStart(2, '0');
-            const month = (d.getMonth() + 1).toString().padStart(2, '0');
-            label = `${day}.${month}`;
-        }
-        options.push({ val: dateStr, label: label });
-    }
-    return options;
-}
-
-const TARIFFS = {
-RASPIL_M2: { price: 65, unit: 'm2' }, LINEAR_RASPIL: { price: 26, unit: 'linear' },
-SKLEIKA_OB: { price: 210, unit: 'm2' }, SKLEIKA_NO_OB: { price: 165, unit: 'm2' },
-PAZY: { price: 30, unit: 'linear' }, FREZER_FASKA: { price: 16, unit: 'linear' }, TIME: { price: 330, unit: 'time' }
-};
-const TARIFF_NAMES = { RASPIL_M2: 'Распил', LINEAR_RASPIL: 'Лин. распил', SKLEIKA_OB: 'Склейка +', SKLEIKA_NO_OB: 'Склейка –', PAZY: 'Пазы', FREZER_FASKA: 'Фаска', TIME: 'Время' };
-const UNIT_LABELS = { m2: 'м²', linear: 'пог. м', time: 'часы' };
 const EARNINGS_MILESTONES = [
 { amount: 500, emoji: '😡', color: '#DC2626', text: 'Разгон...' }, { amount: 1000, emoji: '😢', color: '#3B82F6', text: 'Первая тысяча' },
 { amount: 1500, emoji: '😐', color: '#6B7285', text: 'Половина пути' }, { amount: 2000, emoji: '🙂', color: '#16A34A', text: 'Хороший результат' },
@@ -666,7 +631,7 @@ function deleteOrder(orderId) {
 if (!confirm('Удалить заказ?')) return;
 const orders = loadOrders(); const idx = orders.findIndex(o => o.id === orderId);
 if (idx === -1) return; orders.splice(idx, 1); saveOrders(orders);
-if (getCurrentShift()?.active) updateUI(); showOrdersByDate(); alert('✅ Удалено');
+if (getCurrentShift()?.active) updateUI(); showOrdersByDate(); renderCalendar(); alert('✅ Удалено');
 }
 function deletePreorder(preorderId) {
 if (!confirm('Удалить предзаказ?')) return;
@@ -721,7 +686,7 @@ const amount = calculateAmount(tariffKey, length, width, hours, qty);
 const orders = loadOrders(); const idx = orders.findIndex(o => o.id === orderId);
 if (idx !== -1) {
 orders[idx] = { ...orders[idx], orderNumber: num, tariff: tariffKey, detail: detail, qty: qty, length: length || null, width: width || null, hours: hours || null, amount: amount };
-saveOrders(orders); updateUI(); showOrdersByDate(); closeEditModal(); alert('✅ Обновлён');
+saveOrders(orders); updateUI(); showOrdersByDate(); renderCalendar(); closeEditModal(); alert('✅ Обновлён');
 }
 }
 function createMainOrder() {
@@ -735,7 +700,7 @@ const hours = parseFloat(document.getElementById('hours').value) || 0;
 const amount = calculateAmount(tariffKey, length, width, hours, qty);
 const shift = getCurrentShift(); if (!shift || !shift.active) { alert('⚠️ Начните смену!'); return; }
 const order = { id: Date.now(), orderNumber: num, tariff: tariffKey, detail: detail, qty: qty, length: length || null, width: width || null, hours: hours || null, amount: amount, date: todayYMD(), shiftId: shift.id, timestamp: new Date().toISOString() };
-const orders = loadOrders(); orders.push(order); saveOrders(orders); updateUI();
+const orders = loadOrders(); orders.push(order); saveOrders(orders); updateUI(); renderCalendar();
 ['orderNum','detail','qty','length','width','hours'].forEach(id => { const el = document.getElementById(id); if (el) el.value = (id === 'qty') ? '1' : ''; });
 updateMainFormFields();
 }
@@ -763,7 +728,7 @@ if (!selectedDate) { openDateModal(preorderId); return; }
 const order = {...preorder, shiftId: shift.id, date: selectedDate};
 const orders = loadOrders(); orders.push(order); saveOrders(orders);
 preorders.splice(idx, 1); savePreorders(preorders);
-alert(`✅ Принят на ${formatDateYMD(selectedDate)}!`); updateUI(); renderPreorders();
+alert(`✅ Принят на ${formatDateYMD(selectedDate)}!`); updateUI(); renderPreorders(); renderCalendar();
 }
 function renderPreorders() {
 const preorders = loadPreorders(); const container = document.getElementById('preordersListContainer');
@@ -801,9 +766,10 @@ const orders = loadOrders(); const matched = orders.filter(o => o.orderNumber.to
 let html = `<div class="progress-title">Поиск: "${query}"</div>`;
 if (matched.length === 0) { html += '<div class="empty-msg">Не найдено</div>'; }
 else {
-html += `<table class="orders-table"><thead><tr><th>№</th><th>Деталь</th><th>Сумма</th><th>Действия</th></tr></thead><tbody>`;
+html += `<table class="orders-table"><thead><tr><th>Дата</th><th>№</th><th>Деталь</th><th>Сумма</th><th>Действия</th></tr></thead><tbody>`;
 matched.forEach(o => {
-html += `<tr><td>${o.orderNumber}</td><td>${o.detail}</td><td class="amount">${o.amount.toFixed(2)} ₽</td><td>
+const displayDate = o.date ? formatDateYMD(o.date) : '—';
+html += `<tr><td style="font-size:0.85rem; color:var(--text-muted);">${displayDate}</td><td>${o.orderNumber}</td><td>${o.detail}</td><td class="amount">${o.amount.toFixed(2)} ₽</td><td>
 <button class="action-btn" onclick="viewOrderDetails(${o.id})"><i class="fas fa-eye"></i></button>
 <button class="action-btn" onclick="openEditModal(${o.id})"><i class="fas fa-edit"></i></button>
 <button class="action-btn" onclick="deleteOrder(${o.id})"><i class="fas fa-trash"></i></button></td></tr>`;
@@ -956,34 +922,73 @@ chartHtml += `<div class="bar-item"><div class="bar-label"><span>${opNames[key]}
 }
 document.getElementById('operationsChart').innerHTML = chartHtml || '<p style="color:var(--text-muted); text-align:center;">Нет данных</p>';
 }
-// === КАЛЕНДАРЬ ===
+// === КАЛЕНДАРЬ (ОБНОВЛЕННЫЙ) ===
 let currentCalendarDate = new Date();
 function loadCalendarData() { try { return JSON.parse(localStorage.getItem('operator_calendar') || '{}'); } catch (e) { return {}; } }
 function saveCalendarData(data) { localStorage.setItem('operator_calendar', JSON.stringify(data)); }
+
 function renderCalendar() {
-const year = currentCalendarDate.getFullYear(); const month = currentCalendarDate.getMonth();
-const data = loadCalendarData(); const today = todayYMD();
-const monthNames = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
-document.getElementById('calendarMonthYear').textContent = `${monthNames[month]} ${year}`;
-const firstDay = new Date(year, month, 1).getDay(); const daysInMonth = new Date(year, month + 1, 0).getDate();
-const grid = document.getElementById('calendarGrid'); grid.innerHTML = '';
-for (let i = 0; i < firstDay; i++) { const empty = document.createElement('div'); grid.appendChild(empty); }
-for (let d = 1; d <= daysInMonth; d++) {
-const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-const dayData = data[dateStr] || { hours: 0, isHoliday: false };
-const dayOfWeek = new Date(year, month, d).getDay();
-const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6); const isToday = (dateStr === today);
-const cell = document.createElement('div'); cell.className = 'calendar-day';
-if (isToday) cell.classList.add('today');
-if (dayData.hours > 0) cell.classList.add('worked');
-if (isWeekend) cell.classList.add('weekend');
-if (dayData.isHoliday) cell.classList.add('holiday');
-let html = `<div class="day-num">${d}</div>`;
-if (dayData.hours > 0) html += `<div class="day-hours">${dayData.hours} ч</div>`;
-if (dayData.isHoliday) html += `<i class="fas fa-star holiday-icon"></i>`;
-cell.innerHTML = html; cell.onclick = () => openDayModal(dateStr, dayData); grid.appendChild(cell);
+    const year = currentCalendarDate.getFullYear(); 
+    const month = currentCalendarDate.getMonth();
+    const data = loadCalendarData(); 
+    const today = todayYMD();
+    
+    // Подсчет заработка по датам
+    const orders = loadOrders();
+    const earningsByDate = {};
+    orders.forEach(o => {
+        if (o.date && o.amount) {
+            if (!earningsByDate[o.date]) earningsByDate[o.date] = 0;
+            earningsByDate[o.date] += parseFloat(o.amount);
+        }
+    });
+
+    const monthNames = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
+    document.getElementById('calendarMonthYear').textContent = `${monthNames[month]} ${year}`;
+    
+    const firstDay = new Date(year, month, 1).getDay(); 
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const grid = document.getElementById('calendarGrid'); 
+    grid.innerHTML = '';
+    
+    for (let i = 0; i < firstDay; i++) { 
+        const empty = document.createElement('div'); 
+        grid.appendChild(empty); 
+    }
+    
+    for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const dayData = data[dateStr] || { hours: 0, isHoliday: false };
+        const dayOfWeek = new Date(year, month, d).getDay();
+        
+        const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6); 
+        const isToday = (dateStr === today);
+        const hasEarnings = earningsByDate[dateStr] > 0;
+        const dayEarnings = hasEarnings ? earningsByDate[dateStr].toFixed(0) : ''; 
+
+        const cell = document.createElement('div'); 
+        cell.className = 'calendar-day';
+        
+        if (isToday) cell.classList.add('today');
+        if (hasEarnings) cell.classList.add('worked');
+        if (isWeekend) cell.classList.add('weekend');
+        if (dayData.isHoliday) cell.classList.add('holiday');
+        
+        let html = `<div class="day-num">${d}</div>`;
+        if (hasEarnings) {
+            html += `<div class="day-earnings">${dayEarnings} ₽</div>`;
+        } else if (dayData.hours > 0) {
+            html += `<div class="day-earnings">${dayData.hours} ч</div>`;
+        }
+        
+        if (dayData.isHoliday) html += `<i class="fas fa-star holiday-icon"></i>`;
+        
+        cell.innerHTML = html; 
+        cell.onclick = () => openDayModal(dateStr, dayData); 
+        grid.appendChild(cell);
+    }
 }
-}
+
 function changeMonth(delta) { currentCalendarDate.setMonth(currentCalendarDate.getMonth() + delta); renderCalendar(); }
 function openDayModal(dateStr, dayData) {
 document.getElementById('editDayDate').value = dateStr; document.getElementById('displayDayDate').textContent = formatDateYMD(dateStr);
@@ -998,7 +1003,7 @@ const isHoliday = document.getElementById('dayHoliday').checked;
 const data = loadCalendarData(); data[dateStr] = { hours, isHoliday }; saveCalendarData(data);
 closeDayModal(); renderCalendar(); alert('✅ Сохранено');
 }
-// === ФОТО (ОБНОВЛЕНО С ТЕГАМИ И ДАТОЙ) ===
+// === ФОТО (ОБНОВЛЕНО С ТЕГАМИ) ===
 function loadPhotos() { try { return JSON.parse(localStorage.getItem('operator_photos') || '[]'); } catch (e) { return []; } }
 function savePhotos(photos) {
 try {
@@ -1035,7 +1040,7 @@ callback(canvas.toDataURL('image/jpeg', 0.7));
 };
 }
 
-// ОТРИСОВКА ФОТО С ВЫБОРОМ ТЕГА И ДАТЫ
+// ОТРИСОВКА ФОТО С ВЫБОРОМ ТЕГА НА КАРТОЧКЕ
 function renderPhotos() {
     const photos = loadPhotos();
     const container = document.getElementById('photosListContainer');
@@ -1045,26 +1050,19 @@ function renderPhotos() {
     }
     
     let html = '';
-    const dateOptions = getDateOptions();
-    
     photos.forEach(p => {
-        // Тэг
+        // Определяем класс и имя тега
         const tagClass = p.tagType ? `tag-${p.tagType}` : 'tag-UNKNOWN';
         const tagName = p.tagType ? getTagName(p.tagType) : '';
+        
+        // HTML для ярлыка (показываем только если выбран тег)
         const tagHtml = tagName ? `<div class="photo-tag ${tagClass}">${tagName}</div>` : '';
         
-        // Опции для тега
-        let tagOptionsHtml = '';
+        // Генерируем опции для выпадающего списка на карточке
+        let optionsHtml = '';
         TAG_OPTIONS.forEach(opt => {
             const selected = (opt.val === p.tagType) ? 'selected' : '';
-            tagOptionsHtml += `<option value="${opt.val}" ${selected}>${opt.label}</option>`;
-        });
-
-        // Опции для даты
-        let dateOptionsHtml = '';
-        dateOptions.forEach(opt => {
-            const selected = (opt.val === p.photoDate) ? 'selected' : '';
-            dateOptionsHtml += `<option value="${opt.val}" ${selected}>${opt.label}</option>`;
+            optionsHtml += `<option value="${opt.val}" ${selected}>${opt.label}</option>`;
         });
 
         html += `
@@ -1072,13 +1070,10 @@ function renderPhotos() {
             ${tagHtml}
             <img src="${p.data}" alt="Photo">
             
-            <!-- Контролы: Тэг и Дата -->
-            <div class="photo-controls">
-                <select class="control-select" onchange="updatePhotoTag(${p.id}, this.value)">
-                    ${tagOptionsHtml}
-                </select>
-                <select class="control-select" onchange="updatePhotoDate(${p.id}, this.value)">
-                    ${dateOptionsHtml}
+            <!-- Выпадающий список прямо на карточке -->
+            <div class="photo-tag-selector">
+                <select class="tag-select-mini" onchange="updatePhotoTag(${p.id}, this.value)">
+                    ${optionsHtml}
                 </select>
             </div>
 
@@ -1091,26 +1086,14 @@ function renderPhotos() {
     container.innerHTML = html;
 }
 
-// Обновление тега
+// Функция обновления тега для конкретного фото
 function updatePhotoTag(photoId, newTag) {
     const photos = loadPhotos();
     const idx = photos.findIndex(p => p.id === photoId);
     if (idx !== -1) {
         photos[idx].tagType = newTag;
         savePhotos(photos);
-        renderPhotos();
-    }
-}
-
-// Обновление даты
-function updatePhotoDate(photoId, newDate) {
-    const photos = loadPhotos();
-    const idx = photos.findIndex(p => p.id === photoId);
-    if (idx !== -1) {
-        photos[idx].photoDate = newDate;
-        savePhotos(photos);
-        // Перерисовка не обязательна для даты, но нужна если мы хотим показать что-то визуально (пока просто сохраняем)
-        // Можно добавить визуальный индикатор даты, если нужно
+        renderPhotos(); // Перерисовываем, чтобы обновился цветной ярлык
     }
 }
 
@@ -1119,8 +1102,8 @@ const file = e.target.files[0];
 if (!file) return;
 compressImage(file, (compressedDataUrl) => {
 const photos = loadPhotos();
-// Создаем фото без тега и даты изначально
-const newPhoto = { id: Date.now(), data: compressedDataUrl, timestamp: new Date().toISOString(), tagType: "", photoDate: "" };
+// Создаем фото без тега изначально
+const newPhoto = { id: Date.now(), data: compressedDataUrl, timestamp: new Date().toISOString(), tagType: "" };
 photos.unshift(newPhoto);
 savePhotos(photos);
 renderPhotos();
@@ -1158,21 +1141,6 @@ function openPhotoOrderModal(photoId) {
     const selectedTag = photo.tagType || 'RASPIL_M2';
     document.getElementById('photoTariff').value = selectedTag;
     
-    // Отображаем выбранный тег текстом
-    const tagDisplayEl = document.getElementById('photoTagDisplay');
-    const tagName = getTagName(photo.tagType);
-    tagDisplayEl.textContent = tagName === 'Не выбрано' ? 'Не выбран' : tagName;
-    tagDisplayEl.style.color = photo.tagType ? 'var(--accent-solid)' : 'var(--text-muted)';
-
-    // АВТОМАТИЧЕСКИ выбираем дату равную выбранной на фото (или сегодня)
-    const selectedDate = photo.photoDate || todayYMD();
-    // Дату мы не ставим в форму явно, так как в форме нет поля даты для предзаказа (она берется из объекта или сегодня)
-    // Но мы покажем её пользователю
-    const dateDisplayEl = document.getElementById('photoDateDisplay');
-    const dateLabel = dateOptions.find(o => o.val === photo.photoDate)?.label || (photo.photoDate ? formatDateYMD(photo.photoDate) : 'Сегодня');
-    dateDisplayEl.textContent = photo.photoDate ? dateLabel : 'Не выбрана (будет сегодня)';
-    dateDisplayEl.style.color = photo.photoDate ? 'var(--accent-solid)' : 'var(--text-muted)';
-    
     updatePhotoFormFields();
     document.getElementById('photoOrderModal').classList.add('active');
 }
@@ -1199,11 +1167,6 @@ function confirmPhotoOrder() {
     
     const amount = calculateAmount(tariffKey, length, width, hours, qty);
     
-    // Получаем дату из фото (если не выбрана, то сегодня)
-    const photos = loadPhotos();
-    const photo = photos.find(p => p.id === currentPhotoIdForOrder);
-    const orderDate = (photo && photo.photoDate) ? photo.photoDate : todayYMD();
-    
     const preorder = { 
         id: Date.now(), 
         orderNumber: num, 
@@ -1214,18 +1177,20 @@ function confirmPhotoOrder() {
         width: width || null, 
         hours: hours || null, 
         amount: amount, 
-        date: orderDate, // Используем дату из фото
+        date: todayYMD(), 
         timestamp: new Date().toISOString(), 
-        hasPhoto: true,
-        photoTag: tariffKey 
+        hasPhoto: true
     };
     
     const preorders = loadPreorders(); preorders.push(preorder); savePreorders(preorders);
     
+    // === АВТОМАТИЧЕСКОЕ УДАЛЕНИЕ ФОТО ПОСЛЕ ОФОРМЛЕНИЯ ===
+    let photos = loadPhotos();
     photos = photos.filter(p => p.id !== currentPhotoIdForOrder);
     savePhotos(photos);
+    // ======================================================
     
-    alert(`✅ Оформлен в предзаказ на ${formatDateYMD(orderDate)}! Фото удалено.`);
+    alert('✅ Оформлен в предзаказ! Фото удалено.');
     closePhotoOrderModal(); 
     renderPreorders(); 
     renderPhotos();
@@ -1271,13 +1236,8 @@ const reader = new FileReader();
 reader.onload = function(event) { localStorage.setItem('operator_avatar', event.target.result); loadAvatar(); };
 reader.readAsDataURL(file);
 });
-
-// Глобальная переменная для доступа к опциям дат в openPhotoOrderModal
-let dateOptions = [];
-
 document.addEventListener('DOMContentLoaded', () => {
 document.getElementById('viewDate').value = todayYMD();
-dateOptions = getDateOptions(); // Инициализируем опции дат
 ['tariff','preTariff','editTariff'].forEach(id => {
 const el = document.getElementById(id);
 if (el) el.addEventListener('change', () => {
